@@ -1,9 +1,9 @@
 import querystring from 'query-string';
 import { requestAuthenticated } from '../../../utils';
 
-export const requestDeposits = (query) => {
+export const requestDeposits = ({ type = 'deposits', ...query }) => {
 	const queryValues = querystring.stringify(query);
-	const path = `/admin/deposits${queryValues ? `?${queryValues}` : ''}`;
+	const path = `/admin/${type}${queryValues ? `?${queryValues}` : ''}`;
 	return requestAuthenticated(path);
 };
 

@@ -102,7 +102,7 @@ class UserContent extends Component {
 						</TabPane>
 					)}
 					{!isSupportUser && !isKYC() && (
-						<TabPane tab="Deposits & Withdrawal" key="deposits">
+						<TabPane tab="Deposits" key="deposits">
 							{/*<Deposits*/}
 							{/*initialData={{*/}
 							{/*user_id: id*/}
@@ -117,6 +117,21 @@ class UserContent extends Component {
 									user_id: id
 								}}
 								queryParams={{
+									type: 'deposits',
+									status: true
+								}}
+								hideUserColumn={true}
+							/>
+						</TabPane>
+					)}
+					{!isSupportUser && !isKYC() && (
+						<TabPane tab="Withdrawals" key="withdrawals">
+							<Transactions
+								initialData={{
+									user_id: id
+								}}
+								queryParams={{
+									type: 'withdrawals',
 									status: true
 								}}
 								hideUserColumn={true}

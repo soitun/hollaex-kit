@@ -1,9 +1,9 @@
 import querystring from 'query-string';
 import { requestAuthenticated } from '../../../utils';
 
-export const requestDeposits = (query) => {
+export const requestDeposits = ({ type = 'deposits', ...query }) => {
 	const queryValues = querystring.stringify(query);
-	const path = `/admin/deposits${queryValues ? `?${queryValues}` : ''}`;
+	const path = `/admin/${type}${queryValues ? `?${queryValues}` : ''}`;
 	return requestAuthenticated(path);
 };
 export const requestdate = () => {
@@ -11,12 +11,12 @@ export const requestdate = () => {
 	return requestAuthenticated(path);
 };
 
-export const completeDeposits = (id, status) => {
+export const completeDeposits = (values) => {
 	const options = {
 		method: 'PUT',
-		body: JSON.stringify({ status })
+		body: JSON.stringify(values)
 	};
-	return requestAuthenticated(`/admin/deposit/${id}/verify`, options);
+	return requestAuthenticated(`/admin/deposit/verify`, options);
 };
 
 export const dismissDeposit = (deposit_id, dismissed) => {

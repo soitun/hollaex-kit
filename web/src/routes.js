@@ -269,12 +269,12 @@ export default (
 			<Route
 				path="/admin/withdrawals"
 				name="Admin Withdrawals"
-				component={withAdminProps(DepositsPage, 'withdrawal')}
+				component={withAdminProps(DepositsPage, 'withdrawals')}
 			/>
 			<Route
 				path="/admin/deposits"
 				name="Admin Deposits"
-				component={withAdminProps(DepositsPage, 'deposit')}
+				component={withAdminProps(DepositsPage, 'deposits')}
 			/>
 			<Route
 				path="/admin/blockchain"

@@ -75,7 +75,8 @@ class Deposits extends Component {
 			loading: true,
 			error: '',
 			queryDone: JSON.stringify(queryParams),
-			queryType: queryParams.type
+			queryType: queryParams.type,
+			queryParams
 		});
 
 		requestDeposits({
@@ -102,7 +103,7 @@ class Deposits extends Component {
 		const { loadingItem, loading, dismissingItem } = this.state;
 		if (!(dismissingItem || loadingItem || loading)) {
 			this.setState({ loadingItem: true, error: '', indexItem });
-			completeDeposits(transaction_id, true)
+			completeDeposits({ transaction_id, status: true })
 				.then((data) => {
 					const { deposits } = this.state;
 					this.setState({

@@ -31,23 +31,23 @@ export const PATHS = [
 		hideIfKYC: true,
 		hideIfSupervisor: false,
 		pathProps: {
-			type: 'deposit',
+			type: 'deposits',
 			showFilters: true
 		},
-		routeKey: 'deposit'
+		routeKey: 'deposits'
 	},
 	{
 		path: '/admin/withdrawals',
 		// component: Deposits,
 		label: 'Withdrawals',
 		pathProps: {
-			type: 'withdrawal',
+			type: 'withdrawals',
 			showFilters: true
 		},
 		hideIfSupport: true,
 		hideIfKYC: true,
 		hideIfSupervisor: false,
-		routeKey: 'withdrawal'
+		routeKey: 'withdrawals'
 	},
 	{
 		path: '/admin/pair',
