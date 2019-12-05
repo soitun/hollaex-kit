@@ -13,7 +13,8 @@ const ChatFooter = ({
 	set_username,
 	showEmojiBox = false,
 	handleEmojiBox,
-	onEmojiSelect
+	onEmojiSelect,
+	sendMsgMobile
 }) => {
 	return (
 		<div
@@ -48,6 +49,7 @@ const ChatFooter = ({
 							sendMessage={sendMessage}
 							setChatBoxRef={setChatBoxRef}
 							handleEmojiBox={handleEmojiBox}
+							sendMsgMobile={sendMsgMobile}
 						/>
 				)
 			}

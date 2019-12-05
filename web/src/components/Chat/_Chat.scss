@@ -60,7 +60,6 @@ $light-emoji-content-top-background: #dbdbdb;
 			}
 		}
 		.chat-footer {
-			padding: 0.5rem;
 			.chat-message-box {
 				min-height: 4rem;
 				font-size: $regular-chat--font-size;
@@ -81,6 +80,13 @@ $light-emoji-content-top-background: #dbdbdb;
 				.chat-emoji-icon {
 					svg{
 						.emoji-face-icon {
+							fill: $chat-message-content-color;
+						}
+					}
+				}
+				.send-msg-icon {
+					svg {
+						.send-msg {
 							fill: $chat-message-content-color;
 						}
 					}
@@ -405,11 +411,18 @@ $light-emoji-content-top-background: #dbdbdb;
 					}
 				}
 			}
+			.send-msg-icon {
+				width: 3.5rem;
+				svg {
+					.send-msg {
+						fill: $chat-message-content-color;
+					}
+				}
+			}
 		}
 		.emoji-container {
 			width: 23rem !important;
 			height: 15rem;
-			background-color: $emoji-content-background;
 
 			.chat-category {
 				border-bottom: 1px solid grey;
@@ -466,7 +479,8 @@ $light-emoji-content-top-background: #dbdbdb;
 				}
 			}
 			.emoji-content {
-				height: 100%;
+				background-color: $emoji-content-background;
+				height: 13rem;
 				overflow-y: scroll;
 			}
 			.emoji-mart-emoji {
@@ -605,7 +619,6 @@ $light-emoji-content-top-background: #dbdbdb;
 				}
 			}
 			.emoji-container {
-				background-color: $dark-emoji-content-background;
 
 				.chat-category {
 					background-color: $dark-emoji-content-top-background;
@@ -639,6 +652,9 @@ $light-emoji-content-top-background: #dbdbdb;
 						}
 					}
 				}
+				.emoji-content {
+					background-color: $dark-emoji-content-background;
+				}
 				.emoji-mart-emoji {
 					background-color: $dark-emoji-content-background;
 				}
@@ -649,6 +665,13 @@ $light-emoji-content-top-background: #dbdbdb;
 				    svg {
 				     	.emoji-face-icon {
 					    	fill: $chat-message-content-color;
+						}
+					}
+				}
+				.send-msg-icon {
+					svg {
+						.send-msg {
+							fill: $chat-message-content-color;
 						}
 					}
 				}

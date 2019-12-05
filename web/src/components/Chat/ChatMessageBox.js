@@ -3,6 +3,7 @@ import classnames from 'classnames';
 import Textarea from 'react-expanding-textarea';
 import { Link } from 'react-router';
 import ReactSvg from 'react-svg';
+import { isMobile } from 'react-device-detect';
 
 import { ICONS } from '../../config/constants';
 import STRINGS from '../../config/localizedStrings';
@@ -15,7 +16,8 @@ export const ChatMessageBox = ({
 	sendMessage,
 	setChatBoxRef,
 	set_username,
-	handleEmojiBox
+	handleEmojiBox,
+	sendMsgMobile
 }) => (
 	set_username?
 	<div className={classnames('d-flex')} style={{flex:1}}>
@@ -32,6 +34,14 @@ export const ChatMessageBox = ({
 			onClick={handleEmojiBox}>
 			<ReactSvg path={ICONS.CHAT_EMOJI} wrapperClassName="chat-emoji-icon" />
 		</div>
+		{isMobile
+			? <div
+				className="d-flex align-items-center justify-content-center chat-emoji-wrapper"
+				onClick={sendMsgMobile}>
+				<ReactSvg path={ICONS.CHAT_SEND_MSG} wrapperClassName="send-msg-icon" />
+			</div>
+			: null
+		}
 	</div>:
 	<div className={classnames('d-flex justify-content-center', 'username-to-chat')} >
 		<Link

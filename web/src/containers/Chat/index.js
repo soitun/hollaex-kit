@@ -48,8 +48,26 @@ class Chat extends Component {
 		}
 	}
 
+	
+	componentDidMount() {
+		if (isMobile) {
+			setTimeout(() => {
+				window.scrollTo(0, document.body.scrollHeight);
+			}, 300);
+			window.addEventListener('resize', function (e) {
+				setTimeout(() => {
+					window.scrollTo(0, document.body.scrollHeight);
+				}, 300);
+			});
+		}
+	}
+	
+
 	componentWillUnmount() {
 		this.closeChatSocket();
+		if (isMobile) {
+			window.removeEventListener('resize', () => {});
+		}
 	}
 
 	initializeChatWs = (token = '') => {
@@ -129,23 +147,27 @@ class Chat extends Component {
 	sendMessage = (e) => {
 		if (e.key === ENTER_KEY) {
 			e.preventDefault();
-			const message = this.chatMessageBox.value;
-			if (message.trim().length > 0) {
-				const { username } = this.props;
-				const { to } = this.state;
-				const chatMessage = {
-					username,
-					userType: USER_TYPES.USER_TYPE_NORMAL,
-					to,
-					message,
-					type: MESSAGE_TYPES.MESSAGE_TYPE_NORMAL
-				};
+			this.handleSendMsg();
+		}
+	};
 
-				this.state.chatWs.emit('message', chatMessage);
+	handleSendMsg = () => {
+		const message = this.chatMessageBox.value;
+		if (message.trim().length > 0) {
+			const { username } = this.props;
+			const { to } = this.state;
+			const chatMessage = {
+				username,
+				userType: USER_TYPES.USER_TYPE_NORMAL,
+				to,
+				message,
+				type: MESSAGE_TYPES.MESSAGE_TYPE_NORMAL
+			};
 
-				this.chatMessageBox.value = '';
-				this.chatMessageBox.style.height = isMobile ? '32px' : '36px';
-			}
+			this.state.chatWs.emit('message', chatMessage);
+
+			this.chatMessageBox.value = '';
+			this.chatMessageBox.style.height = isMobile ? '32px' : '36px';
 		}
 	};
 
@@ -218,6 +240,7 @@ class Chat extends Component {
 				removeMessage={this.removeMessage}
 				onEmojiSelect={this.onEmojiSelect}
 				onCloseEmoji={this.onCloseEmoji}
+				sendMsgMobile={this.handleSendMsg}
 			/>
 		);
 	}

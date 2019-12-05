@@ -23,7 +23,8 @@ export const ChatWrapper = ({
 	showEmojiBox,
 	handleEmojiBox,
 	onEmojiSelect,
-	onCloseEmoji
+	onCloseEmoji,
+	sendMsgMobile
 }) => {
 	const chatInitialized =
 		chatSocketInitialized && !chatSocketInitializing ? true : false;
@@ -75,6 +76,7 @@ export const ChatWrapper = ({
 						showEmojiBox={showEmojiBox}
 						handleEmojiBox={handleEmojiBox}
 						onEmojiSelect={onEmojiSelect}
+						sendMsgMobile={sendMsgMobile}
 					/>
 				</div>
 			</div>
