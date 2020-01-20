@@ -216,3 +216,17 @@ $dark-information--color: $dark-link;
 		}
 	}
 }
+
+.font-big {
+	.information_section {
+		font-size: $font-size-big-subtext;
+	}
+	.user-limits {
+		.user-limits-table {
+			font-size: $font-size-big-subtext;
+			tfoot {
+				font-size: $font-size-big-main;
+			}
+		}
+	}
+}

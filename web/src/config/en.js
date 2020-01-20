@@ -971,6 +971,11 @@ export default {
 		{ value: 'white', label: 'White' },
 		{ value: 'dark', label: 'Dark' }
 	],
+	SETTINGS_FONT_LABEL: 'Font size',
+	SETTINGS_FONT_OPTIONS: [
+		{ value: 'big', label: 'Big'},
+		{ value: 'small', label: 'Small'}
+	],
 	SETTING_BUTTON: 'save',
 	STRING_WITH_PARENTHESIS: '{0} ({1})',
 	VERIFICATION_NO_WITHDRAW_TITLE: 'Withdrawals disabled',

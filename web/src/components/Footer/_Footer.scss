@@ -6,6 +6,12 @@ $footer-social-icon--dimension: 2rem;
 $footer-icons--side-margin: 1.5rem;
 $footer--background-color: white;
 
+.font-big {
+	.footer-container {
+		font-size: $font-size-big-subtext;
+	}
+}
+
 .footer-container {
 	padding: $footer-wrapper--margin-top $footer-wrapper--margin
 		$footer-wrapper--margin;

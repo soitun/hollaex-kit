@@ -10,7 +10,11 @@ export const getTheme = (theme = '') => {
 
 export const getThemeClass = (theme = '') => {
   return `${getTheme(theme)}-theme`;
-}
+};
+
+export const getFont = (font='') => {
+	return `font-${font}`
+};
 
 export const getChatMinimized = () => {
 	const minimized = localStorage.getItem(CHAT_STATUS_KEY) || false;

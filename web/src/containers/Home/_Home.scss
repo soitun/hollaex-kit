@@ -181,6 +181,19 @@ $no-background--color: white;
 	}
 }
 
+.font-big {
+	.home_container {
+		.home-card-container {
+			.home-card-text-container {
+				font-size: $font-size-big-subtext;
+			}
+		}
+		.buttons-section--button {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}
+
 @media (max-width: $bp-sm) {
 	.home_container {
 		.home-card-container {

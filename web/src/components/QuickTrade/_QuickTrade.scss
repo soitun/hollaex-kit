@@ -389,3 +389,16 @@ $title-icon--height: 10rem;
 .mobile_dropdown-section {
 	border-top: solid;
 }
+
+.font-big {
+	.quick_trade-wrapper {
+		.toogle_button-wrapper {
+			.toogle-content {
+				font-size: $font-size-big-subtext;
+			}
+		}
+		.input_block-title {
+			font-size: $font-size-big-subhead3;
+		}
+	}
+}

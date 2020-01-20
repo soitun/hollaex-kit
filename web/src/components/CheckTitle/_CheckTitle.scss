@@ -373,3 +373,20 @@ $notification-size: 1.5rem;
 		}
 	}
 }
+
+.font-big {
+	.check_title-container {
+		.custom_title-label {
+			font-size: $font-size-big-subhead3;
+			line-height: $font-size-big-subhead3;
+		}
+		.check_title-notification {
+			font-size: $font-size-big-main;
+		}
+	}
+	.header_title-wrapper {
+		.header_title-children {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}

@@ -33,6 +33,20 @@ $deactive-tab-border: $boder--width solid $border--color;
 	border-bottom: $height solid $color;
 }
 
+.font-big {
+	.sidebar_hub-wrapper {
+		.sidebar_hub-content {
+			.sidebar_hub-section {
+				.sidebar_hub-section-header {
+					.sidebar_hub-section-title {
+						font-size: $font-size-big-subhead3;
+					}
+				}
+			}
+		}
+	}
+}
+
 .sidebar_hub-wrapper {
 	overflow-y: scroll;
 

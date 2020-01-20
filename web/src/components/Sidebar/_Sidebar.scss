@@ -18,7 +18,7 @@
 		overflow-y: scroll;
 		
 		.sidebar-title {
-			font-size: $font-size-subhead3;;
+			font-size: $font-size-subhead3;
 			font-weight: bold;
 		}
 	}
@@ -95,7 +95,7 @@ $row--size: calc(#{$row--height} - #{$sidebar-sections-padding});
 			}
 		}
 		.bottom-bar-text {
-			font-size: 12px;
+			font-size: $font-size-main;
 			text-align: center;
 			margin-top: -17PX;
 			font-weight: lighter;
@@ -174,6 +174,23 @@ $row--size: calc(#{$row--height} - #{$sidebar-sections-padding});
 		}
 		.sidebar-notifications {
 			min-height: 20rem;
+		}
+	}
+}
+
+.font-big {
+	.sidebar-container {
+		.sidebar-notifications {
+			.sidebar-title {
+				font-size: $font-size-big-subhead3;
+			}
+		}
+	}
+	.sidebar-bottom-wrapper {
+		.sidebar-bottom-button {
+			.bottom-bar-text {
+				font-size: $font-size-big-main;
+			}
 		}
 	}
 }

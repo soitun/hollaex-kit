@@ -308,3 +308,14 @@ $placeholder--font-weight: bold;
 		}
 	}
 }
+
+.font-big {
+	.placeholder {
+		font-size: $font-size-big-subtext;
+	}
+	.toggle_button-wrapper {
+		.toggle-content {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}

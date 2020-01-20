@@ -168,3 +168,16 @@ $content--margin: 2rem;
 		padding: 1rem;
 	}
 }
+
+.font-big {
+	.review-wrapper {
+		.review-crypto-amount {
+			.review-fee_message {
+				font-size: $font-size-big-main;
+			}
+		}
+		.review-info_message {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}

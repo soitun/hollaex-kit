@@ -1,5 +1,5 @@
 import PhoneNumber from 'awesome-phonenumber';
-import { DEFAULT_LANGUAGE, THEME_DEFAULT } from '../config/constants';
+import { DEFAULT_LANGUAGE, THEME_DEFAULT, FONTS_DEFAULT } from '../config/constants';
 import { constructSettings } from '../utils/utils';
 
 const USER_DATA_KEYS = [
@@ -101,7 +101,8 @@ const INITIAL_STATE = {
 		},
 		interface: {
 			theme: THEME_DEFAULT,
-			order_book_levels: 10
+			order_book_levels: 10,
+			font: FONTS_DEFAULT
 		},
 		chat: {
 			set_username: false

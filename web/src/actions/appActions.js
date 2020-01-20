@@ -27,7 +27,8 @@ export const NOTIFICATIONS = {
 	INVITE_FRIENDS: 'INVITE_FRIENDS',
 	STAKE_TOKEN: 'STAKE_TOKEN',
 	DEPOSIT_INFO: 'DEPOSIT_INFO',
-	XHT_SUCCESS_ACCESS: 'XHT_SUCCESS_ACCESS'
+	XHT_SUCCESS_ACCESS : 'XHT_SUCCESS_ACCESS',
+	WAVE_NOTIFICATION: 'WAVE_NOTIFICATION'
 };
 export const CONTACT_FORM = 'CONTACT_FORM';
 export const HELPFUL_RESOURCES_FORM = 'HELPFUL_RESOURCES_FORM';
@@ -39,6 +40,7 @@ export const CHANGE_PAIR = 'CHANGE_PAIR';
 export const SET_TICKERS = 'SET_TICKERS';
 export const SET_TICKER_FROM_TRADE = 'SET_TICKER_FROM_TRADE';
 export const CHANGE_THEME = 'CHANGE_THEME';
+export const CHANGE_FONT = 'CHANGE_FONT';
 export const SET_ORDER_LIMITS = 'SET_ORDER_LIMITS';
 export const FEES_STRUCTURE_AND_LIMITS = 'FEES_STRUCTURE_AND_LIMITS';
 export const RISK_PORTFOLIO_ORDER_WARING = 'RISK_PORTFOLIO_ORDER_WARING';
@@ -166,6 +168,13 @@ export const changeTheme = (theme = '') => ({
 	type: CHANGE_THEME,
 	payload: {
 		theme
+	}
+});
+
+export const changeFont = (font = '') => ({
+	type: CHANGE_FONT,
+	payload: {
+		font
 	}
 });
 

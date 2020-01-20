@@ -299,3 +299,33 @@ $dark-api-icon-color: #808080;
 		}
 	}
 }
+
+.font-big {
+	.notification-wrapper {
+		.notification-title-wrapper {
+			.notification-title-text {
+				font-size: $font-size-big-subhead3;
+			}
+		}
+		.notification-content-wrapper {
+			font-size: $font-size-big-main;
+	
+			.notification-content-header {
+				font-size: $font-size-big-subtext;
+			}
+		}
+		.notification-information {
+			font-size: $font-size-big-subtext;
+		}
+		.notification-buttons-wrapper .exir-button {
+			font-size: $font-size-big-main;
+		}
+	}
+	.notification-wrapper {
+		.notification-content-wrapper.notification-withdrawal {
+			.notification-link-wrapper {
+				font-size: $font-size-big-subtext;
+			}
+		}
+	}
+}

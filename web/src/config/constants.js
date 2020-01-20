@@ -448,8 +448,11 @@ export const PRO_URL = process.env.REACT_APP_PRO_URL || 'https://hollaex.com';
 export const MIN_LEVEL_FOR_TOKENS = 1;
 
 const THEME_COLOR = localStorage.getItem('theme');
+export const FONT_SIZE = localStorage.getItem('font')
 export const THEMES = ['dark', 'white'];
+export const FONTS = ['small','big']
 export const THEME_DEFAULT = THEME_COLOR ? THEME_COLOR : THEMES[1];
+export const FONTS_DEFAULT = FONT_SIZE ? FONT_SIZE : FONTS[1];
 export const CHAT_STATUS_KEY = 'chat:minimized';
 
 /* these values are used for the chart limits on the summary page */

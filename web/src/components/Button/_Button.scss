@@ -83,3 +83,12 @@
 		}
 	}
 }
+
+.font-big {
+	.exir-button {
+		font-size: $font-size-big-subtext;
+	}
+	.checkbutton-wrapper {
+		font-size: $font-size-big-main;
+	}
+}

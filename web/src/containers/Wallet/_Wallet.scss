@@ -300,3 +300,27 @@ $header-margin: 2rem;
 		@include size-important(1rem);
 	}
 }
+
+.font-big {
+	.wallet-container {
+		.wallet-header_block {
+			.wallet-header_block-currency_title {
+				font-size: $font-size-big-subhead3;
+			}
+		}
+		.wallet-assets_block {
+			.wallet-assets_block-table {
+				font-size: $font-size-big-subtext;
+
+				tfoot {
+					font-size: $font-size-big-main;
+				}
+			}
+		}
+	}
+	.wallet-notification {
+		.action_notification-text {
+			font-size: $font-size-big-main !important;
+		}
+	}
+}

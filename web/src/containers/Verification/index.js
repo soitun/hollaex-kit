@@ -41,7 +41,7 @@ import {
 import { ContactForm } from '../';
 import { NOTIFICATIONS } from '../../actions/appActions';
 import { setMe } from '../../actions/userAction';
-import { getThemeClass } from '../../utils/theme';
+import { getThemeClass, getFont } from '../../utils/theme';
 // import BankVerificationHome from './BankVerificationHome';
 import IdentityVerificationHome from './IdentityVerificationHome';
 import MobileVerificationHome from './MobileVerificationHome';
@@ -372,7 +372,7 @@ class Verification extends Component {
 	onLogout = () => this.props.logout('');
 
 	render() {
-		const { activeLanguage, activeTheme } = this.props;
+		const { activeLanguage, activeTheme, user } = this.props;
 		const { activeTab, tabs, dialogIsOpen, dialogType } = this.state;
 		if (activeTab === -1 && tabs.length > 0) {
 			return (
@@ -395,6 +395,7 @@ class Verification extends Component {
 					'app_container-main',
 					'my-3',
 					getThemeClass(activeTheme),
+					getFont(user.settings.interface.font),
 					fontClass,
 					languageClasses[0],
 					{

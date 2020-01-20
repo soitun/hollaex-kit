@@ -161,6 +161,21 @@ $sections-font--color: $colors-deactivate-color2;
 	}
 }
 
+.font-big {
+	.wallet_section-wrapper {
+		font-size: $font-size-big-subtext;
+	}
+	.wallet_section-title {
+		font-size: $font-size-big-subtext;
+	}
+	.wallet_section-title-amount {
+		font-size: $font-size-big-subtext;
+	}
+	.wallet_section-total_asset {
+		font-size: $font-size-big-main;
+	}
+}
+
 @media (min-width: 1920px) {
 	.wallet-wrapper {
 		.donut-container {

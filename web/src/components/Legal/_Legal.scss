@@ -58,3 +58,12 @@ $legal-sections--margin: 1.5rem;
 		padding: 1rem;
 	}
 }
+
+.font-big {
+	.legal-content-wrapper {
+		.legal-subtitle,
+		.legal-content {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}

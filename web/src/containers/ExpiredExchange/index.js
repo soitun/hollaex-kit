@@ -4,7 +4,7 @@ import ReactSvg from 'react-svg';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import moment from 'moment';
-import { getThemeClass } from '../../utils/theme';
+import { getThemeClass, getFont } from '../../utils/theme';
 
 import { ICONS, FLEX_CENTER_CLASSES, EXCHANGE_URL, EXCHANGE_EXPIRY_DAYS } from '../../config/constants';
 import { getExchangeInfo } from '../../actions/appActions';
@@ -27,9 +27,17 @@ class Expired extends Component {
     }
 
     render() {
-        const { activeTheme } = this.props;
+        const { activeTheme, settings } = this.props;
         return (
-            <div className={classnames(getThemeClass(activeTheme), 'app_container', 'w-100', 'h-100')}>
+            <div
+                className={
+                    classnames(
+                        getThemeClass(activeTheme),
+                        getFont(settings.interface.font),
+                        'app_container',
+                        'w-100',
+                        'h-100'
+                    )}>
                 <div className={classnames("expired_exchange_wrapper", "h-100", "flex-column", ...FLEX_CENTER_CLASSES)}>
                     <div>
                         <ReactSvg path={ICONS.EXPIRED_ICON} wrapperClassName="expired_img_icon" />
@@ -53,7 +61,8 @@ class Expired extends Component {
 
 const mapStateToProps = (store) => ({
     info: store.app.info,
-    activeTheme: store.app.theme
+    activeTheme: store.app.theme,
+    settings: store.user.settings
 });
 
 const mapDispatchToProps = (dispatch) => ({

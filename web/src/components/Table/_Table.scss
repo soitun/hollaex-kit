@@ -237,3 +237,11 @@ $controllers--color-disabled: $colors-deactivate-color2;
 		color: $dark-font-sub-text-color;
 	}
 }
+
+.font-big {
+	.table-wrapper {
+		.table_body-wrapper {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}

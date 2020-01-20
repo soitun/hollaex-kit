@@ -239,3 +239,29 @@ $padding-input: 4rem;
 		}
 	}
 }
+
+.font-size {
+	.otp_form-wrapper {
+		.otp_form-section-wrapper {
+			.otp_form-section-title {
+				font-size: $font-size-big-main;
+			}
+	
+			.otp_form-section-text {
+				font-size: $font-size-big-subtext;
+			}
+	
+			.otp_secret {
+				font-size: $font-size-big-subtext;
+			}
+		}
+	}
+	.popup_info-wrapper {
+		.popup_info-title {
+			font-size: $font-size-big-subhead3;
+		}
+		.popup_info-text {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}

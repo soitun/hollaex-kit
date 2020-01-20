@@ -18,11 +18,12 @@ import {
 	SET_VALID_BASE_CURRENCY,
 	SET_CONFIG,
 	SET_INFO,
-	SET_WAVE_AUCTION
+	SET_WAVE_AUCTION,
+    CHANGE_FONT
 } from '../actions/appActions';
-import { THEME_DEFAULT } from '../config/constants';
+import { THEME_DEFAULT, FONTS_DEFAULT } from '../config/constants';
 import { getLanguage } from '../utils/string';
-import { getTheme } from '../utils/theme';
+import { getTheme , getFont } from '../utils/theme';
 
 const EMPTY_NOTIFICATION = {
 	type: '',
@@ -49,6 +50,7 @@ const INITIAL_STATE = {
 	activeNotification: EMPTY_NOTIFICATION,
 	snackNotification: EMPTY_SNACK_NOTIFICATION,
 	theme: THEME_DEFAULT,
+	font: FONTS_DEFAULT,
 	language: getLanguage(),
 	pairs: {},
 	pair: '',
@@ -274,6 +276,11 @@ const reducer = (state = INITIAL_STATE, { type, payload = {} }) => {
 			return {
 				...state,
 				theme: getTheme(payload.theme)
+			};
+		case CHANGE_FONT:
+			return {
+				...state,
+				font: getFont(payload.font)
 			};
 		case SET_TICKERS:
 			return {

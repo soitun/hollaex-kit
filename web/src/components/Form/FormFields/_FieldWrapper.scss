@@ -6,6 +6,12 @@ $error-icon-size: 1.25rem;
 $valid-icon-size: 1.25rem;
 $outline-height: 1.5px;
 
+.font-big {
+	.field-wrapper {
+		font-size: $font-size-big-subtext;
+	}
+}
+
 .field-wrapper {
 	position: relative;
 	width: 100%;

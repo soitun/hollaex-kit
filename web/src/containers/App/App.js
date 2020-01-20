@@ -24,7 +24,8 @@ import {
 import {
 	getThemeClass,
 	getChatMinimized,
-	setChatMinimized
+	setChatMinimized,
+	getFont
 } from '../../utils/theme';
 import { checkUserSessionExpired } from '../../utils/utils';
 import { getTokenTimestamp, isLoggedIn } from '../../utils/token';
@@ -418,7 +419,8 @@ class App extends Component {
 			unreadMessages,
 			router,
 			location,
-			info
+			info,
+			settings
 			// user
 		} = this.props;
 		const {
@@ -437,12 +439,14 @@ class App extends Component {
 		const isMenubar = activePath === 'account' || activePath === 'wallet';
 		const expiryDays =
 			EXCHANGE_EXPIRY_DAYS - moment().diff(info.created_at, 'days');
+		console.log('settings', settings);
 		return (
 			<div>
 				<Socket router={router} location={location} />
 				<div
 					className={classnames(
 						getThemeClass(activeTheme),
+						getFont(settings.interface.font),
 						activePath,
 						symbol,
 						fontClass,
@@ -458,6 +462,7 @@ class App extends Component {
 							'app_container',
 							'd-flex',
 							getThemeClass(activeTheme),
+							getFont(settings.interface.font),
 							activePath,
 							symbol,
 							fontClass,
@@ -613,10 +618,14 @@ class App extends Component {
 					<SnackDialog />
 				</div>
 				<div
-					className={classnames(getThemeClass(activeTheme), {
-						'layout-mobile': isMobile,
-						'layout-desktop': isBrowser
-					})}
+					className={
+						classnames(getThemeClass(activeTheme),
+						getFont(settings.interface.font),
+						{
+							'layout-mobile': isMobile,
+							'layout-desktop': isBrowser
+						}
+					)}
 				>
 					{!isMobile && <AppFooter theme={activeTheme} />}
 				</div>

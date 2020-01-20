@@ -211,6 +211,23 @@ $inner_container-border: 1px solid $border-color;
 	z-index: 9999;
 }
 
+.font-big {
+	.presentation_container {
+		.inner_container {	
+			.information_block {
+				.information_block-text_wrapper {
+					.title {
+						font-size: $font-size-big-main;
+					}
+					.text {
+						font-size: $font-size-big-subtext;
+					}
+				}
+			}
+		}
+	}
+}
+
 @media (min-width: 1920px) {
 	.font-small,
 	.exir-button,
@@ -237,6 +254,35 @@ $inner_container-border: 1px solid $border-color;
 	.popup_info-wrapper .popup_info-text,
 	.otp_secret {
 		font-size: 1rem !important;
+	}
+
+	.font-big {
+		.font-small,
+		.exir-button,
+		.field-wrapper,
+		.action_notification-text,
+		.wallet-assets_block-table,
+		.accordion_section_content,
+		.verification_container .header-content,
+		.verification_container .content-text,
+		.table_body-wrapper,
+		.wallet_section-title-amount,
+		.wallet_section-title,
+		.trade_tabs-container .trade_tabs-content,
+		.toogle_button-wrapper .toogle-content,
+		.trade_block-wrapper .trade_block-content,
+		.ohlc_data_wrapper .ohlc_label,
+		.ohlc_value,
+		.information_block-text_wrapper .text,
+		.qr-text,
+		.header_title-children,
+		.placeholder,
+		.notification-content-wrapper,
+		.otp_form-section-wrapper .otp_form-section-text,
+		.popup_info-wrapper .popup_info-text,
+		.otp_secret {
+			font-size: $font-size-big-main !important;
+		}
 	}
 	
 	.presentation_container,

@@ -10,7 +10,7 @@ import { AppFooter } from '../../components';
 import { FLEX_CENTER_CLASSES, CAPTCHA_SITEKEY, EXCHANGE_EXPIRY_DAYS } from '../../config/constants';
 import STRINGS from '../../config/localizedStrings';
 import { getClasesForLanguage } from '../../utils/string';
-import { getThemeClass } from '../../utils/theme';
+import { getThemeClass, getFont } from '../../utils/theme';
 import { getExchangeInfo } from '../../actions/appActions';
 
 const updateThemeToBody = (theme = 'white') => {
@@ -52,7 +52,7 @@ class AuthContainer extends Component {
 	}
 
 	render() {
-		const { activeLanguage, activeTheme, children, info, ...rest } = this.props;
+		const { activeLanguage, activeTheme, children, settings, info, ...rest } = this.props;
 		const languageClasses = getClasesForLanguage(activeLanguage);
 		const childWithLanguageClasses = React.Children.map(children, (child) =>
 			React.cloneElement(child, { activeLanguage, languageClasses })
@@ -100,6 +100,7 @@ class AuthContainer extends Component {
 						'w-100',
 						'h-100',
 						getThemeClass(activeTheme),
+						getFont(settings.interface.font),
 						{
 							'layout-mobile': isMobile,
 							'layout-desktop': isBrowser
@@ -113,7 +114,15 @@ class AuthContainer extends Component {
 				</div>
 				{!isMobile
 					? (
-						<div className={classnames('footer-wrapper', getThemeClass(activeTheme))}>
+						<div
+							className={
+								classnames(
+									'footer-wrapper',
+									getThemeClass(activeTheme),
+									getFont(settings.interface.font)
+								)
+							}
+						>
 							<AppFooter theme={activeTheme} />
 						</div>
 					)
@@ -127,7 +136,8 @@ class AuthContainer extends Component {
 const mapStateToProps = (store) => ({
 	activeLanguage: store.app.language,
 	activeTheme: store.app.theme,
-	info: store.app.info
+	info: store.app.info,
+	settings: store.user.settings
 });
 
 const mapDispatchToProps = dispatch => ({

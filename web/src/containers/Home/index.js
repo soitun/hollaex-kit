@@ -16,7 +16,7 @@ import {
 import { setLanguage, getExchangeInfo } from '../../actions/appActions';
 import { logout } from '../../actions/authAction';
 import { getClasesForLanguage } from '../../utils/string';
-import { getThemeClass } from '../../utils/theme';
+import { getThemeClass, getFont } from '../../utils/theme';
 
 import Section1 from './Section1';
 // import Section2 from './Section2';
@@ -98,7 +98,8 @@ class Home extends Component {
 			activeLanguage,
 			router,
 			info,
-			activeTheme
+			activeTheme,
+			settings
 		} = this.props;
 		const { style } = this.state;
 		const isExpired =
@@ -118,6 +119,7 @@ class Home extends Component {
 					'home_container',
 					'app_background',
 					getClasesForLanguage(activeLanguage),
+					getFont(settings.interface.font),
 					getThemeClass(activeTheme),
 					{
 						'layout-mobile': isMobile,
@@ -202,7 +204,8 @@ const mapStateToProps = (store) => ({
 	// quickTradeData: store.orderbook.quickTrade,
 	activeLanguage: store.app.language,
 	info: store.app.info,
-	activeTheme: store.app.theme
+	activeTheme: store.app.theme,
+	settings: store.user.settings
 });
 
 const mapDispatchToProps = (dispatch) => ({

@@ -22,6 +22,11 @@ export const generateFormValues = () => ({
 		label: STRINGS.SETTINGS_THEME_LABEL,
 		options: STRINGS.SETTINGS_THEME_OPTIONS
 	},
+	font: {
+		type: 'select',
+		label: STRINGS.SETTINGS_FONT_LABEL,
+		options: STRINGS.SETTINGS_FONT_OPTIONS
+	},
 	order_book_levels: {
 		type: 'number',
 		validate: [

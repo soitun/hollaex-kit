@@ -3,6 +3,14 @@ $tab_controller-title-margin: 16px;
 $tab_controller-item-min-width: 4rem;
 $title--margin: 1rem;
 
+.font-big {
+	.icon_title-wrapper {
+		.icon_title-text {
+			font-size: $font-size-big-subhead3;
+		}
+	}
+}
+
 .icon_title-wrapper {
 	margin-top: $title--margin * 2.5;
 	display: flex;

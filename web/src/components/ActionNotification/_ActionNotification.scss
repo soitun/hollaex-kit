@@ -1,5 +1,13 @@
 @import '../../variables';
 
+.font-big {
+	.action_notification-wrapper {
+		.action_notification-text {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}
+
 .action_notification-wrapper {
 	position: absolute;
 	top: 0.25rem;

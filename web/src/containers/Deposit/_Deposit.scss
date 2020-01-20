@@ -123,3 +123,21 @@ $qr-code--size: 12rem;
 		color: $dark-font-main-text-color;
 	}
 }
+
+.font-big {
+	.extra_information-wrapper {
+		font-size: $font-size-big-subtext;
+	}
+
+	.qr_code-wrapper {
+		.qr-text {
+			font-size: $font-size-big-subtext;
+		}
+	}
+
+	.review-wrapper {
+		.review-section {
+			font-size: $font-size-big-subtext;
+		}
+	}
+}

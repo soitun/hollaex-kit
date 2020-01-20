@@ -8,6 +8,7 @@ import { browserHistory } from 'react-router';
 import {
 	setLanguage,
 	changeTheme,
+	changeFont,
 	openContactForm,
 	openRiskPortfolioOrderWarning,
 	closeNotification
@@ -310,8 +311,10 @@ class UserSettings extends Component {
 				this.props.setUserData(data);
 				this.props.changeLanguage(data.settings.language);
 				this.props.changeTheme(data.settings.interface.theme);
+				this.props.changeFont(data.settings.interface.font)
 				this.props.closeNotification();
 				localStorage.setItem('theme', data.settings.interface.theme);
+				localStorage.setItem('font', data.settings.interface.font);
 			})
 			.catch((err) => {
 				const _error =
@@ -423,6 +426,7 @@ const mapDispatchToProps = (dispatch) => ({
 	setUserData: bindActionCreators(setUserData, dispatch),
 	changeLanguage: bindActionCreators(setLanguage, dispatch),
 	changeTheme: bindActionCreators(changeTheme, dispatch),
+	changeFont: bindActionCreators(changeFont, dispatch),
 	openContactForm: bindActionCreators(openContactForm, dispatch),
 	openRiskPortfolioOrderWarning: bindActionCreators(
 		openRiskPortfolioOrderWarning,

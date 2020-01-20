@@ -7,6 +7,19 @@ $footer-icons--side-margin: 1.5rem;
 $footer-content-size: 12px;
 $footer-logo-color: $trade-tabs-inactive-color;
 
+.font-big {
+	.app_footer-container {
+		font-size: $font-size-big-subtext;
+		.footer-row-content {
+			.footer-links-section {
+				.footer-links-group {
+					font-size: $font-size-big-main;
+				}
+			}
+		}
+	}
+}
+
 .app_footer-container {
 	border-top: 1px solid $footer-wrapper--border-color;
 	font-size: $font-size-subtext;
