@@ -439,7 +439,6 @@ class App extends Component {
 		const isMenubar = activePath === 'account' || activePath === 'wallet';
 		const expiryDays =
 			EXCHANGE_EXPIRY_DAYS - moment().diff(info.created_at, 'days');
-		console.log('settings', settings);
 		return (
 			<div>
 				<Socket router={router} location={location} />

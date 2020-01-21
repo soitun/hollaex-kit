@@ -1052,3 +1052,48 @@ $app-bar-add-tab-red: #ff0000;
 		stroke-miterlimit: 10;
 	}
 }
+.font-big {
+	.app_bar {
+		font-size: $navigation_bar-big_font_size;
+
+		.app_bar-pair-font {
+			font-size: $font-size-big-main;
+		}
+	
+		.app_bar-pair-content {
+			font-size: $font-size-big-main;
+		}
+		.app_bar-pair-overflow {
+			font-size: $font-size-big-main;
+		}
+		.app-bar-account-notification {
+			font-size: $font-size-big-subtext;
+		}
+		.app-bar-account-menu {
+			.app-bar-account-menu-notification {
+				font-size: $font-size-big-subtext;
+			}
+			.app-bar-account-list-notification {
+				font-size: $font-size-big-subtext;
+			}
+		}
+	}
+	.app-menu-bar {
+		font-size: $navigation_bar-big_font_size !important;
+		.app-menu-bar-icon-notification {
+			font-size: $font-size-big-subtext;
+		}
+	}
+	.app-bar-add-tab-menu {
+		.app-bar-tab-menu-list {
+			font-size: $font-size-big-main;
+		}
+	
+		.app-bar-add-tab-content {
+			font-size: $font-size-big-main;
+		}
+		.app-bar-tab-overflow-content {
+			font-size: $font-size-big-main;
+		}
+	}
+}

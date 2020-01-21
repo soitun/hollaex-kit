@@ -3,11 +3,14 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { isMobile } from 'react-device-detect';
 import classnames from 'classnames';
+import moment from 'moment';
 
 import SummaryBlock from './components/SummaryBlock';
 import TraderAccounts from './components/TraderAccounts';
 import SummaryRequirements from './components/SummaryRequirements';
 import AccountAssets from './components/AccountAssets';
+import TradingVolume from './components/TradingVolume';
+import AccountDetails from './components/AccountDetails';
 import MobileSummary from './MobileSummary';
 
 import { IconTitle } from '../../components';
@@ -185,7 +188,8 @@ class Summary extends Component {
 			selectedAccount,
 			chartData,
 			totalAssets,
-			lastMonthVolume
+			lastMonthVolume,
+			currentTradingAccount
 		} = this.state;
 		const { fullname } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
 		let traderAccTitle = STRINGS.formatString(
@@ -255,7 +259,7 @@ class Summary extends Component {
 						</div>
 						<div className="d-flex align-items-center">
 							<div
-								className={classnames('assets-wrapper', 'asset_wrapper_width')}
+								className={classnames('assets-wrapper')}
 							>
 								<SummaryBlock
 									title={STRINGS.SUMMARY.ACCOUNT_ASSETS}
@@ -279,6 +283,39 @@ class Summary extends Component {
 									/>
 								</SummaryBlock>
 							</div>
+							<div className="trading-volume-wrapper">
+                                <SummaryBlock
+                                    title={STRINGS.SUMMARY.TRADING_VOLUME}
+                                    secondaryTitle={<span>
+                                        <span className="title-font">
+                                            {` ${formatAverage(formatBaseAmount(lastMonthVolume))}`}
+                                        </span>
+                                        {` ${fullname} ${STRINGS.formatString(STRINGS.SUMMARY.NOMINAL_TRADING_WITH_MONTH, moment().subtract(1, "month").startOf("month").format('MMMM')).join('')}`}
+                                    </span>
+                                    }
+                                >
+                                    <TradingVolume user={user} />
+                                </SummaryBlock>
+                            </div>
+						</div>
+						<div className="d-flex align-items-center">
+							<SummaryBlock
+								title={STRINGS.SUMMARY.ACCOUNT_DETAILS}
+								secondaryTitle={currentTradingAccount.name}
+								wrapperClassname="w-100" >
+								<AccountDetails
+									user={user}
+									coins={coins}
+									pairs={pairs}
+									config={config_level}
+									activeTheme={activeTheme}
+									currentTradingAccount={currentTradingAccount.symbol}
+									selectedAccount={selectedAccount}
+									lastMonthVolume={lastMonthVolume}
+									onAccountTypeChange={this.onAccountTypeChange}
+									onFeesAndLimits={this.onFeesAndLimits}
+									onUpgradeAccount={this.onUpgradeAccount} />
+							</SummaryBlock>
 						</div>
 					</div>
 				)}

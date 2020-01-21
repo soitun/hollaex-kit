@@ -292,7 +292,7 @@
         
         .summary-block-title {
             color: $colors-black;
-            font-size: 1rem;
+            font-size: $font-size-subhead3;
             font-weight: bold;
         }
         .summary-title-icon {
@@ -301,7 +301,7 @@
     }
 
     .summary-content-txt {
-        font-size: $font-size-subtext;
+        font-size: $font-size-main;
     }
 
     .trader-account-wrapper {
@@ -346,7 +346,7 @@
         height: 20rem;
     }
     .summary-section_2 {
-        height: 40rem;
+        height: 42rem;
     }
     .requirements-content-text {
         margin: auto 0;
@@ -407,7 +407,7 @@
     }
 
     .assets-wrapper {
-        font-size: .8rem;
+        font-size: $font-size-subtext;
         margin-right: 1.5rem;
         // width: 25rem;
 
@@ -430,7 +430,7 @@
         }
         .total-assets {
             background: repeating-linear-gradient(-45deg, $app-background-color, $app-background-color 2px, #cccbcb 2px, #cccbcb 4px);
-            font-size: 1.2rem;
+            font-size: $font-size-main;
             font-weight: bold;
             padding: .5rem;
             color: $colors-black;
@@ -526,8 +526,8 @@
             border-top: 2px solid $colors-black;
             border-bottom: 1px solid $colors-black;
             color: $colors-black;
-            font-size: 1rem;
-            text-transform: capitalize;
+            font-size: $font-size-main;
+            text-transform: uppercase;
 
             .account-current {
                 color: $colors-black;
@@ -566,10 +566,10 @@
         font-weight: bold;
     }
     .content-txt {
-        font-size: $font-size-subtext;
+        font-size: $font-size-main;
     }
     .content-title {
-        font-size: $font-size-main;
+        font-size: $font-size-subhead3;
         font-weight: bold;
         margin: 1.5rem 0;
     }
@@ -718,5 +718,44 @@
     }
     .fee-limits-wrapper .content-txt {
         font-size: 0.9rem;
+    }
+}
+
+.font-big {
+    .summary-container {
+        .summary-block_wrapper {
+            .summary-block-title {
+                font-size: $font-size-big-subhead3;
+            }
+        }
+        .summary-content-txt {
+            font-size: $font-size-big-main;
+        }
+        .summary-section_2 {
+            height: 44rem !important;
+        }
+        .requirement-status-warning {
+            font-size: $font-size-big-subtext;
+        }
+    
+        .assets-wrapper {
+            font-size: $font-size-big-subtext;
+            .total-assets {
+                font-size: $font-size-big-main;
+            }
+        }
+        .account-details-wrapper {
+            .account-type-menu-active {
+                font-size: $font-size-big-main;
+            }
+        }
+    }
+    .fee-limits-wrapper {
+        .content-txt {
+            font-size: $font-size-big-main;
+        }
+        .content-title {
+            font-size: $font-size-big-subhead3;
+        }
     }
 }

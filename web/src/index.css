@@ -2888,12 +2888,12 @@ table th {
     padding: .5rem; }
     .summary-container .summary-block_wrapper .summary-block-title {
       color: #000000;
-      font-size: 1rem;
+      font-size: 1.25rem;
       font-weight: bold; }
     .summary-container .summary-block_wrapper .summary-title-icon {
       width: 2rem; }
   .summary-container .summary-content-txt {
-    font-size: 0.9rem; }
+    font-size: 1rem; }
   .summary-container .trader-account-wrapper {
     margin-right: 1.5rem;
     width: 25rem; }
@@ -2920,7 +2920,7 @@ table th {
   .summary-container .summary-section_1 {
     height: 20rem; }
   .summary-container .summary-section_2 {
-    height: 40rem; }
+    height: 42rem; }
   .summary-container .requirements-content-text {
     margin: auto 0; }
   .summary-container .requirements-content {
@@ -2960,7 +2960,7 @@ table th {
     line-height: 1;
     font-weight: bold; }
   .summary-container .assets-wrapper {
-    font-size: .8rem;
+    font-size: 0.9rem;
     margin-right: 1.5rem; }
     .summary-container .assets-wrapper .assets-description {
       width: 86%; }
@@ -2976,7 +2976,7 @@ table th {
       font-weight: bold; }
     .summary-container .assets-wrapper .total-assets {
       background: repeating-linear-gradient(-45deg, white, white 2px, #cccbcb 2px, #cccbcb 4px);
-      font-size: 1.2rem;
+      font-size: 1rem;
       font-weight: bold;
       padding: .5rem;
       color: #000000; }
@@ -3035,7 +3035,7 @@ table th {
     border-bottom: 1px solid #000000;
     color: #000000;
     font-size: 1rem;
-    text-transform: capitalize; }
+    text-transform: uppercase; }
     .summary-container .account-details-wrapper .account-type-menu-active .account-current {
       color: #000000;
       text-transform: lowercase; }
@@ -3057,9 +3057,9 @@ table th {
     cursor: pointer;
     font-weight: bold; }
   .fee-limits-wrapper .content-txt {
-    font-size: 0.9rem; }
+    font-size: 1rem; }
   .fee-limits-wrapper .content-title {
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: bold;
     margin: 1.5rem 0; }
   .fee-limits-wrapper .icon_title-wrapper {
@@ -3155,6 +3155,32 @@ table th {
     height: 44rem !important; }
   .fee-limits-wrapper .content-txt {
     font-size: 0.9rem; } }
+
+.font-big .summary-container .summary-block_wrapper .summary-block-title {
+  font-size: 16px; }
+
+.font-big .summary-container .summary-content-txt {
+  font-size: 14px; }
+
+.font-big .summary-container .summary-section_2 {
+  height: 44rem !important; }
+
+.font-big .summary-container .requirement-status-warning {
+  font-size: 12px; }
+
+.font-big .summary-container .assets-wrapper {
+  font-size: 12px; }
+  .font-big .summary-container .assets-wrapper .total-assets {
+    font-size: 14px; }
+
+.font-big .summary-container .account-details-wrapper .account-type-menu-active {
+  font-size: 14px; }
+
+.font-big .fee-limits-wrapper .content-txt {
+  font-size: 14px; }
+
+.font-big .fee-limits-wrapper .content-title {
+  font-size: 16px; }
 
 .dark-theme .trade_tabs-container {
   color: #808080; }
@@ -4572,6 +4598,35 @@ table th {
 .layout-mobile .st0 {
   fill: #ffffff;
   stroke-miterlimit: 10; }
+
+.font-big .app_bar {
+  font-size: 14px; }
+  .font-big .app_bar .app_bar-pair-font {
+    font-size: 14px; }
+  .font-big .app_bar .app_bar-pair-content {
+    font-size: 14px; }
+  .font-big .app_bar .app_bar-pair-overflow {
+    font-size: 14px; }
+  .font-big .app_bar .app-bar-account-notification {
+    font-size: 12px; }
+  .font-big .app_bar .app-bar-account-menu .app-bar-account-menu-notification {
+    font-size: 12px; }
+  .font-big .app_bar .app-bar-account-menu .app-bar-account-list-notification {
+    font-size: 12px; }
+
+.font-big .app-menu-bar {
+  font-size: 14px !important; }
+  .font-big .app-menu-bar .app-menu-bar-icon-notification {
+    font-size: 12px; }
+
+.font-big .app-bar-add-tab-menu .app-bar-tab-menu-list {
+  font-size: 14px; }
+
+.font-big .app-bar-add-tab-menu .app-bar-add-tab-content {
+  font-size: 14px; }
+
+.font-big .app-bar-add-tab-menu .app-bar-tab-overflow-content {
+  font-size: 14px; }
 
 .check_title-container {
   display: flex;
@@ -6276,7 +6331,7 @@ table th {
   font-size: 16px; }
 
 .font-big .accordion_section_content {
-  font-size: 12px !important; }
+  font-size: 12px; }
 
 .font-big .action_notification-wrapper .action_notification-text {
   font-size: 12px; }
@@ -7563,6 +7618,33 @@ table th {
 
 foreignObject {
   overflow: visible; }
+
+.font-big .ohlc_wrapper .ohlc_data_wrapper .ohlc_label {
+  font-size: 12px; }
+
+.font-big .ohlc_wrapper .ohlc_data_wrapper .ohlc_value {
+  font-size: 12px; }
+
+.font-big .donut-label-percentage {
+  font-size: 12px; }
+
+.font-big .donut-label-link {
+  font-size: 10px; }
+
+.font-big .donut-label-no-price {
+  font-size: 10px; }
+
+.font-big .donut-label-pair {
+  font-size: 14px; }
+
+.font-big .bar_wrapper .bar_xAxis .axis_month {
+  font-size: 14px; }
+
+.font-big .bar_wrapper .bar_xAxis .axis_month-total {
+  font-size: 10px; }
+
+.font-big .bar_wrapper .limit_content-text {
+  font-size: 10px; }
 
 .language_rtl .quick_trade-wrapper {
   font-family: inherit; }

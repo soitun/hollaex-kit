@@ -31,7 +31,7 @@
 }
 
 .donut-label-pair {
-	font-size: 1rem;
+	font-size: $font-size-main;
 	font-weight: bold;
 }
 
@@ -667,4 +667,42 @@
 
 foreignObject {
 	overflow: visible;
+}
+
+.font-big {
+	.ohlc_wrapper {
+		.ohlc_data_wrapper {
+			.ohlc_label {
+				font-size: $font-size-big-subtext;
+			}
+			.ohlc_value {
+				font-size: $font-size-big-subtext;
+			}
+		}
+	}
+	.donut-label-percentage {
+		font-size: $font-size-big-subtext;
+	}
+	.donut-label-link {
+		font-size: 10px;
+	}
+	.donut-label-no-price {
+		font-size: 10px;
+	}
+	.donut-label-pair {
+		font-size: $font-size-big-main;
+	}
+	.bar_wrapper {
+		.bar_xAxis {
+			.axis_month {
+				font-size: $font-size-big-main;
+			}
+			.axis_month-total {
+				font-size: 10px;
+			}
+		}
+		.limit_content-text {
+			font-size: 10px;
+		}
+	}
 }
