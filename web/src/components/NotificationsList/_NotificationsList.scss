@@ -43,3 +43,12 @@
 		color: $dark-font-sub-text-color;
 	}
 }
+
+.font-big {
+	.post_header {
+		font-size: $font-size-big-main;
+	}
+	.post-content {
+		font-size: $font-size-big-main;
+	}
+}

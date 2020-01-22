@@ -40,13 +40,15 @@ class InviteFriends extends Component {
                     underline={true}
                 />
                 <div>
-                    <div className='my-2'>
+                    <div className='my-2 invite_friends_content'>
                         <div>{STRINGS.formatString(STRINGS.REFERRAL_LINK.INFO_TEXT, discount)}</div>
                         <div>{STRINGS.formatString(STRINGS.REFERRAL_LINK.INFO_TEXT_1, discount)}</div>
                     </div>
-                    <div className='my-4'>
+                    <div className='my-4 invite_friends_content'>
                         <RenderDumbField
-                            label={STRINGS.REFERRAL_LINK.COPY_FIELD_LABEL}
+                            label={<div className='invite_friends_content'>
+                                {STRINGS.REFERRAL_LINK.COPY_FIELD_LABEL}
+                            </div>}
                             value={referralLink}
                             fullWidth={true}
                             allowCopy={true}
@@ -55,7 +57,7 @@ class InviteFriends extends Component {
                         />
                         
                     </div>
-                    <div className="user_refer_info p-4 d-flex align-items-center">
+                    <div className="user_refer_info p-4 d-flex align-items-center invite_friends_content">
                         {STRINGS.formatString(
                             STRINGS.REFERRAL_LINK.REFERRED_USER_COUT,
                             affiliationCount

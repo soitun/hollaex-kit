@@ -2508,6 +2508,12 @@ table th {
 .layout-mobile .success-review {
   margin: auto; }
 
+.font-big .quote-review-wrapper,
+.font-big .countdown-expiration-message,
+.font-big .quote-countdown-wrapper,
+.font-big .quote-success-review-text {
+  font-size: 14px; }
+
 .contact_form-wrapper {
   min-width: 30rem; }
   .contact_form-wrapper .icon_title-wrapper .icon_title-text.title {
@@ -2669,6 +2675,9 @@ table th {
 .dark-theme .help-wrapper .help_icons svg .st7,
 .dark-theme .help-wrapper .help_icons svg .st11 {
   fill: white; }
+
+.font-big .help-wrapper .text {
+  font-size: 14px; }
 
 .withdrawal-confirm-warpper .withdrawal-confirm-title {
   font-size: 3.5rem;
@@ -5405,6 +5414,9 @@ table th {
 .font-big .notification-wrapper .notification-content-wrapper.notification-withdrawal .notification-link-wrapper {
   font-size: 12px; }
 
+.font-big .invite_friends_wrapper .invite_friends_content {
+  font-size: 14px; }
+
 .layout-mobile .trade_active_orders-wrapper {
   max-height: 35vh !important; }
 
@@ -5433,6 +5445,12 @@ table th {
 
 .dark-theme .post-content {
   color: #808080; }
+
+.font-big .post_header {
+  font-size: 14px; }
+
+.font-big .post-content {
+  font-size: 14px; }
 
 .dropdown-content .dropdown-option {
   padding: 0; }
@@ -8918,6 +8936,12 @@ foreignObject {
 
 .dark-theme .post-content {
   color: #808080; }
+
+.font-big .post_header {
+  font-size: 14px; }
+
+.font-big .post-content {
+  font-size: 14px; }
 
 .font-big .app_footer-container {
   font-size: 12px; }

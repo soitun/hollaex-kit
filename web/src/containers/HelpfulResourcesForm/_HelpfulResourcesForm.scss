@@ -54,3 +54,11 @@ $contact-form--icon-size: 6rem;
     }
   }
 }
+
+.font-big {
+  .help-wrapper {
+    .text {
+      font-size: $font-size-big-main;
+    }
+  }
+}
