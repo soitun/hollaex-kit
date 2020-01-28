@@ -240,15 +240,15 @@ $padding-input: 4rem;
 	}
 }
 
-.font-size {
+.font-big {
 	.otp_form-wrapper {
 		.otp_form-section-wrapper {
 			.otp_form-section-title {
-				font-size: $font-size-big-main;
+				font-size: $font-size-big-subhead3;
 			}
 	
 			.otp_form-section-text {
-				font-size: $font-size-big-subtext;
+				font-size: $font-size-big-main;
 			}
 	
 			.otp_secret {
@@ -261,7 +261,7 @@ $padding-input: 4rem;
 			font-size: $font-size-big-subhead3;
 		}
 		.popup_info-text {
-			font-size: $font-size-big-subtext;
+			font-size: $font-size-big-main;
 		}
 	}
 }

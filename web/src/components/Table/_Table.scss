@@ -240,6 +240,11 @@ $controllers--color-disabled: $colors-deactivate-color2;
 
 .font-big {
 	.table-wrapper {
+		.table_header-wrapper {
+			.table_header-row {
+				font-size: $font-size-big-main;
+			}
+		}
 		.table_body-wrapper {
 			font-size: $font-size-big-subtext;
 		}

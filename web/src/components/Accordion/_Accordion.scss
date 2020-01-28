@@ -312,8 +312,9 @@ $main-text--color: $colors-deactivate-color2;
 .font-big {
 	.accordion_wrapper .accordion_section {
 		font-size: $font-size-big-subhead3;
-	}
-	.accordion_section_content {
-		font-size: $font-size-big-subtext;
+		
+		.accordion_section_content {
+			font-size: $font-size-big-main;
+		}
 	}
 }

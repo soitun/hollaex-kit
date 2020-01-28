@@ -18,10 +18,10 @@
 	}
 	.header-content {
 		color: $colors-deactivate-color2;
-		font-size: .8rem;
+		font-size: $font-size-subtext;
 	}
 	.content-text {
-		font-size: 0.8rem;
+		font-size: $font-size-subtext;
 	}
 	.document-note-icon {
 		width: 3.5rem;
@@ -149,5 +149,16 @@
 	}
 	.content-text{
 		font-size: $font-size-mobile-txt;
+	}
+}
+
+.font-big {
+	.verification_container {
+		.header-content {
+			font-size: $font-size-big-main;
+		}
+		.content-text {
+			font-size: $font-size-big-main;
+		}
 	}
 }

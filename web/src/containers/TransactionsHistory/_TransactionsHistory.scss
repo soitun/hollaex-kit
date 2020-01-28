@@ -125,3 +125,9 @@ $trade-asks-color-font: $colors-currencies-btc;
 		}
 	}
 }
+
+.font-big {
+	.history_block-wrapper {
+		font-size: $font-size-big-subhead3;
+	}
+}

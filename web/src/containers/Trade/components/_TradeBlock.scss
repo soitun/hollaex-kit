@@ -333,3 +333,19 @@ $tabs-title--margin: 2rem;
 		}
 	}
 }
+
+.font-big {
+	.trade_block-wrapper {
+		.trade_block-content {
+			font-size: $trade-font-size-big;
+		}
+		.trade_block-title-items {
+			font-size: $trade-font-size-big;
+		}
+	}
+	.trade_block_tabs-wrapper .trade_block-title {
+		.trade_block-title-items {
+			font-size: $trade-font-size-big;
+		}
+	}
+}

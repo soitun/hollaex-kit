@@ -325,10 +325,10 @@ table th {
   z-index: 9999; }
 
 .font-big .presentation_container .inner_container .information_block .information_block-text_wrapper .title {
-  font-size: 14px; }
+  font-size: 16px; }
 
 .font-big .presentation_container .inner_container .information_block .information_block-text_wrapper .text {
-  font-size: 12px; }
+  font-size: 14px; }
 
 @media (min-width: 1920px) {
   .font-small,
@@ -917,20 +917,20 @@ table th {
 .layout-mobile .accordion_section_content .warning_text {
   font-size: 12px !important; }
 
-.font-size .otp_form-wrapper .otp_form-section-wrapper .otp_form-section-title {
-  font-size: 14px; }
-
-.font-size .otp_form-wrapper .otp_form-section-wrapper .otp_form-section-text {
-  font-size: 12px; }
-
-.font-size .otp_form-wrapper .otp_form-section-wrapper .otp_secret {
-  font-size: 12px; }
-
-.font-size .popup_info-wrapper .popup_info-title {
+.font-big .otp_form-wrapper .otp_form-section-wrapper .otp_form-section-title {
   font-size: 16px; }
 
-.font-size .popup_info-wrapper .popup_info-text {
+.font-big .otp_form-wrapper .otp_form-section-wrapper .otp_form-section-text {
+  font-size: 14px; }
+
+.font-big .otp_form-wrapper .otp_form-section-wrapper .otp_secret {
   font-size: 12px; }
+
+.font-big .popup_info-wrapper .popup_info-title {
+  font-size: 16px; }
+
+.font-big .popup_info-wrapper .popup_info-text {
+  font-size: 14px; }
 
 .signup_success-wrapper {
   text-align: center; }
@@ -1262,7 +1262,7 @@ table th {
   font-size: 16px; }
 
 .font-big .wallet-container .wallet-assets_block .wallet-assets_block-table {
-  font-size: 12px; }
+  font-size: 14px; }
   .font-big .wallet-container .wallet-assets_block .wallet-assets_block-table tfoot {
     font-size: 14px; }
 
@@ -1592,6 +1592,9 @@ table th {
 .dark-theme svg .transaction-history-5 {
   fill: #0f1114; }
 
+.font-big .history_block-wrapper {
+  font-size: 16px; }
+
 .trade-container {
   flex: 1; }
   .trade-container .dialog-link {
@@ -1919,6 +1922,15 @@ table th {
     text-align: center; }
   .trade_history-wrapper .display_table-wrapper .display_table-body .display_table-cell div {
     overflow: unset !important; }
+
+.font-big .trade_block-wrapper .trade_block-content {
+  font-size: 14px; }
+
+.font-big .trade_block-wrapper .trade_block-title-items {
+  font-size: 14px; }
+
+.font-big .trade_block_tabs-wrapper .trade_block-title .trade_block-title-items {
+  font-size: 14px; }
 
 .trade_order_entry-wrapper.order_side-selector-sell {
   flex: 1;
@@ -2552,9 +2564,9 @@ table th {
     font-weight: bold; }
   .verification_container .header-content {
     color: #777677;
-    font-size: .8rem; }
+    font-size: 0.9rem; }
   .verification_container .content-text {
-    font-size: 0.8rem; }
+    font-size: 0.9rem; }
   .verification_container .document-note-icon {
     width: 3.5rem; }
 
@@ -2640,6 +2652,12 @@ table th {
 
 .layout-mobile .content-text {
   font-size: 12px; }
+
+.font-big .verification_container .header-content {
+  font-size: 14px; }
+
+.font-big .verification_container .content-text {
+  font-size: 14px; }
 
 .dark-theme .account-svg-1 {
   fill: #808080; }
@@ -4846,7 +4864,10 @@ table th {
   font-size: 14px; }
 
 .font-big .header_title-wrapper .header_title-children {
-  font-size: 12px; }
+  font-size: 14px; }
+
+.font-big .header_title-wrapper .header_title-text {
+  font-size: 16px; }
 
 .wallet_section-wrapper {
   font-size: 0.9rem;
@@ -4963,10 +4984,10 @@ table th {
   font-size: 12px; }
 
 .font-big .wallet_section-title {
-  font-size: 12px; }
+  font-size: 14px; }
 
 .font-big .wallet_section-title-amount {
-  font-size: 12px; }
+  font-size: 14px; }
 
 .font-big .wallet_section-total_asset {
   font-size: 14px; }
@@ -5450,7 +5471,7 @@ table th {
     fill: #808080; }
 
 .font-big .field-wrapper {
-  font-size: 12px; }
+  font-size: 14px; }
 
 .field-wrapper {
   position: relative;
@@ -5963,7 +5984,7 @@ table th {
     fill: white; }
 
 .font-big .exir-button {
-  font-size: 12px; }
+  font-size: 16px; }
 
 .font-big .checkbutton-wrapper {
   font-size: 14px; }
@@ -6095,6 +6116,9 @@ table th {
   bottom: 0;
   right: 0;
   left: 0; }
+
+.font-big .success_display-content-text {
+  font-size: 14px; }
 
 .accordion_section {
   position: relative; }
@@ -6285,12 +6309,11 @@ table th {
 
 .font-big .accordion_wrapper .accordion_section {
   font-size: 16px; }
-
-.font-big .accordion_section_content {
-  font-size: 12px; }
+  .font-big .accordion_wrapper .accordion_section .accordion_section_content {
+    font-size: 14px; }
 
 .font-big .action_notification-wrapper .action_notification-text {
-  font-size: 12px; }
+  font-size: 14px; }
 
 .action_notification-wrapper {
   position: absolute;
@@ -6936,6 +6959,9 @@ table th {
 
 .dark-theme .no-data {
   color: #808080; }
+
+.font-big .table-wrapper .table_header-wrapper .table_header-row {
+  font-size: 14px; }
 
 .font-big .table-wrapper .table_body-wrapper {
   font-size: 12px; }

@@ -386,7 +386,10 @@ $notification-size: 1.5rem;
 	}
 	.header_title-wrapper {
 		.header_title-children {
-			font-size: $font-size-big-subtext;
+			font-size: $font-size-big-main;
+		}
+		.header_title-text {
+			font-size: $font-size-big-subhead3;
 		}
 	}
 }
