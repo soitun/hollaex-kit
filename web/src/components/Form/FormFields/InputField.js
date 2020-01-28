@@ -25,6 +25,7 @@ const InputField = (props) => {
 	} = props;
 	const displayError = touched && error && !active;
 	// const displayCheck = !fullWidth && input.value && !displayError && !active;
+	console.log('input', input);
 	return (
 		<FieldWrapper {...props}>
 			<div style={{display: 'flex'}}>
