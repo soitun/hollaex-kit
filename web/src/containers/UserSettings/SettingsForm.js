@@ -16,39 +16,39 @@ const orderbook_level_step = 1;
 const orderbook_level_min = 1;
 const orderbook_level_max = 20;
 
-export const generateFormValues = () => ({
-	theme: {
-		type: 'select',
-		label: STRINGS.SETTINGS_THEME_LABEL,
-		options: STRINGS.SETTINGS_THEME_OPTIONS
-	},
-	font: {
-		type: 'select',
-		label: STRINGS.SETTINGS_FONT_LABEL,
-		options: STRINGS.SETTINGS_FONT_OPTIONS
-	},
-	order_book_levels: {
-		type: 'number',
-		validate: [
-			required,
-			minValue(orderbook_level_min),
-			maxValue(orderbook_level_max),
-			step(orderbook_level_step)
-		],
-		label: STRINGS.USER_SETTINGS.ORDERBOOK_LEVEL,
-		step: orderbook_level_step,
-		min: orderbook_level_min,
-		max: orderbook_level_max,
-		fullWidth: isMobile
-		// notification: {
-		// 		status: 'information',
-		// 		iconPath: ICONS.BLUE_PLUS,
-		// 		className: 'file_upload_icon',
-		// 		useSvg: true,
-		// 		onClick: calculateMin
-		// 	}
+export const generateFormValues = () => {
+	const formFields = {
+		theme: {
+			type: 'select',
+			label: STRINGS.SETTINGS_THEME_LABEL,
+			options: STRINGS.SETTINGS_THEME_OPTIONS
+		},
+		font: {
+			type: 'select',
+			label: STRINGS.SETTINGS_FONT_LABEL,
+			options: STRINGS.SETTINGS_FONT_OPTIONS
+		},
+		order_book_levels: {
+			type: 'number',
+			validate: [
+				required,
+				minValue(orderbook_level_min),
+				maxValue(orderbook_level_max),
+				step(orderbook_level_step)
+			],
+			label: STRINGS.USER_SETTINGS.ORDERBOOK_LEVEL,
+			step: orderbook_level_step,
+			min: orderbook_level_min,
+			max: orderbook_level_max,
+			fullWidth: isMobile
+		}
 	}
-});
+
+	if (isMobile) {
+		delete formFields.font;
+	}
+	return formFields;
+};
 
 class Form extends Component {
 	componentDidUpdate(prevProps) {
