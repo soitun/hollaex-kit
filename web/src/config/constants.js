@@ -16,6 +16,8 @@ export const SESSION_TIME = 6 * 60 * 60 * 1000; // 6 hour
 
 export const API_URL = config[ENV].API_URL;
 export const WS_URL = config[ENV].WS_URL;
+export const PROXY_URL = config[ENV].PROXY_URL;
+export const URL = config[ENV].URL;
 
 export const ICONS = {
 	TRADE_HISTORY_DARK: '/assets/icons/trade-history-dark.svg',

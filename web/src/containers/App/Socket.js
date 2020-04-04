@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import io from 'socket.io-client';
 import { debounce } from 'lodash';
-import { WS_URL, SESSION_TIME, BASE_CURRENCY } from '../../config/constants';
+import { WS_URL, URL, SESSION_TIME, BASE_CURRENCY } from '../../config/constants';
 import { isMobile } from 'react-device-detect';
 
 import { setMe, setBalance, updateUser } from '../../actions/userAction';
@@ -124,6 +124,7 @@ class Container extends Component {
 
 	setPublicWS = () => {
 		const publicSocket = io(`${WS_URL}/realtime`, {
+			path: `${URL}/socket.io`,
 			query: {
 				// symbol: 'btc'
 			}
@@ -190,6 +191,7 @@ class Container extends Component {
 
 	setUserSocket = (token) => {
 		const privateSocket = io.connect(`${WS_URL}/user`, {
+			path: `${URL}/socket.io`,
 			query: {
 				token: `Bearer ${token}`
 			}
