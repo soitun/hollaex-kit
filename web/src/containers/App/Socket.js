@@ -124,7 +124,7 @@ class Container extends Component {
 
 	setPublicWS = () => {
 		const publicSocket = io(`${WS_URL}/realtime`, {
-			path: `${URL}/socket.io`,
+			path: `/api.demo.bitholla.com/socket.io`,
 			query: {
 				// symbol: 'btc'
 			}
@@ -191,7 +191,7 @@ class Container extends Component {
 
 	setUserSocket = (token) => {
 		const privateSocket = io.connect(`${WS_URL}/user`, {
-			path: `${URL}/socket.io`,
+			path: `/api.demo.bitholla.com/socket.io`,
 			query: {
 				token: `Bearer ${token}`
 			}
