@@ -8,21 +8,21 @@ import {
 	Accordion,
 	Notification,
 	MobileBarTabs
-} from '../../components';
-import { TransactionsHistory } from '../';
-import { changeSymbol } from '../../actions/orderbookAction';
-import { NOTIFICATIONS, openContactForm } from '../../actions/appActions';
-import { createAddress, cleanCreateAddress } from '../../actions/userAction';
+} from 'components';
+import { TransactionsHistory } from 'containers';
+import { changeSymbol } from 'actions/orderbookAction';
+import { NOTIFICATIONS, openContactForm } from 'actions/appActions';
+import { createAddress, cleanCreateAddress } from 'actions/userAction';
 import {
 	ICONS,
 	BASE_CURRENCY,
 	CURRENCY_PRICE_FORMAT,
 	DEFAULT_COIN_DATA
-} from '../../config/constants';
-import { calculateBalancePrice, formatToCurrency } from '../../utils/currency';
-import STRINGS from '../../config/localizedStrings';
+} from 'config/constants';
+import { calculateBalancePrice, formatToCurrency } from 'utils/currency';
+import STRINGS from 'config/localizedStrings';
 
-import { AssetsBlock } from './AssetsBlock';
+import AssetsBlock from './AssetsBlock';
 import MobileWallet from './MobileWallet';
 
 class Wallet extends Component {
@@ -33,7 +33,7 @@ class Wallet extends Component {
 		isOpen: true,
 		totalAssets: '',
 		dialogIsOpen: false,
-		selectedCurrency: ''
+		selectedCurrency: '',
 	};
 
 	componentDidMount() {
@@ -44,7 +44,8 @@ class Wallet extends Component {
 			this.state.isOpen,
 			this.props.wallets,
 			this.props.bankaccount,
-			this.props.coins
+			this.props.coins,
+			this.props.pairs
 		);
 	}
 
@@ -56,7 +57,8 @@ class Wallet extends Component {
 			this.state.isOpen,
 			nextProps.wallets,
 			nextProps.bankaccount,
-			nextProps.coins
+			nextProps.coins,
+			nextProps.pairs
 		);
 		if (
 			nextProps.addressRequest.success === true &&
@@ -66,15 +68,62 @@ class Wallet extends Component {
 		}
 	}
 
+	componentDidUpdate(_, prevState,) {
+		const { searchValue, isZeroBalanceHidden } = this.state;
+		if (searchValue !== prevState.searchValue || isZeroBalanceHidden !== prevState.isZeroBalanceHidden) {
+      this.generateSections(
+        this.props.changeSymbol,
+        this.props.balance,
+        this.props.prices,
+        this.state.isOpen,
+        this.props.wallets,
+        this.props.bankaccount,
+        this.props.coins,
+        this.props.pairs
+      );
+		}
+	}
+
 	calculateTotalAssets = (balance, prices, coins) => {
 		const total = calculateBalancePrice(balance, prices, coins);
 		const { min, symbol = '' } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
 		return STRINGS.formatString(
 			CURRENCY_PRICE_FORMAT,
+      symbol.toUpperCase(),
 			formatToCurrency(total, min),
-			symbol.toUpperCase()
 		);
 	};
+
+	getSearchResult = (coins, balance) => {
+		const { searchValue = '', isZeroBalanceHidden = true } = this.state;
+
+    const result = {};
+    const searchTerm = searchValue.toLowerCase().trim();
+    Object.keys(coins).map(key => {
+      const temp = coins[key];
+      const { fullname } = coins[key] || DEFAULT_COIN_DATA;
+      const coinName = fullname ? fullname.toLowerCase() : '';
+      const hasCoinBalance = !!balance[`${key}_balance`];
+      const isCoinHidden = isZeroBalanceHidden && !hasCoinBalance
+      if (
+      	!isCoinHidden && (
+          key.indexOf(searchTerm) !== -1 ||
+          coinName.indexOf(searchTerm) !== -1
+				)) {
+        result[key] = temp;
+      }
+      return key;
+    });
+    return { ...result }
+	}
+
+  handleSearch = (_, value) => {
+    this.setState({ searchValue: value })
+	}
+
+  handleCheck = (_, value) => {
+    this.setState({ isZeroBalanceHidden: value })
+  }
 
 	generateSections = (
 		changeSymbol,
@@ -83,9 +132,11 @@ class Wallet extends Component {
 		isOpen = false,
 		wallets,
 		bankaccount,
-		coins
+		coins,
+		pairs
 	) => {
 		const totalAssets = this.calculateTotalAssets(balance, prices, coins);
+		const searchResult = this.getSearchResult(coins, balance);
 
 		const sections = [
 			{
@@ -95,6 +146,7 @@ class Wallet extends Component {
 						balance={balance}
 						prices={prices}
 						coins={coins}
+						pairs={pairs}
 						totalAssets={totalAssets}
 						isValidBase={this.props.isValidBase}
 						changeSymbol={changeSymbol}
@@ -103,6 +155,9 @@ class Wallet extends Component {
 						bankaccount={bankaccount}
 						navigate={this.goToPage}
 						openContactUs={this.openContactUs}
+						searchResult={searchResult}
+						handleSearch={this.handleSearch}
+						handleCheck={this.handleCheck}
 					/>
 				),
 				isOpen: true,
@@ -240,6 +295,7 @@ class Wallet extends Component {
 const mapStateToProps = (store) => ({
 	coins: store.app.coins,
 	constants: store.app.constants,
+  pairs: store.app.pairs,
 	prices: store.orderbook.prices,
 	balance: store.user.balance,
 	addressRequest: store.user.addressRequest,
