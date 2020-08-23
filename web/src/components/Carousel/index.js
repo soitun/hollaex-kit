@@ -1,9 +1,9 @@
 import React from 'react'
-import { oneOf, array, number, string, object, bool } from 'prop-types';
+import { oneOfType, array, number, string, object, bool } from 'prop-types';
 import AliceCarousel from 'react-alice-carousel'
 import classnames from "classnames";
 
-class Carousel extends React.Component {
+class Carousel extends React.PureComponent {
 
   constructor(props){
     super(props);
@@ -14,6 +14,10 @@ class Carousel extends React.Component {
       isPrevSlideDisabled: true,
       isNextSlideDisabled: true,
     }
+  }
+
+  componentDidMount() {
+    this.setState({ currentIndex: 0 })
   }
 
   onInitialized = ({ item: currentIndex, isPrevSlideDisabled, isNextSlideDisabled }) =>
@@ -55,25 +59,29 @@ class Carousel extends React.Component {
     return (
       <div style={containerStyle} className={classnames("carousel__container", { containerClass: !!containerClass  })} >
         <div
-          className={classnames("carousel__button mr-2", { disabled: isPrevSlideDisabled })}
+          className={classnames("carousel__button", { disabled: isPrevSlideDisabled })}
           onClick={slidePrev}
         >
           Prev
         </div>
 
-        <AliceCarousel
-          infinite={false}
-          dotsDisabled={true}
-          buttonsDisabled={true}
-          items={items}
-          responsive={responsive}
-          slideToIndex={currentIndex}
-          onSlideChanged={onSlideChanged}
-          onInitialized={onInitialized}
-        />
+        <div
+          className="carousel__alice-wrapper"
+        >
+          <AliceCarousel
+            infinite={false}
+            dotsDisabled={true}
+            buttonsDisabled={true}
+            items={items}
+            responsive={responsive}
+            slideToIndex={currentIndex}
+            onSlideChanged={onSlideChanged}
+            onInitialized={onInitialized}
+          />
+        </div>
 
         <div
-          className={classnames("carousel__button ml-2", { disabled: isNextSlideDisabled })}
+          className={classnames("carousel__button", { disabled: isNextSlideDisabled })}
           onClick={slideNext}
         >
           Next
@@ -87,7 +95,7 @@ Carousel.propTypes = {
   items: array,
   groupItems: number,
   containerStyle: object,
-  containerClass: oneOf([bool, string]),
+  containerClass: oneOfType([bool, string]),
 }
 
 Carousel.defaultProps = {

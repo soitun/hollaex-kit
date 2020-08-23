@@ -3,9 +3,54 @@
 
   .market-list__block {
 
-    .market-list__icons {
+    .market-list__coin-icons {
       width: 2.8rem;
       margin: .3rem .3rem 0 .3rem;
+
+      svg {
+        .btc0, .btc1 {
+          fill: $coin-btc;
+        }
+        .eth0, .eth1 {
+          fill: $coin-eth;
+        }
+        .bch-icon {
+          fill: $coin-bch;
+        }
+        .xrp-icon {
+          fill: $coin-xrp;
+        }
+        .xmr-icon {
+          fill: $coin-xmr;
+        }
+        .ada-icon {
+          fill: $coin-ada;
+        }
+        .bnb-icon {
+          fill: $coin-bnb;
+        }
+        .dai-icon {
+          fill: $coin-dai;
+        }
+        .eos-icon {
+          fill: $coin-eos;
+        }
+        .ltc-icon {
+          fill: $coin-ltc;
+        }
+        .trx-icon {
+          fill: $coin-trx;
+        }
+        .tusd-icon {
+          fill: $coin-tusd;
+        }
+        .xlm-icon {
+          fill: $coin-xlm;
+        }
+        .default-icon {
+          fill: $colors-black !important;
+        }
+      }
     }
 
     .market-list__block-table {
@@ -14,6 +59,7 @@
       margin-bottom: 3rem;
 
       thead {
+        color: $colors-black;
         & tr {
           height: 3.5rem;
           vertical-align: bottom;
@@ -21,7 +67,14 @@
       }
 
       .table-row {
+        color: $colors-deactivate-color2;
         height: 2.5rem;
+        cursor: pointer;
+
+        &:hover {
+          background-color: $app-light-background;
+          color: $colors-black;
+        }
       }
 
       .table-bottom-border td,
@@ -102,12 +155,26 @@
     .market-list__block {
       color: $dark-font-main-text-color !important;
       .market-list__block-table {
+
+        thead {
+          color: $dark-font-main-text-color;
+        }
+
         tbody, tfoot {
           color: $dark-font-sub-text-color;
         }
+
         .table-bottom-border td,
         th {
           border-bottom-color: $dark-border-main;
+        }
+
+        .table-row {
+
+          &:hover {
+            background-color: $dark-app-bar-tab-active-menu-list-background;
+            color: $dark-font-main-text-color;
+          }
         }
       }
     }

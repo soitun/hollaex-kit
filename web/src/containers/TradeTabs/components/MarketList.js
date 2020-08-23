@@ -51,7 +51,7 @@ const MarketList = ({ markets, handleClick }) => {
                             ? ICONS[`${pair.pair_base.toUpperCase()}_ICON`]
                             : ICONS.DEFAULT_ICON
                         }
-                        wrapperClassName="market-list__icons"
+                        wrapperClassName="market-list__coin-icons"
                       />
                       <div>
                         {symbol.toUpperCase()}/
@@ -70,7 +70,7 @@ const MarketList = ({ markets, handleClick }) => {
                         className={
                           priceDifference < 0
                             ? 'title-font price-diff-down trade-tab-price_diff_down'
-                            : 'title-font trade-tab-price_diff_up price-diff-up'
+                            : 'title-font price-diff-up trade-tab-price_diff_up'
                         }
                       >
                         {priceDifferencePercent}
