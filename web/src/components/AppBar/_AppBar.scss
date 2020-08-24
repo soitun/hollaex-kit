@@ -180,10 +180,6 @@ $app-bar-add-tab-red: #ff0000;
 		color: $dark-font-main-text-color;
 	}
 
-	.app_bar-link {
-		color: $dark-link
-	}
-
 	.app-bar_add-tab-price {
 		color: $dark-font-main-text-color;
 	}
@@ -828,7 +824,7 @@ $app-bar-add-tab-red: #ff0000;
 }
 
 .app-bar-tab-menu {
-	background-color: $dark-app-bar-background-color !important;
+	background-color: $colors-black !important;
 }
 
 .app_bar-mobile {
@@ -1030,6 +1026,8 @@ $app-bar-add-tab-red: #ff0000;
 		font-size: .8rem;
 		height: 2.5rem;
 		padding: .5rem .8rem;
+		width: 3.2rem
+		/* (22 -6) / 5 */
 	}
 
 	.active-tab {
@@ -1148,7 +1146,6 @@ $app-bar-add-tab-red: #ff0000;
 }
 
 .app_bar-link {
-	color: $link;
 	margin: .5rem 0;
 	padding: 0 .5rem;
 	text-transform: uppercase;
@@ -1194,6 +1191,11 @@ $app-bar-add-tab-red: #ff0000;
 	}
 	.app-bar-add-tab-menu {
 		width: 24rem;
+
+		.app-bar-tab-menu-list {
+			width: 3.6rem
+			/* (24 -6) / 5 */
+		}
 		
 		.app-bar-add-tab-content,
 		.app-bar-tab-menu-list,

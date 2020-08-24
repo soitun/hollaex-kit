@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { browserHistory, Link } from 'react-router';
-import ControlledScrollbar from './ControlledScrollbar';
 
-import { Accordion } from '../';
+import { Accordion, ControlledScrollbar } from 'components';
 import { BASE_CURRENCY, DEFAULT_COIN_DATA, IS_XHT } from '../../config/constants';
 import {
 	calculateBalancePrice,
@@ -91,9 +90,13 @@ class Wallet extends Component {
 				balanceFormat: formatToCurrency(currencyBalance, min),
 				balancePercentage: donutFormatPercentage(balancePercent)
 			});
-			sections.push(
-				this.generateSection(symbol, price, balance, orders, coins)
-			);
+
+      // Hide zero balances
+      if (balancePercent !== 0) {
+        sections.push(
+          this.generateSection(symbol, price, balance, orders, coins)
+        );
+			}
 		});
 
 		this.setState({
@@ -133,7 +136,7 @@ class Wallet extends Component {
 					autoHeightMax={hasScrollbar ? 175 : 350}
 				>
 					<Accordion sections={sections} />
-					<div className="d-flex justify-content-center app_bar-link">
+					<div className="d-flex justify-content-center wallet_link blue-link">
 						<Link to="/wallet">
               {`view all`}
 						</Link>

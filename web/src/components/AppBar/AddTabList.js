@@ -3,10 +3,10 @@ import ReactSVG from 'react-svg';
 import classnames from 'classnames';
 import { Link } from 'react-router';
 
-import { Carousel } from 'components';
+import { Slider } from 'components';
 import { ICONS, BASE_CURRENCY, DEFAULT_COIN_DATA } from 'config/constants';
 import STRINGS from 'config/localizedStrings';
-import { donutFormatPercentage, formatToCurrency } from 'utils/currency';
+import { donutFormatPercentage, formatToCurrency, calculatePrice } from 'utils/currency';
 import SearchBox from './SearchBox';
 
 class AddTabList extends Component {
@@ -55,7 +55,8 @@ class AddTabList extends Component {
             tickers = {},
             handleSearch,
             addTradePairTab,
-            closeAddTabMenu
+            closeAddTabMenu,
+            prices,
         } = this.props;
 
         let tabMenu = {};
@@ -96,6 +97,9 @@ class AddTabList extends Component {
               const priceDifferencePercent = isNaN(tickerPercent)
                 ? donutFormatPercentage(0)
                 : donutFormatPercentage(tickerPercent);
+
+              const volumePrice = calculatePrice(ticker.volume, prices[symbol])
+
               return ({
                 pair,
                 symbol,
@@ -104,13 +108,12 @@ class AddTabList extends Component {
                 ticker,
                 increment_price,
                 priceDifference,
-                priceDifferencePercent
+                priceDifferencePercent,
+                volumePrice
               })
             })
-            .sort((a, b) => {
-              const { volume: volumeA = 0 } = tickers[a.pair] || {};
-              const { volume: volumeB = 0 } = tickers[b.pair] || {};
-              return volumeB - volumeA;
+            .sort(({ volumePrice: volumePriceA }, { volumePrice: volumePriceB }) => {
+              return volumePriceB - volumePriceA;
             })
             .slice(0, Math.min(tabMenuLength, 10))
         }
@@ -120,7 +123,9 @@ class AddTabList extends Component {
         return (
             <div id="add-tab-list-menu" className={classnames("app-bar-add-tab-menu", { "tab-menu-left": selectedtabPairs.length <= 1 })}>
                 <div className="app-bar-tab-menu">
-                    <Carousel items={this.tabListMenuItems()}/>
+                    <Slider small steps={5}>
+                      {this.tabListMenuItems()}
+                    </Slider>
                     {/*<div className="d-flex align-items-center mr-2">*/}
                       {/*<ReactSVG*/}
                         {/*path={ICONS.TAB_SETTING}*/}
@@ -182,7 +187,7 @@ class AddTabList extends Component {
                             No data...
                         </div>
                     }
-                    <div className="d-flex justify-content-center app_bar-link">
+                    <div className="d-flex justify-content-center app_bar-link blue-link">
                         <Link to="/trade/add/tabs" onClick={() => closeAddTabMenu()}>
                           {`view markets`}
                         </Link>
