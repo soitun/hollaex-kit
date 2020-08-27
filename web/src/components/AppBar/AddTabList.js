@@ -56,7 +56,6 @@ class AddTabList extends Component {
             handleSearch,
             addTradePairTab,
             closeAddTabMenu,
-            prices,
         } = this.props;
 
         let tabMenu = {};
@@ -98,7 +97,7 @@ class AddTabList extends Component {
                 ? donutFormatPercentage(0)
                 : donutFormatPercentage(tickerPercent);
 
-              const volumePrice = calculatePrice(ticker.volume, prices[symbol])
+              const volumePrice = calculatePrice(ticker.volume, symbol)
 
               return ({
                 pair,

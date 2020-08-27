@@ -58,12 +58,12 @@ class CurrencySlider extends Component {
 		);
 
 	render() {
-		const { wallets, balance, prices, navigate, coins } = this.props;
+		const { wallets, balance, navigate, coins } = this.props;
 		const { currentCurrency } = this.state;
 		const balanceValue = balance[`${currentCurrency}_balance`];
 		const baseBalance =
 			currentCurrency !== BASE_CURRENCY
-				&& calculatePrice(balanceValue, prices[currentCurrency]);
+				&& calculatePrice(balanceValue, currentCurrency);
 		const { fullname } = coins[currentCurrency] || DEFAULT_COIN_DATA;
 
 		return (
