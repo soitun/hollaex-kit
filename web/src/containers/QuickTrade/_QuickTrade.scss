@@ -3,8 +3,11 @@
 	overflow-y: scroll;
 }
 
+.base_negative_balance,
+.success-review,
 .quote-review-wrapper {
 	margin: 1rem 0;
+	width: 30rem;
 }
 
 .quote-countdown-wrapper {
@@ -30,9 +33,6 @@
 }
 
 .layout-mobile {
-	.base_negative_balance {
-		margin: auto
-	}
 	.quote-container {
 		background-color: transparent;
 		overflow-y: scroll;
@@ -44,7 +44,9 @@
 			max-width: 100vw;
 		}
 	}
-	.success-review{
+	.base_negative_balance,
+	.success-review,
+	.quote-review-wrapper {
 		margin: auto;
 	}
 }

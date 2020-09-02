@@ -286,11 +286,10 @@ export default {
 		ERROR_INVALID: 'Invalid OTP Code'
 	},
 	QUICK_TRADE_COMPONENT: {
-		TITLE: 'Quick',
+		TITLE: 'Quick Trade', // updated
 		TOTAL_COST: 'Total cost',
-		BUTTON: 'Review {0} order',
+		BUTTON: 'Review Order', // updated
 		INPUT: '{0} to {1}',
-		TRADE_TITLE: '{0} {1}' // quick buy
 	},
 	PREVIOUS_PAGE: 'previous page',
 	NEXT_PAGE: 'next page',
@@ -745,6 +744,10 @@ export default {
 		buy: 'buy',
 		sell: 'sell'
 	},
+	SIDES_VERBS: {
+		buy: 'bought',
+		sell: 'sold'
+	},
 	SIDES: [{ value: 'buy', label: 'buy' }, { value: 'sell', label: 'sell' }], // DO NOT CHANGE value, ONLY TRANSLATE label
 	DEFAULT_TOGGLE_OPTIONS: [
 		{ value: true, label: 'on' }, // DO NOT CHANGE value, ONLY TRANSLATE label
@@ -937,6 +940,9 @@ export default {
 		'The order with the current size can not be filled',
 	QUICK_TRADE_ORDER_NOT_FILLED: 'Order is not filled',
 	QUICK_TRADE_NO_BALANCE: 'Insufficient balance to perform the order',
+	QUICK_TRADE_SUCCESS: 'Success!',
+  QUICK_TRADE_INSUFFICIENT_FUND: 'Insufficient funds',
+  QUICK_TRADE_INSUFFICIENT_FUND_MESSAGE: 'You have insufficient funds in your wallet to complete this transaction.',
 	YES: 'Yes',
 	NO: 'No',
 	NEXT: 'Next',
