@@ -1,9 +1,4 @@
 import { overwriteLocale } from './string';
-import { getVersions } from 'actions/operatorActions';
-
-export const getRemoteVersion = async () => {
-  return await getVersions()
-}
 
 export const getLocalVersions = () => {
   const versions = localStorage.getItem('versions') || '{}';
@@ -27,4 +22,13 @@ export const getValidLanguages = () => {
 
 export const setValidLanguages = (validLanguages = '') => {
   return localStorage.setItem('valid_languages', validLanguages)
+}
+
+export const setExchangeInitialized = (initialized) => {
+  return localStorage.setItem('initialized', initialized)
+}
+
+export const getExchangeInitialized = () => {
+  const initialized = localStorage.getItem('initialized') || false;
+  return initialized;
 }

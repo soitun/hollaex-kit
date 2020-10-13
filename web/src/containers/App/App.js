@@ -6,7 +6,6 @@ import { loadReCaptcha } from 'react-recaptcha-v3';
 import { Helmet } from "react-helmet";
 import STRINGS from '../../config/localizedStrings';
 import {
-	ICONS,
 	FLEX_CENTER_CLASSES,
 	FIT_SCREEN_HEIGHT,
 	CAPTCHA_SITEKEY,
@@ -39,7 +38,6 @@ import {
 	Dialog,
 	Notification,
 	MessageDisplay,
-	CurrencyList,
 	SnackNotification,
 	SnackDialog
 } from '../../components';
@@ -62,10 +60,13 @@ import {
 	getClasesForLanguage,
 	getFontClassForLanguage
 } from '../../utils/string';
+import { getExchangeInitialized } from '../../utils/initialize';
 
 import Socket from './Socket';
 import Container from './Container';
 import GetSocketState from './GetSocketState';
+import withEdit from 'components/EditProvider/withEdit';
+import withConfig from 'components/ConfigProvider/withConfig';
 
 class App extends Component {
 	state = {
@@ -79,7 +80,6 @@ class App extends Component {
 		ordersQueued: [],
 		limitFilledOnOrder: '',
 		sidebarFitHeight: false,
-		isEditMode: false,
 	};
 	ordersQueued = [];
 	limitTimeOut = null;
@@ -95,6 +95,10 @@ class App extends Component {
 	}
 
 	componentDidMount() {
+		const initialized = getExchangeInitialized();
+		if (initialized === 'false' || !initialized) {
+			this.props.router.push('/init');
+		}
 		this.updateThemeToBody(this.props.activeTheme);
 		if (this.props.location && this.props.location.pathname) {
 			this.checkPath(this.props.location.pathname);
@@ -156,7 +160,9 @@ class App extends Component {
 	checkPath = (path) => {
 		var sheet = document.createElement('style');
 		if (path === 'login' || path === 'signup'
-			|| (path === '/reset-password') || path.includes('/withdraw')) {
+			|| (path === '/reset-password') || path.includes('/withdraw')
+			|| path.includes('/init')
+		) {
 			sheet.innerHTML = '.grecaptcha-badge { visibility: visible !important;}';
 			sheet.id = 'addCap';
 			if (document.getElementById('rmvCap') !== null) {
@@ -264,6 +270,7 @@ class App extends Component {
 	}
 
 	renderDialogContent = ({ type, data }, prices = {}) => {
+		const { icons: ICONS } = this.props;
 		switch (type) {
 			case NOTIFICATIONS.ORDERS:
 			case NOTIFICATIONS.TRADES:
@@ -293,7 +300,8 @@ class App extends Component {
 			case NOTIFICATIONS.ERROR:
 				return (
 					<MessageDisplay
-						iconPath={ICONS.RED_WARNING}
+						iconId="RED_WARNING"
+						iconPath={ICONS['RED_WARNING']}
 						onClick={this.onCloseDialog}
 						text={data}
 					/>
@@ -456,13 +464,6 @@ class App extends Component {
 		}
 	};
 
-	handleEditMode = () => {
-    this.setState(prevState => ({
-      ...prevState,
-      isEditMode: !prevState.isEditMode,
-    }))
-	}
-
 	render() {
 		const {
 			symbol,
@@ -481,15 +482,17 @@ class App extends Component {
 			info,
 			enabledPlugins,
 			constants = { captcha: {} },
+			isEditMode,
+			handleEditMode,
 			// user,
 		} = this.props;
+
 		const {
 			dialogIsOpen,
 			appLoaded,
 			chatIsClosed,
 			sidebarFitHeight,
 			isSocketDataReady,
-      isEditMode,
 		} = this.state;
 		let siteKey = DEFAULT_CAPTCHA_SITEKEY;
 		if (CAPTCHA_SITEKEY) {
@@ -570,12 +573,6 @@ class App extends Component {
 									logout={this.logout}
 									activePath={activePath}
 									onHelp={openHelpfulResourcesForm}
-									rightChildren={
-										<CurrencyList
-											className="horizontal-currency-list justify-content-end"
-											activeLanguage={activeLanguage}
-										/>
-									}
 								/>
 								{info.is_trial ? (
 									<div
@@ -715,10 +712,10 @@ class App extends Component {
 						{!isMobile && <AppFooter theme={activeTheme} constants={constants} />}
 					</div>
 				</div>
-				{ isAdmin() && isBrowser && <OperatorControls onChangeEditMode={this.handleEditMode} editMode={isEditMode}/>}
+				{ isAdmin() && isBrowser && <OperatorControls onChangeEditMode={handleEditMode} editMode={isEditMode}/>}
 			</ThemeProvider>
 		);
 	}
 }
 
-export default App;
+export default withEdit(withConfig(App));

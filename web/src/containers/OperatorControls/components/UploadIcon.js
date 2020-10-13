@@ -2,11 +2,14 @@ import React, { Component } from 'react';
 import Modal from 'components/Dialog/DesktopDialog';
 import { bool, func, array } from 'prop-types';
 import { Button } from 'antd';
+import { upload } from 'actions/operatorActions';
+import { DeleteOutlined } from '@ant-design/icons';
 
 class UploadIcon extends Component {
 
   state = {
     selectedFiles: {},
+    loading: false,
   }
 
   onFileChange = ({ target: { name, files } }) => {
@@ -19,25 +22,40 @@ class UploadIcon extends Component {
     }))
   };
 
-  handleSave = () => {
+  handleSave = async () => {
     const { onSave } = this.props;
     const { selectedFiles } = this.state;
-
-    const path = '/somewhere';
     const icons = {};
 
-    Object.entries(selectedFiles).forEach(([key, file]) => {
-      if (file) {
-        // Upload and then
-        icons[key] = path;
+    this.setState({
+      loading: true,
+    });
+
+    for (const key in selectedFiles) {
+      if (selectedFiles.hasOwnProperty(key)) {
+        const file = selectedFiles[key];
+        if (file) {
+          const formData = new FormData();
+
+          formData.append('name', key);
+          formData.append('file', file);
+
+          const { data: { path } } = await upload(formData)
+          icons[key] = path;
+        }
       }
-    })
+    }
+
+    this.setState({
+      loading: false
+    });
 
     onSave(icons);
   }
 
   render() {
-    const { isOpen, onCloseDialog, editId } = this.props;
+    const { isOpen, onCloseDialog, editId, onReset } = this.props;
+    const { loading } = this.state;
 
     return (
       <Modal
@@ -46,8 +64,8 @@ class UploadIcon extends Component {
         className="operator-controls__modal"
         disableTheme={true}
         onCloseDialog={onCloseDialog}
-        shouldCloseOnOverlayClick={true}
-        showCloseText={true}
+        shouldCloseOnOverlayClick={!loading}
+        showCloseText={!loading}
         bodyOpenClassName="operator-controls__modal-open"
       >
         <div className="operator-controls__all-strings-header">
@@ -65,6 +83,15 @@ class UploadIcon extends Component {
                 style={{ width: '232px' }}
                 onChange={this.onFileChange}
               />
+              <Button
+                ghost
+                shape="circle"
+                size="small"
+                disabled={loading}
+                className="operator-controls__all-strings-settings-button"
+                onClick={() => onReset(id)}
+                icon={<DeleteOutlined />}
+              />
             </div>
           ))}
         </div>
@@ -73,6 +100,7 @@ class UploadIcon extends Component {
             block
             type="primary"
             className="operator-controls__save-button"
+            loading={loading}
             onClick={this.handleSave}
           >
             Save
