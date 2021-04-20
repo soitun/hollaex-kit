@@ -16,7 +16,7 @@ const {
 	HOLLAEX_NETWORK_BASE_URL,
 	HOLLAEX_NETWORK_PATH_ACTIVATE
 } = require('./constants');
-const { each, isNumber, difference } = require('lodash');
+const { isNumber, difference } = require('lodash');
 
 let nodeLib;
 
@@ -75,7 +75,10 @@ const checkStatus = () => {
 
 	let frozenUsers = {};
 
-	return Status.findOne({})
+	return Status.findOne({
+		where: { id: 1 },
+		raw: true
+	})
 		.then((status) => {
 			loggerInit.info('init/checkStatus');
 			if (!status) {
@@ -106,50 +109,57 @@ const checkStatus = () => {
 						status.kit
 					),
 					Tier.findAll(),
-					status.dataValues
+					status
 				]);
 			}
 		})
-		.then(([exchange, tiers, status]) => {
+		.then(async ([exchange, tiers, status]) => {
 			loggerInit.info('init/checkStatus/activation', exchange.name, exchange.active);
 			const exchangePairs = [];
-			each(exchange.coins, (coin) => {
+
+			for (let coin of exchange.coins) {
 				configuration.coins[coin.symbol] = coin;
-			});
-			each(exchange.pairs, (pair) => {
+			}
+
+			for (let pair of exchange.pairs) {
 				exchangePairs.push(pair.name);
 				configuration.pairs[pair.name] = pair;
-			});
-			each(tiers, async (tier) => {
-				const makerDiff = difference(exchangePairs, Object.keys(tier.fees.maker));
-				const takerDiff = difference(exchangePairs, Object.keys(tier.fees.taker));
+			}
 
-				if (makerDiff.length > 0 || takerDiff.length > 0 || isNumber(tier.fees.maker.default) || isNumber(tier.fees.taker.default)) {
+			for (let tier of tiers) {
+				const tierData = tier.dataValues;
+
+				const makerDiff = difference(exchangePairs, Object.keys(tierData.fees.maker));
+				const takerDiff = difference(exchangePairs, Object.keys(tierData.fees.taker));
+
+				if (makerDiff.length > 0 || takerDiff.length > 0 || isNumber(tierData.fees.maker.default) || isNumber(tierData.fees.taker.default)) {
+					loggerInit.verbose('init/checkStatus/activation setting fees for new pairs for tier', tierData.id);
 					const fees = {
 						maker: {},
 						taker: {}
 					};
-					each(exchangePairs, (pair) => {
-						if (!isNumber(tier.fees.maker[pair])) {
+
+					for (let pair of exchangePairs) {
+						if (!isNumber(tierData.fees.maker[pair])) {
 							fees.maker[pair] = DEFAULT_FEES[exchange.collateral_level].maker;
 						} else {
-							fees.maker[pair] = tier.fees.maker[pair];
+							fees.maker[pair] = tierData.fees.maker[pair];
 						}
 
-						if (!isNumber(tier.fees.taker[pair])) {
+						if (!isNumber(tierData.fees.taker[pair])) {
 							fees.taker[pair] = DEFAULT_FEES[exchange.collateral_level].taker;
 						} else {
-							fees.taker[pair] = tier.fees.taker[pair];
+							fees.taker[pair] = tierData.fees.taker[pair];
 						}
-					});
+					}
 
-					const t = await tier.update({ fees }, { fields: ['fees'] });
+					const updatedTier = await tier.update({ fees }, { fields: ['fees'] });
 
-					configuration.tiers[t.id] = t.dataValues;
+					configuration.tiers[updatedTier.dataValues.id] = updatedTier.dataValues;
 				} else {
-					configuration.tiers[tier.id] = tier.dataValues;
+					configuration.tiers[tierData.id] = tierData;
 				}
-			});
+			}
 			configuration.kit.info = {
 				name: exchange.name,
 				active: exchange.active,
@@ -164,6 +174,7 @@ const checkStatus = () => {
 				status: true,
 				initialized: status.initialized
 			};
+
 			const networkNodeLib = new Network({
 				apiUrl: HOLLAEX_NETWORK_ENDPOINT,
 				baseUrl: HOLLAEX_NETWORK_BASE_URL,
@@ -179,16 +190,17 @@ const checkStatus = () => {
 				User.findAll({
 					where: {
 						activated: false
-					}
+					},
+					raw: true
 				}),
 				networkNodeLib
 			]);
 		})
 		.then(([ users, networkNodeLib ]) => {
 			loggerInit.info('init/checkStatus/activation', users.length, 'users deactivated');
-			each(users, (user) => {
-				frozenUsers[user.dataValues.id] = true;
-			});
+			for (let user of users) {
+				frozenUsers[user.id] = true;
+			}
 			publisher.publish(
 				CONFIGURATION_CHANNEL,
 				JSON.stringify({
