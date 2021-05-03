@@ -82,6 +82,7 @@ class App extends Component {
 		limitFilledOnOrder: '',
 		sidebarFitHeight: false,
 		isSidebarOpen: getSideBarState(),
+		activeMenu: '',
 	};
 	ordersQueued = [];
 	limitTimeOut = null;
@@ -111,6 +112,8 @@ class App extends Component {
 			this.checkPath(this.props.location.pathname);
 			this.handleFitHeight(this.props.location.pathname);
 		}
+
+		this.setActiveMenu();
 
 		setTimeout(
 			() => this.props.setPricesAndAsset(this.props.balance, this.props.coins),
@@ -167,6 +170,14 @@ class App extends Component {
 		}
 	}
 
+	componentDidUpdate(prevProps) {
+		if (
+			JSON.stringify(prevProps.location) !== JSON.stringify(this.props.location)
+		) {
+			this.setActiveMenu();
+		}
+	}
+
 	componentWillUnmount() {
 		if (this.state.publicSocket) {
 			this.state.publicSocket.close();
@@ -214,16 +225,54 @@ class App extends Component {
 		this.setState({ sidebarFitHeight: FIT_SCREEN_HEIGHT.includes(pathname) });
 	};
 
+	setActiveMenu = () => {
+		const { location: { pathname = '' } = {} } = this.props;
+
+		let activeMenu;
+		if (pathname.includes('quick-trade')) {
+			activeMenu = 'quick-trade';
+		} else {
+			activeMenu = pathname;
+		}
+		this.setState({ activeMenu });
+	};
+
+	handleMenuChange = (path = '', cb) => {
+		const { router, pairs } = this.props;
+
+		let pair = '';
+		if (Object.keys(pairs).length) {
+			pair = Object.keys(pairs)[0];
+		} else {
+			pair = this.props.pair;
+		}
+
+		switch (path) {
+			case 'logout':
+				this.logout();
+				break;
+			case 'help':
+				this.props.openHelpfulResourcesForm();
+				break;
+			case 'quick-trade':
+				router.push(`/quick-trade/${pair}`);
+				break;
+			default:
+				router.push(path);
+		}
+
+		this.setState({ activePath: path }, () => {
+			if (cb) {
+				cb();
+			}
+		});
+	};
+
 	goToPage = (path) => {
 		if (this.props.location.pathname !== path) {
 			this.props.router.push(path);
 		}
 	};
-
-	goToAccountPage = () => this.goToPage('/account');
-	goToVerificationPage = () => this.goToPage('/verification');
-	goToDashboard = () => this.goToPage('/');
-	goToXHTTrade = () => this.goToPage('/trade/xht-usdt');
 
 	logout = (message = '') => {
 		this.setState({ appLoaded: false }, () => {
@@ -332,7 +381,8 @@ class App extends Component {
 					<MessageDisplay
 						iconId="UNDEFINED_ERROR"
 						iconPath={ICONS['UNDEFINED_ERROR']}
-						onClick={this.onCloseDialog}
+						onClick={() => window.location.reload(false)}
+						buttonLabel={STRINGS['REFRESH']}
 						text={STRINGS['UNDEFINED_ERROR']}
 						title={STRINGS['UNDEFINED_ERROR_TITLE']}
 						titleId="UNDEFINED_ERROR_TITLE"
@@ -471,7 +521,6 @@ class App extends Component {
 			// verification_level,
 			activeLanguage,
 			// openContactForm,
-			openHelpfulResourcesForm,
 			activeTheme,
 			// unreadMessages,
 			router,
@@ -483,9 +532,8 @@ class App extends Component {
 			features,
 			isReady: isSocketDataReady,
 			pairsTradesFetched,
-			verifyToken,
-			token,
 			icons: ICONS,
+			menuItems,
 		} = this.props;
 
 		const {
@@ -499,7 +547,9 @@ class App extends Component {
 		const languageClasses = getClasesForLanguage(activeLanguage, 'array');
 		const fontClass = getFontClassForLanguage(activeLanguage);
 
-		const shouldCloseOnOverlayClick = activeNotification.type !== CONTACT_FORM;
+		const shouldCloseOnOverlayClick =
+			activeNotification.type !== CONTACT_FORM &&
+			activeNotification.type !== NOTIFICATIONS.UNDEFINED_ERROR;
 		const activePath = !appLoaded
 			? ''
 			: this.getClassForActivePath(this.props.location.pathname);
@@ -578,19 +628,17 @@ class App extends Component {
 							<div className="d-flex flex-column f-1">
 								{!isHome && (
 									<AppBar
-										token={token}
-										verifyToken={verifyToken}
-										noBorders={isHome}
-										isHome={isHome}
 										router={router}
-										location={location}
-										goToDashboard={this.goToDashboard}
-										logout={this.logout}
-										activePath={activePath}
-										onHelp={openHelpfulResourcesForm}
+										menuItems={menuItems}
+										activePath={this.state.activeMenu}
+										onMenuChange={this.handleMenuChange}
 									>
 										{isBrowser && isMenubar && isLoggedIn() && (
-											<AppMenuBar router={router} location={location} />
+											<AppMenuBar
+												menuItems={menuItems}
+												activePath={this.state.activeMenu}
+												onMenuChange={this.handleMenuChange}
+											/>
 										)}
 									</AppBar>
 								)}
@@ -612,14 +660,13 @@ class App extends Component {
 										}
 									)}
 								>
-									{isMenuSider ? (
+									{isMenuSider && (
 										<AppMenuSidebar
-											router={router}
-											location={location}
-											logout={this.logout}
-											onHelp={openHelpfulResourcesForm}
+											menuItems={menuItems}
+											activePath={this.state.activeMenu}
+											onMenuChange={this.handleMenuChange}
 										/>
-									) : null}
+									)}
 									<div
 										className={classnames(
 											'app_container-main',
@@ -679,10 +726,19 @@ class App extends Component {
 									<Dialog
 										isOpen={dialogIsOpen && !isHome}
 										label="hollaex-modal"
-										className={classnames('app-dialog', {
-											'app-dialog-flex':
-												activeNotification.type === NOTIFICATIONS.DEPOSIT_INFO,
-										})}
+										className={classnames(
+											'app-dialog',
+											{
+												'app-dialog-flex':
+													activeNotification.type ===
+													NOTIFICATIONS.DEPOSIT_INFO,
+											},
+											{
+												full:
+													activeNotification.type ===
+													NOTIFICATIONS.UNDEFINED_ERROR,
+											}
+										)}
 										onCloseDialog={this.onCloseDialog}
 										shouldCloseOnOverlayClick={shouldCloseOnOverlayClick}
 										theme={activeTheme}

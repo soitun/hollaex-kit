@@ -1,5 +1,29 @@
 .trade_orderbook-wrapper {
 	height: 49vh;
+	.trade_orderbook-headers {
+		.trade_orderbook-cell {
+			font-size: $font-size-subtext !important;
+			flex-direction: column;
+			.custom-select-input-style {
+				font-size: 1rem !important;
+				max-width: 8rem;
+				.ant-select-selector {
+					height: 1.5rem !important;
+					line-height: 1.5rem !important;
+					padding: 0;
+					font-size: $font-size-subtext !important;
+				}
+				.ant-select-selection-item {
+					height: 1.5rem !important;
+					line-height: 1.5rem !important;
+					font-weight: bold;
+				}
+				.ant-select-arrow {
+					right: 2px;
+				}
+			}
+		}
+	}
 	.trade_orderbook-cell {
 		padding: 0 0.25rem;
 		.ant-select-arrow {
@@ -21,9 +45,11 @@
 		margin: 1px 0;
 		text-align: right;
 
-		.trade_orderbook-cell-price,
+		.trade_orderbook-cell-price {
+			text-align: left;
+		}
 		.trade_orderbook-cell-amount {
-			text-align: center;
+			text-align: right;
 		}
 		.trade_orderbook-cell-amount {
 			color: $orderbook-text;
@@ -78,7 +104,7 @@
 	.trade_orderbook-content {
 		.trade_orderbook-spread {
 			flex: 0;
-			min-height: 6rem;
+			min-height: 4rem;
 			color: $colors-deactivate-color2;
 			// font-size: $font-size-main;
 			padding: 0 0.25rem;

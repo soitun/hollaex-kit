@@ -103,15 +103,31 @@ class Orderbook extends Component {
 	state = {
 		dataBlockHeight: 0,
 		isBase: true,
+		positioned: false,
 		isOpen: false,
 	};
 
 	componentDidMount() {
-		this.scrollTop();
+		const { orderbookFetched } = this.props;
+		if (orderbookFetched) {
+			setTimeout(() => {
+				window.dispatchEvent(new Event('resize'));
+			}, 1000);
+		}
 	}
 
-	UNSAFE_componentWillReceiveProps(nextProps) {
-		// this.scrollTop();
+	componentDidUpdate(prevProps) {
+		const { orderbookFetched } = this.props;
+		const { positioned } = this.state;
+		if (
+			!positioned &&
+			prevProps.orderbookFetched === false &&
+			orderbookFetched === true
+		) {
+			setTimeout(() => {
+				window.dispatchEvent(new Event('resize'));
+			}, 1000);
+		}
 	}
 
 	componentWillUnmount() {
@@ -136,7 +152,7 @@ class Orderbook extends Component {
 			if (needScroll && askDif > 0) {
 				this.wrapper.scrollTop = askDif;
 			}
-			this.setState({ dataBlockHeight });
+			this.setState({ dataBlockHeight, positioned: true });
 		}
 	};
 
@@ -205,7 +221,7 @@ class Orderbook extends Component {
 			lastPrice,
 		} = this.props;
 
-		const { isBase, isOpen } = this.state;
+		const { isBase, positioned, isOpen } = this.state;
 		// const blockStyle = {};
 		const { dataBlockHeight } = this.state;
 		const blockStyle =
@@ -240,18 +256,19 @@ class Orderbook extends Component {
 						<PlusSquareOutlined />
 					</Button>
 				</div>
-				<div className="trade_orderbook-headers d-flex">
+				<div className="trade_orderbook-headers d-flex align-end">
 					<div className="f-1 trade_orderbook-cell">
-						{STRINGS.formatString(
-							STRINGS['PRICE_CURRENCY'],
-							symbol.toUpperCase()
-						)}
+						<div>{STRINGS['PRICE_CURRENCY']}</div>
+						<div>({symbol.toUpperCase()})</div>
 					</div>
 					<div className="f-1 trade_orderbook-cell">
-						{STRINGS.formatString(STRINGS['AMOUNT_SYMBOL'], pairBase)}
+						<div>{STRINGS['AMOUNT_SYMBOL']}</div>
+						<div>({pairBase})</div>
 					</div>
-					<div className="f-1 trade_orderbook-cell d-flex">
-						{STRINGS['CUMULATIVE_AMOUNT_SYMBOL']}
+					<div className="f-1 trade_orderbook-cell">
+						<div className="d-flex align-items-center">
+							{STRINGS['CUMULATIVE_AMOUNT_SYMBOL']}
+						</div>
 						<Select
 							bordered={false}
 							defaultValue={false}
@@ -267,6 +284,7 @@ class Orderbook extends Component {
 							open={isOpen}
 							className="custom-select-input-style order-entry no-border"
 							dropdownClassName="custom-select-style trade-select-option-wrapper"
+							dropdownStyle={{ minWidth: '7rem' }}
 						>
 							<Option value={false}>{symbol.toUpperCase()}</Option>
 							<Option value={true}>{pairBase}</Option>
@@ -279,6 +297,7 @@ class Orderbook extends Component {
 				<div
 					ref={this.setRefs('wrapper')}
 					className={classnames('trade_orderbook-content', 'f-1', 'overflow-y')}
+					style={{ visibility: positioned ? 'visible' : 'hidden' }}
 				>
 					<div
 						className={classnames(

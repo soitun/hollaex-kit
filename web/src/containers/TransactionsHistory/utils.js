@@ -14,7 +14,7 @@ import {
 	CURRENCY_PRICE_FORMAT,
 	DEFAULT_COIN_DATA,
 } from '../../config/constants';
-import { getFormatTimestamp, isBlockchainTx } from '../../utils/utils';
+import { getFormatTimestamp } from '../../utils/utils';
 import { formatToCurrency, formatBaseAmount } from 'utils/currency';
 
 notification.config({
@@ -69,11 +69,12 @@ export const generateOrderHistoryHeaders = (
 		{
 			stringId: 'PAIR',
 			label: STRINGS['PAIR'],
+			className: 'sticky-col',
 			key: 'pair',
 			exportToCsv: ({ symbol }) => symbol.toUpperCase(),
 			renderCell: ({ symbol }, key, index) => {
 				return (
-					<td key={index} className="text-uppercase">
+					<td key={index} className="text-uppercase sticky-col">
 						{symbol}
 					</td>
 				);
@@ -315,9 +316,10 @@ export const generateTradeHeaders = (
 			label: STRINGS['PAIR'],
 			key: 'pair',
 			exportToCsv: ({ symbol }) => symbol.toUpperCase(),
+			className: 'sticky-col',
 			renderCell: ({ symbol }, key, index) => {
 				return (
-					<td key={index} className="text-uppercase">
+					<td key={index} className="text-uppercase sticky-col">
 						{symbol}
 					</td>
 				);
@@ -570,6 +572,7 @@ export const generateWithdrawalsHeaders = (
 		{
 			stringId: 'CURRENCY',
 			label: STRINGS['CURRENCY'],
+			className: 'sticky-col',
 			key: 'currency',
 			exportToCsv: ({ currency }) => {
 				const { fullname } = coins[currency] || DEFAULT_COIN_DATA;
@@ -578,7 +581,7 @@ export const generateWithdrawalsHeaders = (
 			renderCell: ({ currency }, key, index) => {
 				const data = coins[currency] || DEFAULT_COIN_DATA;
 				return (
-					<td key={index} className="coin-cell">
+					<td key={index} className="coin-cell sticky-col">
 						<div className="d-flex align-items-center">
 							<Image
 								iconId={`${data.symbol.toUpperCase()}_ICON`}
@@ -692,6 +695,7 @@ export const generateWithdrawalsHeaders = (
 					id,
 					amount,
 					type,
+					network,
 				},
 				key,
 				index
@@ -739,12 +743,13 @@ export const generateWithdrawalsHeaders = (
 					);
 				} else {
 					// Completed Status
-					return isBlockchainTx(transaction_id) &&
-						currency !== BASE_CURRENCY ? (
+					// return isBlockchainTx(transaction_id) &&
+					return network ? (
+						// currency !== BASE_CURRENCY ? (
 						<td key={index}>
 							<a
 								target="blank"
-								href={EXPLORERS_ENDPOINT(currency) + transaction_id}
+								href={EXPLORERS_ENDPOINT(network) + transaction_id}
 							>
 								{STRINGS['VIEW']}
 							</a>

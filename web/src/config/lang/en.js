@@ -20,7 +20,7 @@ const nestedContent = {
 	HOUR_FORMAT: 'HH:mm:ss',
 	LOGIN_TEXT: 'Login',
 	SIGN_IN: 'Sign In',
-	SIGNUP_TEXT: 'Sign Up',
+	SIGNUP_TEXT: 'Sign up',
 	REGISTER_TEXT: 'Register',
 	ACCOUNT_TEXT: 'Account',
 	HOME_TEXT: 'Home',
@@ -35,6 +35,11 @@ const nestedContent = {
 	HELPFUL_RESOURCES_TEXT: 'Helpful resources',
 	HELP_RESOURCE_GUIDE_TEXT:
 		'Feel free to contact us for more information and any issues by sending us an email',
+	HELP_RESOURCE_GUIDE: {
+		CONTACT_US: 'contact us',
+		TEXT:
+			'Feel free to {0} for more information and any issues by sending us an email',
+	},
 	HELP_TELEGRAM_TEXT: 'Check out open API documentation:',
 	HELP_TELEGRAM_LINK: 'https://apidocs.hollaex.com',
 	NEED_HELP_TEXT: 'Need help?', // new
@@ -831,9 +836,10 @@ const nestedContent = {
 	LOWEST_PRICE: 'Lowest Price ({0})', // new
 	PHASE: 'Phase', // new
 	INCOMING: 'Incoming', // new
-	PRICE_CURRENCY: 'Price ({0})',
-	AMOUNT_SYMBOL: 'Amount ({0})',
+	PRICE_CURRENCY: 'Price',
+	AMOUNT_SYMBOL: 'Amount',
 	MARKET_PRICE: 'Market Price',
+	ESTIMATED_PRICE: 'Estimated Price',
 	ORDER_PRICE: 'Order Price',
 	TOTAL_ORDER: 'Order Total',
 	NO_DATA: 'No Data',
@@ -1137,7 +1143,7 @@ const nestedContent = {
 	WALLET_ADDRESS_TITLE: 'Generate {0} Wallet',
 	WALLET_ADDRESS_GENERATE: 'Generate',
 	WALLET_ADDRESS_MESSAGE:
-		'When you generate a wallet, you create a deposit and withdrawal address.',
+		'When you generate a wallet, you create a deposit address.',
 	WALLET_ADDRESS_ERROR:
 		'Error generating the address, please refresh and try again.',
 	DEPOSIT_WITHDRAW: 'Deposit/Withdraw',
@@ -1411,6 +1417,7 @@ const nestedContent = {
 	POST_ONLY: 'Post only',
 	CLEAR: 'Clear',
 	ORDER_TYPE: 'type',
+	ORDER_MODE: 'Order mode', //new
 	TRIGGER_CONDITIONS: 'Trigger conditions',
 	TRANSACTION_STATUS: {
 		PENDING: 'Pending',
@@ -1440,9 +1447,9 @@ const nestedContent = {
 	AMOUNT_IN: 'Amount in',
 	LIMITS_BLOCK: {
 		HEADER_ROW_DESCRIPTION:
-			'Deposit and withdrawal allowance for all assets ({0})',
+			'24h Deposit and withdrawal allowance for all assets ({0})',
 		HEADER_ROW_TYPE: 'Type (All assets)',
-		HEADER_ROW_AMOUNT: 'Amount ({0})',
+		HEADER_ROW_AMOUNT: '24h Amount ({0})',
 	},
 	MARKETS_TABLE: {
 		TITLE: 'Live markets',
@@ -1458,6 +1465,8 @@ const nestedContent = {
 	UNDEFINED_ERROR_TITLE: 'You’ve Encountered an Unidentified Error',
 	UNDEFINED_ERROR:
 		'Wow! An unknown error has occurred. This could be a connection issue or a number of other things. You can try again later or try refreshing.',
+	POST_ONLY_TOOLTIP: 'Post only orders only execute as a limit order.', // new
+	REFRESH: 'Refresh',
 };
 
 const content = flatten(nestedContent, options);

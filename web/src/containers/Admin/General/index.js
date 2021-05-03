@@ -18,6 +18,7 @@ import { upload, updateConstants } from './action';
 import { getGeneralFields } from './utils';
 import { publish } from 'actions/operatorActions';
 import merge from 'lodash.merge';
+import { clearFileInputById } from 'helpers/vanilla';
 
 import './index.css';
 import { handleUpgrade } from 'utils/utils';
@@ -27,6 +28,7 @@ const LanguageForm = AdminHocForm('LanguageForm');
 const ThemeForm = AdminHocForm('ThemeForm');
 const NativeCurrencyForm = AdminHocForm('NativeCurrencyForm');
 const HelpDeskForm = AdminHocForm('HelpDeskForm');
+const APIDocLinkForm = AdminHocForm('APIDocLinkForm');
 
 class General extends Component {
 	constructor() {
@@ -46,7 +48,7 @@ class General extends Component {
 			isSignUpActive: true,
 			loading: false,
 			loadingButton: false,
-			isReferralLink: false
+			isReferralLink: false,
 		};
 	}
 
@@ -150,6 +152,7 @@ class General extends Component {
 								icons[themeKey][key] = path;
 								this.setState({ currentIcon: {} });
 							} catch (error) {
+								clearFileInputById(`admin-file-input__${themeKey},${key}`);
 								message.error('Something went wrong!');
 								return;
 							}
@@ -313,6 +316,16 @@ class General extends Component {
 		});
 	};
 
+	handleSubmitAPIDocLink = (formProps) => {
+		this.handleSubmitGeneral({
+			kit: {
+				links: {
+					...formProps,
+				},
+			},
+		});
+	};
+
 	handleSubmitEmailVerification = (formProps) => {
 		this.handleSubmitGeneral({
 			kit: {
@@ -344,6 +357,7 @@ class General extends Component {
 						accept="image/*"
 						onChange={this.handleChangeFile}
 						name={`${theme},${id}`}
+						id={`admin-file-input__${theme},${id}`}
 					/>
 				</label>
 			</div>
@@ -414,7 +428,7 @@ class General extends Component {
 			isSignUpActive,
 			showDisableSignUpsConfirmation,
 			loadingButton,
-			isReferralLink
+			isReferralLink,
 		} = this.state;
 		const { kit = {} } = this.state.constants;
 		const { coins, themeOptions } = this.props;
@@ -828,8 +842,13 @@ class General extends Component {
 				</div>
 				<div className="divider"></div>
 				<div className="general-wrapper">
-					<div className="sub-title">Helpdesk link</div>
-					<div className="description">
+					<h3>Help pop up</h3>
+					<p>
+						The help pop up displays helpful links for your users and can be
+						accessed in various areas that say 'help'.
+					</p>
+					<div className="sub-title pt-3">Helpdesk link</div>
+					<div className="description mb-4">
 						This link will be used for your any help sections on your exchange.
 						You can put a direct link to your helpdesk service or your support
 						email address.
@@ -843,6 +862,20 @@ class General extends Component {
 						buttonClass="green-btn minimal-btn"
 						onSubmit={this.handleSubmitHelpDesk}
 					/>
+					<div className="sub-title mt-4 pt-3">API documentation link</div>
+					<div className="description mb-4">
+						Provide the link to your exchanges API documentation. This link will
+						appear on universal help pop up.
+					</div>
+					<APIDocLinkForm
+						initialValues={{
+							api_doc_link: initialLinkValues.api_doc_link,
+						}}
+						fields={generalFields.section_9}
+						buttonText="Save"
+						buttonClass="green-btn minimal-btn"
+						onSubmit={this.handleSubmitAPIDocLink}
+					/>
 				</div>
 				<div className="divider"></div>
 				<InterfaceForm
@@ -854,41 +887,36 @@ class General extends Component {
 				<div className="referral-link-section">
 					<div className="sub-title">Referral affiliate link</div>
 					<div className="description">
-						Allow your user to share a referral affiliate link with their friends.
-						Users that share this link will be able to earn commissions form 
-						trading fees made from their invited friends.
+						Allow your user to share a referral affiliate link with their
+						friends. Users that share this link will be able to earn commissions
+						form trading fees made from their invited friends.
 					</div>
-					{isUpgrade
-						?
-							<div className="d-flex">
-								<div className="d-flex align-items-center justify-content-between upgrade-section my-4">
-									<div>
-										<div className="font-weight-bold">Boost your userbase</div>
-										<div>Incentives your users to share your platform</div>
-									</div>
-									<div className="ml-5 button-wrapper">
-										<a
-											href="https://dash.bitholla.com/billing"
-											target="_blank"
-											rel="noopener noreferrer"
-										>
-											<Button
-												type="primary"
-												className="w-100"
-											>
-												Upgrade Now
-											</Button>
-										</a>
-									</div>
+					{isUpgrade ? (
+						<div className="d-flex">
+							<div className="d-flex align-items-center justify-content-between upgrade-section my-4">
+								<div>
+									<div className="font-weight-bold">Boost your userbase</div>
+									<div>Incentives your users to share your platform</div>
+								</div>
+								<div className="ml-5 button-wrapper">
+									<a
+										href="https://dash.bitholla.com/billing"
+										target="_blank"
+										rel="noopener noreferrer"
+									>
+										<Button type="primary" className="w-100">
+											Upgrade Now
+										</Button>
+									</a>
 								</div>
 							</div>
-						: null
-					}
+						</div>
+					) : null}
 					<div className="description">
-						In the account summary page your users can access a 'INVITE YOUR FRIEND'
-						link which will give them a unique sharable referral link.
+						In the account summary page your users can access a 'INVITE YOUR
+						FRIEND' link which will give them a unique sharable referral link.
 					</div>
-					<div className={isUpgrade ? "disabled-area" : ""}>
+					<div className={isUpgrade ? 'disabled-area' : ''}>
 						<div className="admin-chat-feature-wrapper pt-4">
 							<div className="switch-wrapper mb-5">
 								<div className="d-flex">
@@ -900,7 +928,7 @@ class General extends Component {
 										}
 									>
 										Hide
-										</span>
+									</span>
 									<Switch
 										checked={isReferralLink}
 										onClick={this.handleReferralLink}
@@ -913,15 +941,12 @@ class General extends Component {
 										}
 									>
 										Show
-										</span>
+									</span>
 								</div>
 							</div>
 						</div>
-						<div className='general-wrapper'>
-							<Button
-								type="primary"
-								className="mb-5"
-							>
+						<div className="general-wrapper">
+							<Button type="primary" className="mb-5">
 								Save
 							</Button>
 						</div>
