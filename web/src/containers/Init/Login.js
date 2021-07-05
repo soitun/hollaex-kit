@@ -35,7 +35,11 @@ const Login = (props) => {
 
 	const handleSubmit = (values) => {
 		if (values) {
-			performLogin(values)
+			const formProps = { ...values };
+			if (formProps.otp_code) {
+				formProps.otp_code = formProps.otp_code.toString();
+			}
+			performLogin(formProps)
 				.then((res) => {
 					if (isAdmin()) {
 						browserHistory.push('/admin');

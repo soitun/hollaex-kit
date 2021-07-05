@@ -425,7 +425,7 @@ const nestedContent = {
 		START_DOCUMENTATION_SUBMISSION: 'Start Documentation Submission',
 		GO_BACK: 'Go Back',
 		BANK_VERIFICATION_TEXT_1:
-			'You can add up to 3 bank accounts. International bank accounts will require you contacting customer support and will have limited withdrawal limits.',
+			'You can add your bank accounts here and get the verified. International bank accounts will require you contacting customer support and will have limited withdrawal limits.',
 		BANK_VERIFICATION_TEXT_2:
 			'By verifying your bank account you can obtain the following:',
 		BASE_WITHDRAWAL: 'Fiat withdrawal',
@@ -1441,7 +1441,7 @@ const nestedContent = {
 	CANCEL_ORDERS: {
 		HEADING: 'Cancel orders',
 		SUB_HEADING: 'Cancel all orders',
-		INFO_1: 'This will cancel your open orders for this markets.',
+		INFO_1: 'This will cancel your open orders for all markets.',
 		INFO_2: 'Are you sure you want to cancel all your open orders?',
 	},
 	AMOUNT_IN: 'Amount in',

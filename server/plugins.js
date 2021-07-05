@@ -15,7 +15,7 @@ const morganType = process.env.NODE_ENV === 'development' ? 'dev' : 'combined';
 const multer = require('multer');
 const moment = require('moment');
 const { checkStatus } = require('./init');
-const UglifyJS = require('uglify-es');
+const uglifyEs = require('uglify-es');
 const cors = require('cors');
 const mathjs = require('mathjs');
 const bluebird = require('bluebird');
@@ -28,6 +28,26 @@ const { resolve } = bluebird;
 const npm = require('npm-programmatic');
 const sequelize = require('sequelize');
 const umzug = require('umzug');
+const jwt = require('jsonwebtoken');
+const momentTz = require('moment-timezone');
+const json2csv = require('json2csv');
+const flat = require('flat');
+const ws = require('ws');
+const cron = require('node-cron');
+const randomString = require('random-string');
+const bcryptjs = require('bcryptjs');
+const expectCt = require('expect-ct');
+const validator = require('validator');
+const otp = require('otp');
+const geoipLite = require('geoip-lite');
+const nodemailer = require('nodemailer');
+const wsHeartbeatServer = require('ws-heartbeat/server');
+const wsHeartbeatClient = require('ws-heartbeat/client');
+const winston = require('winston');
+const elasticApmNode = require('elastic-apm-node');
+const winstonElasticsearchApm = require('winston-elasticsearch-apm');
+const tripleBeam = require('triple-beam');
+const { Plugin } = require('./db/models');
 
 const getInstalledLibrary = async (name, version) => {
 	const jsonFilePath = path.resolve(__dirname, './node_modules', name, 'package.json');
@@ -152,6 +172,7 @@ checkStatus()
 								'documentation',
 								'web_view',
 								'public_meta',
+								'type',
 								'admin_view',
 								'created_at',
 								'updated_at'
@@ -375,6 +396,12 @@ checkStatus()
 							errorMessage: 'must be an object'
 						},
 						optional: { options: { nullable: true } }
+					},
+					type: {
+						in: ['body'],
+						errorMessage: 'must be a string or null',
+						isString: true,
+						optional: { options: { nullable: true } }
 					}
 				})
 			], (req, res) => {
@@ -405,18 +432,33 @@ checkStatus()
 					prescript,
 					postscript,
 					meta,
-					public_meta
+					public_meta,
+					type
 				} = req.body;
 
 				loggerPlugin.info(req.uuid, 'PUT /plugins name', name, 'version', version);
 
-				toolsLib.plugin.getPlugin(name)
-					.then((plugin) => {
+				let sameTypePlugins = [];
+
+				if (type) {
+					sameTypePlugins = Plugin.findAll({
+						where: { type }
+					});
+				}
+
+				bluebird.all([
+					toolsLib.plugin.getPlugin(name),
+					sameTypePlugins
+				])
+					.then(([ plugin, sameType ]) => {
 						if (!plugin) {
 							throw new Error('Plugin not installed');
 						}
 						if (plugin.version === version) {
 							throw new Error('Version is already installed');
+						}
+						if (sameType.length > 0 && type && plugin.type !== type) {
+							throw new Error(`Plugin with type ${type} already installed`);
 						}
 
 						const updatedPlugin = {
@@ -424,10 +466,10 @@ checkStatus()
 						};
 
 						if (script) {
-							const minifiedScript = UglifyJS.minify(script);
+							const minifiedScript = uglifyEs.minify(script);
 
 							if (minifiedScript.error) {
-								throw new Error('Error while minifying script');
+								throw new Error(`Error while minifying script: ${minifiedScript.error.message}`);
 							}
 
 							updatedPlugin.script = minifiedScript.code;
@@ -443,6 +485,10 @@ checkStatus()
 
 						if (author) {
 							updatedPlugin.author = author;
+						}
+
+						if (type) {
+							updatedPlugin.type = type;
 						}
 
 						if (documentation) {
@@ -478,6 +524,15 @@ checkStatus()
 						}
 
 						if (lodash.isPlainObject(meta)) {
+							for (let key in plugin.meta) {
+								if (
+									plugin.meta[key].overwrite === false
+									&& (!meta[key] || meta[key].overwrite === false)
+								) {
+									meta[key] = plugin.meta[key];
+								}
+							}
+
 							const existingMeta = lodash.pick(plugin.meta, Object.keys(meta));
 
 							for (let key in meta) {
@@ -498,6 +553,15 @@ checkStatus()
 						}
 
 						if (lodash.isPlainObject(public_meta)) {
+							for (let key in plugin.public_meta) {
+								if (
+									plugin.public_meta[key].overwrite === false
+									&& (!public_meta[key] || public_meta[key].overwrite === false)
+								) {
+									public_meta[key] = plugin.public_meta[key];
+								}
+							}
+
 							const existingPublicMeta = lodash.pick(plugin.public_meta, Object.keys(public_meta));
 
 							for (let key in public_meta) {
@@ -700,6 +764,12 @@ checkStatus()
 							errorMessage: 'must be an object'
 						},
 						optional: { options: { nullable: true } }
+					},
+					type: {
+						in: ['body'],
+						errorMessage: 'must be a string or null',
+						isString: true,
+						optional: { options: { nullable: true } }
 					}
 				})
 			], (req, res) => {
@@ -731,15 +801,30 @@ checkStatus()
 					prescript,
 					postscript,
 					meta,
-					public_meta
+					public_meta,
+					type
 				} = req.body;
 
 				loggerPlugin.info(req.uuid, 'POST /plugins name', name, 'version', version);
 
-				toolsLib.plugin.getPlugin(name)
-					.then((plugin) => {
-						if (plugin) {
-							throw new Error('Plugin is already installed');
+				const whereArray = [
+					{ name }
+				];
+
+				if (type) {
+					whereArray.push(
+						{ type }
+					);
+				}
+
+				Plugin.findAll({
+					where: {
+						[sequelize.Op.or]: whereArray
+					}
+				})
+					.then((plugins) => {
+						if (plugins.length > 0) {
+							throw new Error('Plugin with same name or type is already installed');
 						}
 
 						const newPlugin = {
@@ -750,10 +835,10 @@ checkStatus()
 						};
 
 						if (script) {
-							const minifiedScript = UglifyJS.minify(script);
+							const minifiedScript = uglifyEs.minify(script);
 
 							if (minifiedScript.error) {
-								throw new Error('Error while minifying script');
+								throw new Error(`Error while minifying script: ${minifiedScript.error.message}`);
 							}
 
 							newPlugin.script =  minifiedScript.code;
@@ -781,6 +866,10 @@ checkStatus()
 
 						if (logo) {
 							newPlugin.logo = logo;
+						}
+
+						if (type) {
+							newPlugin.type = type;
 						}
 
 						if (!lodash.isUndefined(web_view)) {
@@ -1265,11 +1354,35 @@ checkStatus()
 								rp,
 								sequelize,
 								uuid,
+								jwt,
+								momentTz,
+								json2csv,
+								flat,
+								ws,
+								cron,
+								randomString,
+								bcryptjs,
+								expectCt,
+								validator,
+								uglifyEs,
+								otp,
+								latestVersion,
+								geoipLite,
+								nodemailer,
+								wsHeartbeatServer,
+								wsHeartbeatClient,
+								cors,
+								winston,
+								elasticApmNode,
+								winstonElasticsearchApm,
+								tripleBeam,
+								bodyParser,
+								morgan,
 								meta: plugin.meta,
 								publicMeta: plugin.public_meta,
 								installedLibraries: {}
 							};
-							if (plugin.prescript.install) {
+							if (plugin.prescript && plugin.prescript.install) {
 								loggerPlugin.verbose('plugin', plugin.name, 'installing packages');
 								for (let library of plugin.prescript.install) {
 									context.installedLibraries[library] = await installLibrary(library);

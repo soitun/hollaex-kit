@@ -277,10 +277,20 @@ const SMS = {
 };
 
 const DISCOUNTUPDATE = {
-	TITLE: 'Discount Rate Change',
+	TITLE: 'Descuento',
 	GREETING: (name) => COMMON.GREETING(name),
 	BODY: {
-		1: (rate) => `Your discount rate has been changed to ${rate}%. This rate will be applied to your order fees.`
+		1: (rate) => `Su tasa de descuento se ha cambiado al ${rate}%.  Este descuento se aplicará a las tarifas de sus transacciones.`
+	},
+	CLOSING: COMMON.CLOSING
+};
+
+const BANKVERIFIED = {
+	TITLE: 'Bank Verified',
+	GREETING: (name) => COMMON.GREETING(name),
+	BODY: {
+		1: 'A pending bank account has been verified. Your valid account can now be used for exchange operations requiring a bank account.',
+		2: 'To view your current bank accounts, please visit the exchange\'s Verification Tab'
 	},
 	CLOSING: COMMON.CLOSING
 };
@@ -306,5 +316,6 @@ module.exports = {
 	USERDEACTIVATED,
 	ALERT,
 	SMS,
-	DISCOUNTUPDATE
+	DISCOUNTUPDATE,
+	BANKVERIFIED
 };

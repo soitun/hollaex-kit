@@ -40,7 +40,7 @@ import { unique } from 'utils/data';
 import { getFavourites, setFavourites } from 'utils/favourites';
 import { generateRemoteRouteStringId } from 'utils/string';
 import { generateRemoteRouteIconId } from 'utils/icon';
-// import { PLUGINS } from 'utils/plugin';
+import { mapPluginsTypeToName } from 'utils/plugin';
 
 const EMPTY_NOTIFICATION = {
 	type: '',
@@ -153,6 +153,9 @@ const INITIAL_STATE = {
 	wave: [],
 	enabledPlugins: [],
 	plugins: [],
+	pluginNames: {
+		bank: 'bank',
+	},
 	helpdeskInfo: {
 		has_helpdesk: false,
 		helpdesk_endpoint: '',
@@ -364,21 +367,43 @@ const reducer = (state = INITIAL_STATE, { type, payload = {} }) => {
 			};
 
 		case SET_PLUGINS: {
+			const enabledPluginsNames = payload.enabledPlugins.map(
+				({ name }) => name
+			);
+
+			//FIXME: change this once name-based logic is completely changed to type-based
+			const enabledPluginTypes = mapPluginsTypeToName(
+				payload.enabledPlugins.map(({ type }) => type)
+			);
+
+			const enabledPlugins = unique([
+				...enabledPluginsNames,
+				...enabledPluginTypes,
+			]);
+
+			const { name: bank = 'bank' } =
+				payload.enabledPlugins.find(({ type }) => type === 'bank') || {};
+
 			return {
 				...state,
-				enabledPlugins: payload.enabledPlugins.map(({ name }) => name),
+				enabledPlugins,
 				plugins: payload.enabledPlugins,
+				pluginNames: {
+					...state.pluginNames,
+					bank,
+				},
 			};
 		}
 		case SET_HELPDESK_INFO: {
 			const helpdesk = payload.enabledPlugins.find(
-				(plugin) => plugin.public_meta && plugin.public_meta.is_helpdesk
+				({ type }) => type === 'helpdesk'
 			);
+
 			return {
 				...state,
 				helpdeskInfo: {
 					has_helpdesk: !!helpdesk,
-					helpdesk_endpoint: helpdesk && helpdesk.public_meta.url,
+					helpdesk_endpoint: helpdesk && `/plugins/${helpdesk.name}`,
 				},
 			};
 		}
@@ -413,10 +438,36 @@ const reducer = (state = INITIAL_STATE, { type, payload = {} }) => {
 				}
 			});
 
+			const FILTERED_CLUSTERED_WEB_VIEWS = {};
+			Object.entries(CLUSTERED_WEB_VIEWS).forEach(([targetKey, viewArray]) => {
+				if (viewArray.length === 1) {
+					FILTERED_CLUSTERED_WEB_VIEWS[targetKey] = viewArray;
+				} else {
+					FILTERED_CLUSTERED_WEB_VIEWS[targetKey] = viewArray.filter(
+						({ is_default }) => !is_default
+					);
+				}
+			});
+
+			if (process.env.REACT_APP_PLUGIN_DEV_MODE === 'true') {
+				FILTERED_CLUSTERED_WEB_VIEWS[
+					process.env.REACT_APP_PLUGIN_WEB_VIEW_TARGET
+				] = [
+					{
+						all_props: true,
+						target: process.env.REACT_APP_PLUGIN_WEB_VIEW_TARGET,
+						props: [],
+						src: '/main.js',
+					},
+				];
+			}
+
 			return {
 				...state,
-				webViews: CLUSTERED_WEB_VIEWS,
-				targets: Object.entries(CLUSTERED_WEB_VIEWS).map(([target]) => target),
+				webViews: FILTERED_CLUSTERED_WEB_VIEWS,
+				targets: Object.entries(FILTERED_CLUSTERED_WEB_VIEWS).map(
+					([target]) => target
+				),
 				remoteRoutes,
 			};
 		}
