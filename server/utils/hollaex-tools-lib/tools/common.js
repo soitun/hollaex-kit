@@ -39,7 +39,7 @@ const { TemplateEmail } = require(`${SERVER_PATH}/mail/templates/helpers/common`
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { reject, resolve } = require('bluebird');
 const flatten = require('flat');
-const { getNodeLib } = require(`${SERVER_PATH}/init`);
+const { checkStatus: checkExchangeStatus, getNodeLib } = require(`${SERVER_PATH}/init`);
 const rp = require('request-promise');
 const { isEmail: isValidEmail } = require('validator');
 const moment = require('moment');
@@ -794,5 +794,6 @@ module.exports = {
 	emailHtmlBoilerplate,
 	getNetworkConstants,
 	getNetworkEndpoint,
-	getDefaultFees
+	getDefaultFees,
+	checkExchangeStatus
 };
