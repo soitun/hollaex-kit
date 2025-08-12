@@ -1005,6 +1005,18 @@ const OperatorControlSearch = ({
 						'https://docs.hollaex.com/how-tos/operator-control-panel/user-profile#withdrawal',
 				},
 				{
+					subTitle: 'Stakes',
+					path: `/admin/user?id=${user?.id}&tab=stakes`,
+					description: `View a specific user's staking activity.`,
+					searchContent: [
+						'user stakes',
+						'staking',
+						'cefi',
+						'defi',
+						'manage user stakes',
+					],
+				},
+				{
 					subTitle: 'Referral',
 					path: `/admin/user?id=${user?.id}&tab=referrals`,
 					description: 'Access referral details and analytics for the user.',
@@ -1288,6 +1300,8 @@ const OperatorControlSearch = ({
 				'trading pairs',
 				'market management',
 				'available markets',
+				'margin trading',
+				'leverage',
 			],
 			docLink:
 				'https://docs.hollaex.com/how-tos/operator-control-panel/markets',
