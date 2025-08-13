@@ -2390,7 +2390,7 @@
 	},
 	"MORE_OPTIONS_LABEL": {
 		"MORE_OPTION_SEARCH_TXT": "Search feature or pages",
-		"NO_RESULT_DESC_1": "Looks there is isn't any results for this.",
+		"NO_RESULT_DESC_1": "Looks like there aren't any results for this.",
 		"NO_RESULT_DESC_2": "Try searching another keyword.",
 		"ICONS": {
 			"REFERRALS": "Referrals",
