@@ -10,12 +10,14 @@ definitions:
   UserAuthentication:
     type: object
     required:
-      - email
       - password
     properties:
       email:
         type: string
         maxLength: 256
+      phone_number:
+        type: string
+        maxLength: 20
       password:
         type: string
         format: password

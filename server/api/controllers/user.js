@@ -1,6 +1,6 @@
 'use strict';
 
-const { isEmail, isUUID } = require('validator');
+const { isEmail, isUUID, isMobilePhone } = require('validator');
 const toolsLib = require('hollaex-tools-lib');
 const crypto = require('crypto');
 const { sendEmail } = require('../../mail');
@@ -206,7 +206,8 @@ const loginPost = (req, res) => {
 		version
 	} = req.swagger.params.authentication.value;
 	let {
-		email
+		email,
+		phone_number
 	} = req.swagger.params.authentication.value;
 
 	const ip = req.headers['x-real-ip'];
@@ -253,6 +254,8 @@ const loginPost = (req, res) => {
 		'controllers/user/loginPost',
 		'email',
 		email,
+		'phone_number',
+		phone_number,
 		'otp_code',
 		otp_code,
 		'captcha',
@@ -273,8 +276,15 @@ const loginPost = (req, res) => {
 		referer
 	);
 
+	if (!email && !phone_number) {
+		loggerUser.error(
+			req.uuid,
+			'controllers/user/loginPost missing email or phone_number'
+		);
+		return res.status(400).json({ message: 'Email or phone number is required' });
+	}
 
-	if (!email || typeof email !== 'string' || !isEmail(email)) {
+	if (email && (typeof email !== 'string' || !isEmail(email))) {
 		loggerUser.error(
 			req.uuid,
 			'controllers/user/loginPost invalid email',
@@ -283,11 +293,29 @@ const loginPost = (req, res) => {
 		return res.status(400).json({ message: 'Invalid Email' });
 	}
 
-	email = email.toLowerCase().trim();
+	if (phone_number && (typeof phone_number !== 'string' || !isMobilePhone(phone_number, 'any'))) {
+		loggerUser.error(
+			req.uuid,
+			'controllers/user/loginPost invalid phone_number',
+			phone_number
+		);
+		return res.status(400).json({ message: 'Invalid phone number' });
+	}
+
+	if (email) {
+		email = email.toLowerCase().trim();
+	}
+	if (phone_number) {
+		phone_number = phone_number.trim();
+	}
 
 	toolsLib.security.checkIp(ip)
 		.then(() => {
-			return toolsLib.user.getUserByEmail(email);
+			if (email) {
+				return toolsLib.user.getUserByEmail(email);
+			} else {
+				return toolsLib.user.getUserByPhoneNumber(phone_number);
+			}
 		})
 		.then(async (user) => {
 			if (!user) {
@@ -369,7 +397,7 @@ const loginPost = (req, res) => {
 
 				const data = {
 					id: loginData.id,
-					email,
+					email: user.email,
 					verification_code,
 					ip,
 					time,
@@ -380,7 +408,7 @@ const loginPost = (req, res) => {
 				await toolsLib.database.client.setexAsync(`user:confirm-login:${verification_code}`, 5 * 60, JSON.stringify(data));
 				await toolsLib.database.client.setexAsync(`user:freeze-account:${verification_code}`, 60 * 60 * 6, JSON.stringify(data));
 
-				sendEmail(version === "v3" ? MAILTYPE.SUSPICIOUS_LOGIN_CODE : MAILTYPE.SUSPICIOUS_LOGIN, email, data, user.settings, domain);
+				sendEmail(version === "v3" ? MAILTYPE.SUSPICIOUS_LOGIN_CODE : MAILTYPE.SUSPICIOUS_LOGIN, user.email, data, user.settings, domain);
 				throw new Error('Suspicious login detected, please check your email.');
 			}
 
@@ -428,7 +456,7 @@ const loginPost = (req, res) => {
 			}));
 
 			if (!service) {
-				sendEmail(MAILTYPE.LOGIN, email, data, user.settings, domain);
+				sendEmail(MAILTYPE.LOGIN, user.email, data, user.settings, domain);
 			}
 
 			let userRole
@@ -442,7 +470,7 @@ const loginPost = (req, res) => {
 				toolsLib.security.issueToken(
 					user.id,
 					user.network_id,
-					email,
+					user.email,
 					ip,
 					long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL,
 					user.settings.language,

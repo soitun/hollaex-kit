@@ -20,7 +20,7 @@ const {
 	uniq,
 	uniqWith
 } = require('lodash');
-const { isEmail } = require('validator');
+const { isEmail, isMobilePhone } = require('validator');
 const randomString = require('random-string');
 const { SERVER_PATH } = require('../constants');
 const {
@@ -961,7 +961,7 @@ const getAllUsersAdmin = (opts = {
 const getUser = (identifier = {}, rawData = true, networkData = false, opts = {
 	additionalHeaders: null
 }) => {
-	if (!identifier.email && !identifier.kit_id && !identifier.network_id) {
+	if (!identifier.email && !identifier.kit_id && !identifier.network_id && !identifier.phone_number) {
 		return reject(new Error(PROVIDE_USER_CREDENTIALS));
 	}
 
@@ -970,6 +970,8 @@ const getUser = (identifier = {}, rawData = true, networkData = false, opts = {
 		where.email = identifier.email;
 	} else if (identifier.kit_id) {
 		where.id = identifier.kit_id;
+	} else if (identifier.phone_number) {
+		where.phone_number = identifier.phone_number;
 	} else {
 		where.network_id = identifier.network_id;
 	}
@@ -1047,6 +1049,15 @@ const getUserByNetworkId = (network_id, rawData = true, networkData = false, opt
 		return reject(new Error(PROVIDE_NETWORK_ID));
 	}
 	return getUser({ network_id }, rawData, networkData, opts);
+};
+
+const getUserByPhoneNumber = (phone_number, rawData = true, networkData = false, opts = {
+	additionalHeaders: null
+}) => {
+	if (!phone_number || typeof phone_number !== 'string' || !isMobilePhone(phone_number, 'any')) {
+		return reject(new Error('Provide valid phone number'));
+	}
+	return getUser({ phone_number: phone_number.trim() }, rawData, networkData, opts);
 };
 
 const freezeUserById = (userId) => {
@@ -4452,6 +4463,7 @@ module.exports = {
 	getUserByEmail,
 	getUserByKitId,
 	getUserByNetworkId,
+	getUserByPhoneNumber,
 	freezeUserById,
 	freezeUserByEmail,
 	unfreezeUserById,
