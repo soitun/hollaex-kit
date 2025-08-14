@@ -600,6 +600,8 @@ definitions:
             type: object
           user_payments:
             type: object
+          google_oauth:
+            type: object
       secrets:
         type: object
         properties:

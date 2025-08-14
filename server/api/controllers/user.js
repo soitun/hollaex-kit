@@ -130,6 +130,15 @@ const signUpUserWithGoogle = async (req, res) => {
 	);
 
     try {
+        // Enforce kit configuration: only allow when google_oauth configured
+        const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
+        if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
+            throw new Error(SERVICE_NOT_AVAILABLE);
+        }
+
+        // Geo/IP check (enforce same blocking as email login)
+        await toolsLib.security.checkIp(ip);
+
         // Verify Google token and get user data
         const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
         const email = googleUserData.email.toLowerCase().trim();
@@ -610,6 +619,15 @@ const loginWithGoogle = async (req, res) => {
 	);
 
     try {
+        // Enforce kit configuration: only allow when google_oauth configured
+        const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
+        if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
+            throw new Error(SERVICE_NOT_AVAILABLE);
+        }
+
+        // Enforce geo/IP restrictions the same as email login
+        await toolsLib.security.checkIp(ip);
+
         // Verify Google token and get user data
         const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
         const email = googleUserData.email.toLowerCase().trim();
