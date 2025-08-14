@@ -20,7 +20,7 @@ const {
 	uniq,
 	uniqWith
 } = require('lodash');
-const { isEmail } = require('validator');
+const { isEmail, isMobilePhone } = require('validator');
 const randomString = require('random-string');
 const { SERVER_PATH } = require('../constants');
 const {
@@ -67,7 +67,9 @@ const {
 	PAYMENT_DETAIL_NOT_FOUND,
 	ADDRESSBOOK_ALREADY_EXISTS,
 	UNAUTHORIZED_UPDATE_METHOD,
-	ADDRESSBOOK_NOT_FOUND
+	INVALID_AUTOTRADE_CONFIG,
+	GOOGLE_TOKEN_INVALID_ISSUER,
+	GOOGLE_TOKEN_EXPIRED
 } = require(`${SERVER_PATH}/messages`);
 const { publisher, client } = require('./database/redis');
 const {
@@ -109,8 +111,7 @@ const moment = require('moment');
 const mathjs = require('mathjs');
 const { loggerUser } = require('../../../config/logger');
 const BigNumber = require('bignumber.js');
-const { INVALID_AUTOTRADE_CONFIG } = require('../../../messages');
-const sequelize = require('sequelize');
+const request = require('request-promise');
 
 let networkIdToKitId = {};
 let kitIdToNetworkId = {};
@@ -150,7 +151,9 @@ const signUpUser = (email, password, opts = { referral: null }) => {
 					password,
 					verification_level: 1,
 					email_verified: false,
-					settings: INITIAL_SETTINGS()
+					settings: INITIAL_SETTINGS(),
+					// Optional OAuth fields (ignored unless provided)
+					google_id: opts.google_id || null
 				}, { transaction })
 					.then((user) => {
 						return all([
@@ -961,7 +964,7 @@ const getAllUsersAdmin = (opts = {
 const getUser = (identifier = {}, rawData = true, networkData = false, opts = {
 	additionalHeaders: null
 }) => {
-	if (!identifier.email && !identifier.kit_id && !identifier.network_id) {
+	if (!identifier.email && !identifier.kit_id && !identifier.network_id && !identifier.phone_number) {
 		return reject(new Error(PROVIDE_USER_CREDENTIALS));
 	}
 
@@ -970,6 +973,8 @@ const getUser = (identifier = {}, rawData = true, networkData = false, opts = {
 		where.email = identifier.email;
 	} else if (identifier.kit_id) {
 		where.id = identifier.kit_id;
+	} else if (identifier.phone_number) {
+		where.phone_number = identifier.phone_number;
 	} else {
 		where.network_id = identifier.network_id;
 	}
@@ -1047,6 +1052,15 @@ const getUserByNetworkId = (network_id, rawData = true, networkData = false, opt
 		return reject(new Error(PROVIDE_NETWORK_ID));
 	}
 	return getUser({ network_id }, rawData, networkData, opts);
+};
+
+const getUserByPhoneNumber = (phone_number, rawData = true, networkData = false, opts = {
+	additionalHeaders: null
+}) => {
+	if (!phone_number || typeof phone_number !== 'string' || !isMobilePhone(phone_number, 'any')) {
+		return reject(new Error('Provide valid phone number'));
+	}
+	return getUser({ phone_number: phone_number.trim() }, rawData, networkData, opts);
 };
 
 const freezeUserById = (userId) => {
@@ -4444,6 +4458,48 @@ const deleteExchangeUserRole = async (id, user_id, otp_code) => {
 	return { message: 'Role deleted successfully' };
 };
 
+// Verify Google OAuth id_token (JWT) using Google's tokeninfo endpoint and return user info
+const verifyGoogleToken = async (token) => {
+	try {
+        const response = await request({
+            url: 'https://oauth2.googleapis.com/tokeninfo',
+            method: 'GET',
+            qs: { id_token: token },
+            json: true
+        });
+
+        // Validate issuer is Google
+        const issuer = String(response.iss || '').toLowerCase();
+        const validIssuer = issuer === 'https://accounts.google.com' || issuer === 'accounts.google.com';
+        if (!validIssuer) {
+            throw new Error(GOOGLE_TOKEN_INVALID_ISSUER);
+        }
+
+        // Validate token not expired
+        const now = Math.floor(Date.now() / 1000);
+        const exp = Number(response.exp || 0);
+        if (!exp || exp <= now) {
+            throw new Error(GOOGLE_TOKEN_EXPIRED);
+        }
+
+        const emailVerified =
+            response.email_verified === true || response.email_verified === 'true';
+
+        if (response.email && emailVerified) {
+			const name = response.name || [response.given_name, response.family_name].filter(Boolean).join(' ').trim();
+			return {
+				email: response.email,
+				name,
+				picture: response.picture,
+				google_id: response.sub
+			};
+		} else {
+			throw new Error('Invalid Google token or email not verified');
+		}
+	} catch (error) {
+		throw new Error('Failed to verify Google token');
+	}
+};
 
 module.exports = {
 	loginUser,
@@ -4452,6 +4508,7 @@ module.exports = {
 	getUserByEmail,
 	getUserByKitId,
 	getUserByNetworkId,
+	getUserByPhoneNumber,
 	freezeUserById,
 	freezeUserByEmail,
 	unfreezeUserById,
@@ -4539,5 +4596,6 @@ module.exports = {
 	getExchangeUserRoles,
 	createExchangeUserRole,
 	updateExchangeUserRole,
-	deleteExchangeUserRole
+	deleteExchangeUserRole,
+	verifyGoogleToken
 };

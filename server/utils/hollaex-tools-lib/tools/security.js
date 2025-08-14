@@ -1010,7 +1010,9 @@ const issueToken = (
 	let scopes = [].concat(BASE_SCOPES);
 
 	if (checkAdminIp(getKitSecrets().admin_whitelist, ip)) {
-		scopes.push(role);
+		if (role) {
+			scopes.push(role);
+		}
 	}
 
 	const token = jwt.sign(
