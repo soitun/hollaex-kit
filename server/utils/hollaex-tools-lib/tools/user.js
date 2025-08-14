@@ -67,7 +67,9 @@ const {
 	PAYMENT_DETAIL_NOT_FOUND,
 	ADDRESSBOOK_ALREADY_EXISTS,
 	UNAUTHORIZED_UPDATE_METHOD,
-	ADDRESSBOOK_NOT_FOUND
+	INVALID_AUTOTRADE_CONFIG,
+	GOOGLE_TOKEN_INVALID_ISSUER,
+	GOOGLE_TOKEN_EXPIRED
 } = require(`${SERVER_PATH}/messages`);
 const { publisher, client } = require('./database/redis');
 const {
@@ -109,8 +111,7 @@ const moment = require('moment');
 const mathjs = require('mathjs');
 const { loggerUser } = require('../../../config/logger');
 const BigNumber = require('bignumber.js');
-const { INVALID_AUTOTRADE_CONFIG } = require('../../../messages');
-const sequelize = require('sequelize');
+const request = require('request-promise');
 
 let networkIdToKitId = {};
 let kitIdToNetworkId = {};
@@ -150,7 +151,9 @@ const signUpUser = (email, password, opts = { referral: null }) => {
 					password,
 					verification_level: 1,
 					email_verified: false,
-					settings: INITIAL_SETTINGS()
+					settings: INITIAL_SETTINGS(),
+					// Optional OAuth fields (ignored unless provided)
+					google_id: opts.google_id || null
 				}, { transaction })
 					.then((user) => {
 						return all([
@@ -4455,6 +4458,48 @@ const deleteExchangeUserRole = async (id, user_id, otp_code) => {
 	return { message: 'Role deleted successfully' };
 };
 
+// Verify Google OAuth id_token (JWT) using Google's tokeninfo endpoint and return user info
+const verifyGoogleToken = async (token) => {
+	try {
+        const response = await request({
+            url: 'https://oauth2.googleapis.com/tokeninfo',
+            method: 'GET',
+            qs: { id_token: token },
+            json: true
+        });
+
+        // Validate issuer is Google
+        const issuer = String(response.iss || '').toLowerCase();
+        const validIssuer = issuer === 'https://accounts.google.com' || issuer === 'accounts.google.com';
+        if (!validIssuer) {
+            throw new Error(GOOGLE_TOKEN_INVALID_ISSUER);
+        }
+
+        // Validate token not expired
+        const now = Math.floor(Date.now() / 1000);
+        const exp = Number(response.exp || 0);
+        if (!exp || exp <= now) {
+            throw new Error(GOOGLE_TOKEN_EXPIRED);
+        }
+
+        const emailVerified =
+            response.email_verified === true || response.email_verified === 'true';
+
+        if (response.email && emailVerified) {
+			const name = response.name || [response.given_name, response.family_name].filter(Boolean).join(' ').trim();
+			return {
+				email: response.email,
+				name,
+				picture: response.picture,
+				google_id: response.sub
+			};
+		} else {
+			throw new Error('Invalid Google token or email not verified');
+		}
+	} catch (error) {
+		throw new Error('Failed to verify Google token');
+	}
+};
 
 module.exports = {
 	loginUser,
@@ -4551,5 +4596,6 @@ module.exports = {
 	getExchangeUserRoles,
 	createExchangeUserRole,
 	updateExchangeUserRole,
-	deleteExchangeUserRole
+	deleteExchangeUserRole,
+	verifyGoogleToken
 };

@@ -29,7 +29,8 @@ const {
 	NO_IP_FOUND,
 	INVALID_OTP_CODE,
 	OTP_CODE_NOT_FOUND,
-	INVALID_CAPTCHA
+	INVALID_CAPTCHA,
+	GOOGLE_ACCOUNT_MISMATCH
 } = require('../../messages');
 const { DEFAULT_ORDER_RISK_PERCENTAGE, EVENTS_CHANNEL, API_HOST, DOMAIN, TOKEN_TIME_NORMAL, TOKEN_TIME_LONG, HOLLAEX_NETWORK_BASE_URL, NUMBER_OF_ALLOWED_ATTEMPTS, GET_KIT_SECRETS } = require('../../constants');
 const { all } = require('bluebird');
@@ -114,6 +115,61 @@ const signUpUser = (req, res) => {
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
 			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		});
+};
+
+// Google OAuth signup function
+const signUpUserWithGoogle = async (req, res) => {
+	const { google_token, referral } = req.swagger.params.signup.value;
+	const ip = req.headers['x-real-ip'];
+
+	loggerUser.verbose(
+		req.uuid,
+		'controllers/user/signUpUserWithGoogle',
+		{ google_token: !!google_token, referral },
+		ip
+	);
+
+    try {
+        // Verify Google token and get user data
+        const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
+        const email = googleUserData.email.toLowerCase().trim();
+
+        // Check if user already exists
+        const existingUser = await toolsLib.user.getUserByEmail(email, false);
+        if (existingUser) {
+			throw new Error('User already exists');
+        }
+
+		// Generate a random password for Google OAuth users
+		const randomPassword = crypto.randomBytes(16).toString('hex');
+
+		// Create user with Google data
+        const userData = {
+            email,
+            password: randomPassword,
+            referral,
+            google_id: googleUserData.google_id || googleUserData.sub,
+            name: googleUserData.name,
+            email_verified: true, // Google emails are already verified
+            activated: true
+        };
+
+		await toolsLib.user.signUpUser(email, randomPassword, userData);
+
+		res.status(201).json({ 
+			message: USER_REGISTERED,
+			oauth_signup: true
+		});
+
+	} catch (err) {
+		loggerUser.error(req.uuid, 'controllers/user/signUpUserWithGoogle', err.message);
+		const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+		return res.status(err.statusCode || 400).json({ 
+			message: messageObj?.message, 
+			lang: messageObj?.lang, 
+			code: messageObj?.code 
+		});
+	}
 };
 
 const getVerifyUser = (req, res) => {
@@ -493,6 +549,155 @@ const loginPost = (req, res) => {
 		});
 };
 
+// Google OAuth login function
+const loginWithGoogle = async (req, res) => {
+	const { google_token, service, long_term, version } = req.swagger.params.authentication.value;
+	const ip = req.headers['x-real-ip'];
+	const domain = req.headers['x-real-origin'];
+	const origin = req.headers.origin;
+	const referer = req.headers.referer;
+	const time = new Date();
+
+	let device;
+	if (req.headers['custom-device']) {
+		device = req.headers['user-agent'];
+	} else {
+		const userAgent = req.headers['user-agent'];
+		const result = detector.detect(userAgent);
+
+		const truncate = (str, maxLen = 100) => {
+			if (!str || typeof str !== 'string') return '';
+			return str.substring(0, maxLen);
+		};
+
+		let deviceParts = [
+			truncate(result.device.brand, 100),
+			truncate(result.device.model, 100),
+			truncate(result.device.type, 100),
+			truncate(result.client.name, 100),
+			truncate(result.client.type, 100),
+			truncate(result.os.name, 100)
+		].filter(Boolean);
+
+		device = deviceParts.join(' ').trim();
+
+		const encoder = new TextEncoder();
+		while (encoder.encode(device).length > 1000 && deviceParts.length > 1) {
+			deviceParts.pop();
+			device = deviceParts.join(' ').trim();
+		}
+	}
+
+	loggerUser.verbose(
+		req.uuid,
+		'controllers/user/loginPostWithGoogle',
+		'google_token',
+		!!google_token,
+		'service',
+		service,
+		'long_term',
+		long_term,
+		'ip',
+		ip,
+		'device',
+		device,
+		'domain',
+		domain,
+		'origin',
+		origin,
+		'referer',
+		referer
+	);
+
+    try {
+        // Verify Google token and get user data
+        const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
+        const email = googleUserData.email.toLowerCase().trim();
+
+        // Check if user exists
+        const user = await toolsLib.user.getUserByEmail(email, false);
+		if (!user) {
+			throw new Error(USER_NOT_FOUND);
+		}
+
+        // If user has google_id set and it does not match, reject
+        const tokenGoogleId = googleUserData.google_id || googleUserData.sub;
+        if (user.google_id && tokenGoogleId && user.google_id !== tokenGoogleId) {
+            throw new Error(GOOGLE_ACCOUNT_MISMATCH);
+        }
+        // If user has no google_id yet, link it now
+        if (!user.google_id && tokenGoogleId) {
+            await user.update({ google_id: tokenGoogleId }, { fields: ['google_id'], returning: true });
+        }
+
+		if (user.verification_level === 0) {
+			throw new Error(USER_NOT_VERIFIED);
+		} else if (toolsLib.getKitConfig().email_verification_required && !user.email_verified) {
+			throw new Error(USER_EMAIL_NOT_VERIFIED);
+		} else if (!user.activated) {
+			throw new Error(USER_NOT_ACTIVATED);
+		}
+
+		const loginData = await toolsLib.user.findUserLatestLogin(user, false);
+		if (loginData && loginData.attempt === NUMBER_OF_ALLOWED_ATTEMPTS && loginData.status == false) {
+			throw new Error(LOGIN_NOT_ALLOW);
+		}
+
+		// Send login email notification if not a service login
+		if (!service) {
+			const data = { ip, time, device, country: '' };
+			sendEmail(MAILTYPE.LOGIN, user.email, data, user.settings, domain);
+		}
+
+		// Get user role
+		let userRole;
+		if (user.role) {
+			const roles = toolsLib.getRoles();
+			userRole = roles.find(role => role.role_name === user.role);
+		}
+
+		// Issue token
+		const token = await toolsLib.security.issueToken(
+			user.id,
+			user.network_id,
+			user.email,
+			ip,
+			long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL,
+			user.settings.language,
+			userRole?.permissions,
+			userRole?.configs,
+			user.role
+		);
+
+		// Create login record
+		if (!ip) {
+			throw new Error(NO_IP_FOUND);
+		}
+		await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true);
+
+		// Publish login event
+		publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+			type: 'user',
+			data: {
+				action: 'login',
+				user_id: user.id
+			}
+		}));
+
+		return res.status(201).json({ 
+			token,
+			oauth_login: true
+		});
+
+	} catch (err) {
+		loggerUser.error(req.uuid, 'controllers/user/loginPostWithGoogle catch', err.message);
+		return res.status(err.statusCode || 401).json({ 
+			message: errorMessageConverter(err, req?.auth?.sub?.lang)?.message, 
+			lang: errorMessageConverter(err, req?.auth?.sub?.lang)?.lang, 
+			code: errorMessageConverter(err, req?.auth?.sub?.lang)?.code 
+		});
+	}
+};
 
 const confirmLogin = (req, res) => {
 	loggerUser.verbose(
@@ -1989,9 +2194,11 @@ const fetchAnnouncements = (req, res) => {
 
 module.exports = {
 	signUpUser,
+	signUpUserWithGoogle,
 	getVerifyUser,
 	verifyUser,
 	loginPost,
+	loginWithGoogle,
 	verifyToken,
 	requestResetPassword,
 	resetPassword,
