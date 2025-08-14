@@ -130,6 +130,12 @@ const signUpUserWithGoogle = async (req, res) => {
 	);
 
     try {
+        // Enforce kit configuration: only allow when google_oauth configured
+        const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
+        if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
+            throw new Error(SERVICE_NOT_AVAILABLE);
+        }
+
         // Geo/IP check (enforce same blocking as email login)
         await toolsLib.security.checkIp(ip);
 
@@ -613,6 +619,12 @@ const loginWithGoogle = async (req, res) => {
 	);
 
     try {
+        // Enforce kit configuration: only allow when google_oauth configured
+        const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
+        if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
+            throw new Error(SERVICE_NOT_AVAILABLE);
+        }
+
         // Enforce geo/IP restrictions the same as email login
         await toolsLib.security.checkIp(ip);
 
