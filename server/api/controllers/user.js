@@ -94,7 +94,7 @@ const signUpUser = (req, res) => {
 		referral
 	} = req.swagger.params.signup.value;
 
-	let { email } = req.swagger.params.signup.value;
+	let { email, version } = req.swagger.params.signup.value;
 	const ip = req.headers['x-real-ip'];
 	loggerUser.debug(
 		req.uuid,
@@ -109,7 +109,7 @@ const signUpUser = (req, res) => {
 		.then(() => {
 			return toolsLib.security.checkCaptcha(captcha, ip);
 		})
-		.then(() => toolsLib.user.signUpUser(email, password, { referral }))
+		.then(() => toolsLib.user.signUpUser(email, password, { referral }, version))
 		.then(() => res.status(201).json({ message: USER_REGISTERED }))
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/signUpUser', err.message);
@@ -807,6 +807,7 @@ function requestEmailConfirmation(req, res) {
 
 const requestResetPassword = (req, res) => {
 	let email = req.swagger.params.email.value;
+	let version = req.swagger.params.version.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
 
@@ -832,7 +833,7 @@ const requestResetPassword = (req, res) => {
 
 	email = email.toLowerCase();
 
-	toolsLib.security.sendResetPasswordCode(email, null, ip, domain)
+	toolsLib.security.sendResetPasswordCode(email, null, ip, domain, version)
 		.then(() => {
 			return res.json({ message: `Password request sent to: ${email}` });
 		})
