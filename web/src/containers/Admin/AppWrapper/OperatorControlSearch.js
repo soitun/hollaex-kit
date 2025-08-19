@@ -260,6 +260,22 @@ const OperatorControlSearch = ({
 					sectionId: 'geofencing',
 				},
 				{
+					subTitle: 'Google OAuth',
+					path: '/admin/general?security',
+					description: 'Activate sign up with Google onboarding (OAuth)',
+					sectionId: 'google-oauth',
+					searchContent: [
+						'onboarding',
+						'google',
+						'oauth',
+						'sign up',
+						'sign in',
+						'login',
+						'account',
+						'authorization',
+					],
+				},
+				{
 					subTitle: 'Suspicious Login',
 					path: '/admin/general?security',
 					description:
