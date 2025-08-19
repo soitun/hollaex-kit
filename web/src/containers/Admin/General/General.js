@@ -90,6 +90,7 @@ class GeneralContent extends Component {
 			initialEmailValues: {},
 			initialLinkValues: {},
 			initialEmailVerificationValues: {},
+			initialGoogleOAuthValues: {},
 			pendingPublishIcons: {},
 			showDisableSignUpsConfirmation: false,
 			isSignUpActive: true,
@@ -118,11 +119,14 @@ class GeneralContent extends Component {
 			isDisplayKey: false,
 			isConfirmSave: false,
 			confirmText: null,
+			googleOAuth: {},
+			isActiveOAuth: false,
 		};
 		this.priceAssetTimeout = null;
 	}
 
 	componentDidMount() {
+		const { constants } = this.props;
 		let customCurrencies = this.props.selectable_native_currencies || [];
 		if (customCurrencies.length === 0) {
 			customCurrencies = [BASE_CURRENCY];
@@ -132,6 +136,8 @@ class GeneralContent extends Component {
 		this.setState({
 			isDisable: true,
 			nativeCurrencies: customCurrencies,
+			googleOAuth: constants?.google_oauth || {},
+			isActiveOAuth: !!constants?.google_oauth?.client_id,
 		});
 	}
 
@@ -257,6 +263,7 @@ class GeneralContent extends Component {
 		let initialEmailVerificationValues = {
 			...this.state.initialEmailVerificationValues,
 		};
+		let initialGoogleOAuthValues = { ...this.state.initialGoogleOAuthValues };
 		const { kit = {}, secrets = { smtp: {}, emails: {} } } =
 			this.state.constants || {};
 		const {
@@ -265,6 +272,7 @@ class GeneralContent extends Component {
 			links = {},
 			new_user_is_activated: isSignUpActive,
 			email_verification_required,
+			google_oauth,
 		} = kit;
 		initialNameValues = { ...initialNameValues, api_name };
 		initialLanguageValues = {
@@ -282,6 +290,7 @@ class GeneralContent extends Component {
 			...initialEmailVerificationValues,
 			email_verification_required,
 		};
+		initialGoogleOAuthValues = { ...initialGoogleOAuthValues, ...google_oauth };
 
 		const { configuration = {} } = this.state.initialEmailValues || {};
 		const initialEmailValues = {
@@ -299,6 +308,7 @@ class GeneralContent extends Component {
 			initialLinkValues,
 			isSignUpActive,
 			initialEmailVerificationValues,
+			initialGoogleOAuthValues,
 			showDisableSignUpsConfirmation: false,
 		});
 	};
@@ -1002,6 +1012,30 @@ class GeneralContent extends Component {
 		});
 	};
 
+	onHandleGoogleOAuth = () => {
+		const { googleOAuth } = this.state;
+		this.handleSubmitGeneral({
+			kit: {
+				google_oauth: googleOAuth,
+			},
+		});
+	};
+
+	onHandleActiveOAuth = (value) => {
+		const googleOAuth = value ? this.state.googleOAuth : { client_id: '' };
+
+		this.setState({
+			isActiveOAuth: value,
+			googleOAuth,
+		});
+
+		if (!value) {
+			this.handleSubmitGeneral({
+				kit: { google_oauth: googleOAuth },
+			});
+		}
+	};
+
 	render() {
 		const {
 			initialEmailValues,
@@ -1027,6 +1061,9 @@ class GeneralContent extends Component {
 			testKeyDetails,
 			isDisplayKey,
 			isConfirmSave,
+			googleOAuth,
+			initialGoogleOAuthValues,
+			isActiveOAuth,
 		} = this.state;
 		const { kit = {} } = this.state.constants;
 		const {
@@ -1049,6 +1086,9 @@ class GeneralContent extends Component {
 		const isUpgrade = handleUpgrade(kit.info);
 		const isFiatUpgrade = handleFiatUpgrade(kit.info);
 		const isEnterpriseUpgrade = handleEnterpriseUpgrade(kit.info);
+		const isDisabledOAuth =
+			googleOAuth?.client_id === initialGoogleOAuthValues?.client_id ||
+			!googleOAuth?.client_id;
 
 		return (
 			<div>
@@ -1743,6 +1783,54 @@ class GeneralContent extends Component {
 							>
 								{this.renderModalContent()}
 							</Modal>
+						</div>
+						<div className="divider"></div>
+						<div className="general-wrapper mb-5 google-oauth-wrapper">
+							<div className="sub-title" id="google-oauth">
+								Google OAuth
+							</div>
+							<div className="description d-flex flex-column">
+								<span>
+									Enable quick onboarding on your sign up and login page with
+									Google Accounts.
+								</span>
+								<Switch
+									className="mt-3"
+									checked={isActiveOAuth}
+									onChange={this.onHandleActiveOAuth}
+								/>
+								<span
+									className={isActiveOAuth ? 'mt-3' : 'mt-3 disabled-content'}
+								>
+									Client ID
+								</span>
+								<Input
+									placeholder="Input Google OAuth Client ID"
+									className={
+										isActiveOAuth
+											? 'google-oauth-field mt-2'
+											: 'disabled-content google-oauth-field mt-2'
+									}
+									value={googleOAuth?.client_id}
+									onChange={(e) => {
+										this.setState({
+											googleOAuth: {
+												client_id: e.target?.value?.trim(''),
+											},
+										});
+									}}
+									disabled={!isActiveOAuth}
+								/>
+								{isActiveOAuth && (
+									<Button
+										className="no-border green-btn mt-3 minimal-btn"
+										onClick={this.onHandleGoogleOAuth}
+										disabled={isDisabledOAuth}
+									>
+										Save & Apply
+									</Button>
+								)}
+							</div>
 						</div>
 						<div className="divider"></div>
 						<div className="general-wrapper mb-5">
