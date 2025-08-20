@@ -159,7 +159,9 @@
 		"CREATE_ACCOUNT": "Create one here",
 		"LOOKING_PRICES": "Looking for prices?",
 		"VIEW_MARKETS": "View the markets",
-		"HELP": "Help"
+		"HELP": "Help",
+		"GOOGLE_LOGIN": "Or {0} With Google",
+		"CONTINUE_WITH_GOOGLE": "Continue With Google"
 	},
 	"FORM_FIELDS": {
 		"EMAIL_LABEL": "Email",

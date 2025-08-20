@@ -875,6 +875,15 @@ table th {
     margin-top: 1rem; }
   .auth-wrapper .link_wrapper {
     margin: 1.5rem 0 0; }
+  .auth-wrapper .google-oauth-button-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem; }
+    .auth-wrapper .google-oauth-button-wrapper span {
+      font-size: 14px; }
+    .auth-wrapper .google-oauth-button-wrapper #google-oauth-container {
+      min-width: 18rem; }
 
 .footer-wrapper {
   position: relative; }
