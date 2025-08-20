@@ -592,6 +592,8 @@ const replaceHTMLContent = (type, html = '', email, data, language, domain) => {
 		}
 		html = html.replace(/\$\{ip\}/g, data.ip || '');
 		html = html.replace(/\$\{confirmation_code\}/g, data.transaction_id);
+		// Add optional freeze account link support
+		html = html.replace(/\$\{freeze_account_link\}/g, data.freeze_account_link || `${domain}/confirm-login?token=${data.transaction_id}&prompt=false&freeze_account=true`);
 		if (data.network) {
 			html = html.replace(/\$\{network\}/g, data.network || '');
 		} else {
@@ -606,6 +608,8 @@ const replaceHTMLContent = (type, html = '', email, data, language, domain) => {
 		html = html.replace(/\$\{ip\}/g, data.ip || '');
 		html = html.replace(/\$\{api_name\}/g, API_NAME() || '');
 		html = html.replace(/\$\{confirmation_code\}/g, data.code);
+		// Optional freeze account link
+		html = html.replace(/\$\{freeze_account_link\}/g, data.freeze_account_link || `${domain}/confirm-login?token=${data.code}&prompt=false&freeze_account=true`);
 	}
 	else if (type === MAILTYPE.SIGNUP_CODE) {
 		html = html.replace(/\$\{name\}/g, email);

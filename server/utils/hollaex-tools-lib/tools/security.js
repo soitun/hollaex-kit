@@ -111,8 +111,11 @@ const resetUserPassword = (resetPasswordCode, newPassword) => {
 				client.delAsync(`ResetPasswordCode:${resetPasswordCode}`)
 			]);
 		})
-		.then(([user]) => {
-			return user.update({ password: newPassword }, { fields: ['password'] });
+		.then(async ([user]) => {
+			const updated = await user.update({ password: newPassword }, { fields: ['password'] });
+			const { disableUserWithdrawal } = require('./user');
+			await disableUserWithdrawal(user.id, { expiry_date: moment().add(24, 'hours').toISOString() });
+			return updated;
 		});
 };
 
@@ -257,7 +260,7 @@ const createResetPasswordCode = (userId, version) => {
 
 	let code;
 	//Generate new random code
-	if (version === "v3") {
+	if (version === 'v3') {
 		const letters = Array.from({ length: 2 }, () =>
 			String.fromCharCode(65 + crypto.randomInt(0, 26))
 		).join('');
@@ -287,14 +290,28 @@ const sendResetPasswordCode = (email, captcha, ip, domain, version) => {
 			return all([createResetPasswordCode(user.id, version), user, checkCaptcha(captcha, ip)]);
 		})
 		.then(([code, user]) => {
-			sendEmail(
-				version === "v3" ? MAILTYPE.RESET_PASSWORD_CODE : MAILTYPE.RESET_PASSWORD,
-				email,
-				{ code, ip },
-				user.settings,
-				domain
-			);
-			return;
+			// Create a freeze-account token (valid for 6 hours) tied to the reset code
+			return client.setexAsync(
+				`user:freeze-account:${code}`,
+				60 * 60 * 6,
+				JSON.stringify({
+					id: code,
+					user_id: user.id,
+					email: user.email,
+					verification_code: code,
+					ip,
+					time: new Date().toISOString()
+				})
+			).then(() => {
+				sendEmail(
+					version === 'v3' ? MAILTYPE.RESET_PASSWORD_CODE : MAILTYPE.RESET_PASSWORD,
+					email,
+					{ code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` },
+					user.settings,
+					domain
+				);
+				return;
+			});
 		});
 };
 
@@ -323,8 +340,8 @@ const getUserOtpCode = (user_id, usedParam = true) => {
 		order: [['updated_at', 'DESC']]
 	})
 		.then((otpCode) => {
-			return generateOtp(otpCode.secret, 30)
-		})
+			return generateOtp(otpCode.secret, 30);
+		});
 };
 
 const hasUserOtpEnabled = (id) => {
