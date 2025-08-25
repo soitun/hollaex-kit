@@ -5,6 +5,7 @@ import { SubmissionError, change } from 'redux-form';
 import { bindActionCreators } from 'redux';
 import { Link } from 'react-router';
 import { isMobile } from 'react-device-detect';
+import { message } from 'antd';
 import { setPricesAndAssetPending } from 'actions/assetActions';
 import {
 	performLogin,
@@ -219,7 +220,26 @@ class Login extends Component {
 				this.redirectToHome();
 			}
 		} catch (err) {
-			console.error(err);
+			const _error =
+				err.response && err.response.data
+					? err.response.data.message
+					: err.message;
+
+			let error = {};
+
+			if (_error === 'User is not activated') {
+				error._error = STRINGS['VALIDATIONS.FROZEN_ACCOUNT'];
+			} else {
+				error._error = _error;
+			}
+			if (
+				_error
+					?.toLowerCase()
+					?.includes('suspicious login detected, please check your email')
+			) {
+				this.props.router.replace('/email-confirm');
+			}
+			message.error(error?._error);
 		}
 	};
 
