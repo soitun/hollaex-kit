@@ -800,8 +800,10 @@ table th {
     .layout-mobile.auth-wrapper .auth-container > div .auth_wrapper {
       padding: 0 1rem !important;
       height: 100%; }
-  .layout-mobile.auth-wrapper .auth-container .icon_title-wrapper .icon_title-text.title {
-    font-size: 5rem; }
+  .layout-mobile.auth-wrapper .auth-container .icon_title-wrapper {
+    margin-left: unset !important; }
+    .layout-mobile.auth-wrapper .auth-container .icon_title-wrapper .icon_title-text.title {
+      font-size: 5rem; }
   .layout-mobile.auth-wrapper .auth-container .font-small {
     font-size: 1.2rem; }
   .layout-mobile.auth-wrapper .auth-container .auth_form-wrapper .field-wrapper {
@@ -809,6 +811,13 @@ table th {
     .layout-mobile.auth-wrapper .auth-container .auth_form-wrapper .field-wrapper .field-label,
     .layout-mobile.auth-wrapper .auth-container .auth_form-wrapper .field-wrapper .input_field-input {
       font-size: 1.2rem; }
+
+.layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container {
+  min-width: 18rem; }
+  .layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] {
+    height: 4rem; }
+    .layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) div:first-child svg {
+      width: 1.5rem; }
 
 .auth-wrapper {
   background-repeat: no-repeat;
@@ -881,9 +890,23 @@ table th {
     align-items: center;
     gap: 1rem; }
     .auth-wrapper .google-oauth-button-wrapper span {
-      font-size: 14px; }
+      font-size: 1.1rem; }
     .auth-wrapper .google-oauth-button-wrapper #google-oauth-container {
-      min-width: 18rem; }
+      min-width: 16rem; }
+      .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] {
+        height: 3rem;
+        width: 100%; }
+        .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) {
+          justify-content: center !important; }
+          .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) div:first-child {
+            width: unset;
+            min-width: unset;
+            margin-right: unset;
+            height: unset;
+            position: relative;
+            bottom: 1px; }
+            .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) div:first-child svg {
+              width: 1.2rem; }
 
 .footer-wrapper {
   position: relative; }
