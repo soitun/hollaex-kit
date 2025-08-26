@@ -49,6 +49,7 @@ $container--padding-sm: 3rem;
 				}
 			}
 			.icon_title-wrapper {
+				margin-left: unset !important;
 				.icon_title-text.title {
 					font-size: 5rem;
 				}
@@ -63,6 +64,21 @@ $container--padding-sm: 3rem;
 					.field-label,
 					.input_field-input {
 						font-size: $regular--font-size;
+					}
+				}
+			}
+		}
+		.google-oauth-button-wrapper {
+			#google-oauth-container {
+				min-width: 18rem;
+				div[role='button'] {
+					height: 4rem;
+					div:nth-child(2) {
+						div:first-child {
+							svg {
+								width: 1.5rem;
+							}
+						}
 					}
 				}
 			}
@@ -182,11 +198,29 @@ $container--padding-sm: 3rem;
 		gap: 1rem;
 
 		span {
-			font-size: 14px;
+			font-size: 1.1rem;
 		}
 
 		#google-oauth-container {
-			min-width: 18rem;
+			min-width: 16rem;
+			div[role='button'] {
+				height: 3rem;
+				width: 100%;
+				div:nth-child(2) {
+					justify-content: center !important;
+					div:first-child {
+						width: unset;
+						min-width: unset;
+						margin-right: unset;
+						height: unset;
+						position: relative;
+						bottom: 1px;
+						svg {
+							width: 1.2rem;
+						}
+					}
+				}
+			}
 		}
 	}
 }
