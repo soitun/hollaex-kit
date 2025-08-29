@@ -814,9 +814,9 @@ table th {
 
 .layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container {
   min-width: 18rem; }
-  .layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] {
+  .layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role='button'] {
     height: 4rem; }
-    .layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) div:first-child svg {
+    .layout-mobile.auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role='button'] div:nth-child(2) div:first-child svg {
       width: 1.5rem; }
 
 .auth-wrapper {
@@ -902,19 +902,19 @@ table th {
       font-size: 1.1rem; }
     .auth-wrapper .google-oauth-button-wrapper #google-oauth-container {
       min-width: 16rem; }
-      .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] {
+      .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role='button'] {
         height: 3rem;
         width: 100%; }
-        .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) {
+        .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role='button'] div:nth-child(2) {
           justify-content: center !important; }
-          .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) div:first-child {
+          .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role='button'] div:nth-child(2) div:first-child {
             width: unset;
             min-width: unset;
             margin-right: unset;
             height: unset;
             position: relative;
             bottom: 1px; }
-            .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role="button"] div:nth-child(2) div:first-child svg {
+            .auth-wrapper .google-oauth-button-wrapper #google-oauth-container div[role='button'] div:nth-child(2) div:first-child svg {
               width: 1.2rem; }
 
 .footer-wrapper {
