@@ -259,17 +259,16 @@ class Login extends Component {
 						...FLEX_CENTER_CLASSES,
 						'flex-column',
 						'auth_wrapper',
+						'login-wrapper',
 						'w-100'
 					)}
 				>
 					<IconTitle
-						iconId="EXCHANGE_LOGO"
-						iconPath={ICONS['EXCHANGE_LOGO']}
 						stringId="LOGIN_TEXT"
 						text={STRINGS['LOGIN_TEXT']}
 						textType="title"
 						underline={true}
-						className="w-100 holla-logo"
+						className="w-100 holla-logo login-text"
 						imageWrapperClassName="auth_logo-wrapper"
 						subtitle={STRINGS.formatString(
 							STRINGS['LOGIN.LOGIN_TO'],
@@ -297,7 +296,7 @@ class Login extends Component {
 						{isMobile && <BottomLink />}
 					</div>
 					{!!constants?.google_oauth?.client_id && (
-						<div className="google-oauth-button-wrapper mt-5">
+						<div className="google-oauth-button-wrapper">
 							<EditWrapper stringId="LOGIN.GOOGLE_LOGIN">
 								<span>
 									{STRINGS.formatString(

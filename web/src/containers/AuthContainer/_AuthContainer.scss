@@ -112,11 +112,27 @@ $container--padding-sm: 3rem;
 			background-color: $auth-container-background;
 			padding: $container--padding $container--padding $container--padding * 1.5;
 
+			.signup-title,
+			.login-text {
+				.edit-wrapper__container {
+					.icon_title-text {
+						font-family: $raleway-medium--font-family;
+						padding: unset !important;
+						margin-top: unset !important;
+					}
+				}
+			}
+
 			.icon_title-svg {
 				.hollaEX_logo_gray {
 					fill: $colors-black;
 				}
 			}
+		}
+
+		.login-wrapper,
+		.signup-wrapper {
+			padding: $container--padding $container--padding !important;
 		}
 
 		.auth_form-wrapper {
@@ -196,6 +212,7 @@ $container--padding-sm: 3rem;
 		flex-direction: column;
 		align-items: center;
 		gap: 1rem;
+		margin-top: 2rem;
 
 		span {
 			font-size: 1.1rem;
@@ -236,7 +253,7 @@ $container--padding-sm: 3rem;
 
 			.auth_wrapper {
 				padding: $container--padding-sm $container--padding
-					$container--padding-sm;
+					$container--padding-sm !important;
 			}
 			.auth_form-wrapper {
 				margin-top: 1rem;
