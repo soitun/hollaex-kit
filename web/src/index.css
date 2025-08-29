@@ -838,8 +838,16 @@ table th {
     .auth-wrapper .auth-container .auth_wrapper {
       background-color: var(--base_wallet-sidebar-and-popup);
       padding: 4rem 4rem 6rem; }
+      .auth-wrapper .auth-container .auth_wrapper .signup-title .edit-wrapper__container .icon_title-text,
+      .auth-wrapper .auth-container .auth_wrapper .login-text .edit-wrapper__container .icon_title-text {
+        font-family: "Raleway Medium";
+        padding: unset !important;
+        margin-top: unset !important; }
       .auth-wrapper .auth-container .auth_wrapper .icon_title-svg .hollaEX_logo_gray {
         fill: var(--labels_secondary-inactive-label-text-graphics); }
+    .auth-wrapper .auth-container .login-wrapper,
+    .auth-wrapper .auth-container .signup-wrapper {
+      padding: 4rem 4rem !important; }
     .auth-wrapper .auth-container .auth_form-wrapper {
       margin-top: 2rem;
       position: relative; }
@@ -888,7 +896,8 @@ table th {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem; }
+    gap: 1rem;
+    margin-top: 2rem; }
     .auth-wrapper .google-oauth-button-wrapper span {
       font-size: 1.1rem; }
     .auth-wrapper .google-oauth-button-wrapper #google-oauth-container {
@@ -915,7 +924,7 @@ table th {
   .auth-wrapper .auth-container {
     max-width: 475px !important; }
     .auth-wrapper .auth-container .auth_wrapper {
-      padding: 3rem 4rem 3rem; }
+      padding: 3rem 4rem 3rem !important; }
     .auth-wrapper .auth-container .auth_form-wrapper {
       margin-top: 1rem; }
       .auth-wrapper .auth-container .auth_form-wrapper .field-wrapper {
