@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import {
 	Table,
 	Spin,
@@ -10,6 +12,7 @@ import {
 	Tooltip,
 } from 'antd';
 import { CloseOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import debounce from 'lodash.debounce';
 
 import {
 	getUserReferer,
@@ -20,6 +23,8 @@ import {
 import { formatTimestampGregorian, DATETIME_FORMAT } from 'utils/date';
 import './index.css';
 import { PlusCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { setIsDisplayCreateReferral } from 'actions/appActions';
+
 const AFF_COLUMNS = [
 	{
 		title: 'Time referred /signed up',
@@ -123,6 +128,8 @@ const LIMIT = 50;
 const Referrals = ({
 	userInformation: { id: userId, affiliation_code },
 	referral_history_config,
+	isDisplayCreateReferral,
+	setIsDisplayCreateReferral = () => {},
 }) => {
 	const [loading, setLoading] = useState(true);
 	const [invitedBy, setInvitedBy] = useState();
@@ -184,20 +191,16 @@ const Referrals = ({
 	};
 
 	useEffect(() => {
-		getUserReferer(userId).then(({ email }) => {
-			setInvitedBy(email);
-			setLoading(false);
-			requestAffiliations(1, LIMIT);
-		});
+		getUserReferer(userId)
+			.then(({ email }) => {
+				setInvitedBy(email);
+				setLoading(false);
+				requestAffiliations(1, LIMIT);
+			})
+			.catch((error) => {
+				console.error('error', error);
+			});
 	}, [userId, requestAffiliations]);
-
-	if (loading) {
-		return (
-			<div className="app_container-content">
-				<Spin size="large" />
-			</div>
-		);
-	}
 
 	const generateUniqueCode = () => {
 		const characters =
@@ -211,6 +214,34 @@ const Referrals = ({
 
 		return code;
 	};
+
+	const debounceTimeout = debounce(() => {
+		setIsDisplayCreateReferral(false);
+	}, 1000);
+
+	useEffect(() => {
+		if (isDisplayCreateReferral && !displayCreateReferralCode) {
+			setDisplayCreateReferralCode(true);
+			if (!referralCode) {
+				const code = generateUniqueCode();
+				setReferralCode(code);
+				debounceTimeout();
+			}
+		}
+		return () => {
+			debounceTimeout.cancel();
+		};
+		//eslint-disable-next-line
+	}, [isDisplayCreateReferral]);
+
+	if (loading) {
+		return (
+			<div className="app_container-content">
+				<Spin size="large" />
+			</div>
+		);
+	}
+
 	return (
 		<div className="admin-user-container">
 			{displayCreateReferralCode && (
@@ -478,4 +509,15 @@ const Referrals = ({
 	);
 };
 
-export default Referrals;
+const mapStateToProps = (state) => ({
+	isDisplayCreateReferral: state.app.isDisplayCreateReferral,
+});
+
+const mapDispatchToProps = (dispatch) => ({
+	setIsDisplayCreateReferral: bindActionCreators(
+		setIsDisplayCreateReferral,
+		dispatch
+	),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Referrals);

@@ -7,13 +7,7 @@ import { PATHS } from './containers';
 import { verifyToken } from './actions/authAction';
 import { setLanguage } from './actions/appActions';
 import { SmartTarget, NotLoggedIn } from 'components';
-import {
-	isLoggedIn,
-	getToken,
-	removeToken,
-	isAdmin,
-	checkRole,
-} from './utils/token';
+import { isLoggedIn, getToken, removeToken, isAdmin } from './utils/token';
 import {
 	getLanguage,
 	getInterfaceLanguage,
@@ -331,6 +325,11 @@ const AdminAnnouncement = Loadable({
 	loading: LoadingComponent,
 });
 
+const MarginTrading = Loadable({
+	loader: () => import('./containers/MarginTrading'),
+	loading: LoadingComponent,
+});
+
 ReactGA.initialize('UA-154626247-1'); // Google analytics. Set your own Google Analytics values
 browserHistory.listen((location) => {
 	if (window) {
@@ -483,15 +482,6 @@ const noLoggedUserCommonProps = {
 
 function withAdminProps(Component, key) {
 	let adminProps = {};
-	let restrictedPaths = [
-		'general',
-		'financials',
-		'trade',
-		'plugins',
-		'tiers',
-		'roles',
-		'billing',
-	];
 
 	PATHS.map((data) => {
 		const { pathProps = {}, routeKey, ...rest } = data;
@@ -501,15 +491,7 @@ function withAdminProps(Component, key) {
 		return 0;
 	});
 	return function (matchProps) {
-		if (
-			checkRole() !== 'admin' &&
-			restrictedPaths.includes(key) &&
-			!(checkRole() === 'supervisor' && key === 'financials')
-		) {
-			return <NotFound {...matchProps} />;
-		} else {
-			return <Component {...adminProps} {...matchProps} />;
-		}
+		return <Component {...adminProps} {...matchProps} />;
 	};
 }
 
@@ -682,6 +664,7 @@ export const generateRoutes = (routes = []) => {
 					onEnter={requireAuth}
 				/>
 				<Route path="p2p" name="P2P" component={P2P} />
+				<Route path="margin" name="Margin" component={MarginTrading} />
 
 				<Route
 					path="p2p/order/:order_id"
