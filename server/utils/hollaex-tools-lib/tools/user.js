@@ -173,7 +173,7 @@ const signUpUser = (email, password, opts = { referral: null }, version) => {
 		.then((user) => {
 			let verification_code;
 
-			if (version === "v3") {
+			if (version === 'v3') {
 				const letters = Array.from({ length: 2 }, () =>
 					String.fromCharCode(65 + crypto.randomInt(0, 26))
 				).join('');
@@ -199,7 +199,7 @@ const signUpUser = (email, password, opts = { referral: null }, version) => {
 			}));
 
 			sendEmail(
-				version === "v3" ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+				version === 'v3' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
 				email,
 				verificationCode,
 				{}
@@ -4473,31 +4473,31 @@ const deleteExchangeUserRole = async (id, user_id, otp_code) => {
 // Verify Google OAuth id_token (JWT) using Google's tokeninfo endpoint and return user info
 const verifyGoogleToken = async (token) => {
 	try {
-        const response = await request({
-            url: 'https://oauth2.googleapis.com/tokeninfo',
-            method: 'GET',
-            qs: { id_token: token },
-            json: true
-        });
+		const response = await request({
+			url: 'https://oauth2.googleapis.com/tokeninfo',
+			method: 'GET',
+			qs: { id_token: token },
+			json: true
+		});
 
-        // Validate issuer is Google
-        const issuer = String(response.iss || '').toLowerCase();
-        const validIssuer = issuer === 'https://accounts.google.com' || issuer === 'accounts.google.com';
-        if (!validIssuer) {
-            throw new Error(GOOGLE_TOKEN_INVALID_ISSUER);
-        }
+		// Validate issuer is Google
+		const issuer = String(response.iss || '').toLowerCase();
+		const validIssuer = issuer === 'https://accounts.google.com' || issuer === 'accounts.google.com';
+		if (!validIssuer) {
+			throw new Error(GOOGLE_TOKEN_INVALID_ISSUER);
+		}
 
-        // Validate token not expired
-        const now = Math.floor(Date.now() / 1000);
-        const exp = Number(response.exp || 0);
-        if (!exp || exp <= now) {
-            throw new Error(GOOGLE_TOKEN_EXPIRED);
-        }
+		// Validate token not expired
+		const now = Math.floor(Date.now() / 1000);
+		const exp = Number(response.exp || 0);
+		if (!exp || exp <= now) {
+			throw new Error(GOOGLE_TOKEN_EXPIRED);
+		}
 
-        const emailVerified =
+		const emailVerified =
             response.email_verified === true || response.email_verified === 'true';
 
-        if (response.email && emailVerified) {
+		if (response.email && emailVerified) {
 			const name = response.name || [response.given_name, response.family_name].filter(Boolean).join(' ').trim();
 			return {
 				email: response.email,
