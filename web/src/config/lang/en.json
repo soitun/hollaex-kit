@@ -101,6 +101,7 @@
 		"TAB_SETTINGS": "Settings",
 		"TAB_APPS": "Apps",
 		"TAB_WALLET": "Wallet",
+		"MARGIN_TRADE": "Margin Trade",
 		"TAB_SUMMARY": "Summary",
 		"TAB_HISTORY": "History",
 		"TAB_SIGNOUT": "Signout",
@@ -158,7 +159,8 @@
 		"CREATE_ACCOUNT": "Create one here",
 		"LOOKING_PRICES": "Looking for prices?",
 		"VIEW_MARKETS": "View the markets",
-		"HELP": "Help"
+		"HELP": "Help",
+		"GOOGLE_LOGIN": "Or {0} With Google"
 	},
 	"FORM_FIELDS": {
 		"EMAIL_LABEL": "Email",
@@ -2389,7 +2391,7 @@
 	},
 	"MORE_OPTIONS_LABEL": {
 		"MORE_OPTION_SEARCH_TXT": "Search feature or pages",
-		"NO_RESULT_DESC_1": "Looks there is isn't any results for this.",
+		"NO_RESULT_DESC_1": "Looks like there aren't any results for this.",
 		"NO_RESULT_DESC_2": "Try searching another keyword.",
 		"ICONS": {
 			"REFERRALS": "Referrals",
@@ -2590,7 +2592,8 @@
 			"UPGRADE": "Upgrade",
 			"DETAILS": "Details",
 			"FRIENDS": "Friends",
-			"TRADER": "Trader"
+			"TRADER": "Trader",
+			"LEVERAGE": "Leverage"
 		}
 	},
 	"CONNECTIONS": {
@@ -2649,7 +2652,8 @@
 		"ONRAMPER_DESC": "Use Onramper to buy and sell crypto",
 		"AUTO_TRADER_DESC": "Recurring automatic buy & sell transactions",
 		"ANNOUNCEMENT_DESC": "Updates, listings and other news",
-		"WALLET_DESCRIPTION": "View your wallet asset and balances"
+		"WALLET_DESCRIPTION": "View your wallet asset and balances",
+		"MARGIN_TRADING_DESC": "Trade with leverage using margin"
 	},
 	"DESKTOP_ULTIMATE_SEARCH": {
 		"SEARCH_DESCRIPTION": "Find Functions, Coins, and More",

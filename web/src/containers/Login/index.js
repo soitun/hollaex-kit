@@ -5,20 +5,29 @@ import { SubmissionError, change } from 'redux-form';
 import { bindActionCreators } from 'redux';
 import { Link } from 'react-router';
 import { isMobile } from 'react-device-detect';
+import { message } from 'antd';
 import { setPricesAndAssetPending } from 'actions/assetActions';
 import {
 	performLogin,
 	storeLoginResult,
 	setLogoutMessage,
+	performGoogleLogin,
 } from 'actions/authAction';
 import LoginForm from './LoginForm';
-import { Dialog, OtpForm, IconTitle, Notification } from 'components';
+import {
+	Dialog,
+	OtpForm,
+	IconTitle,
+	Notification,
+	EditWrapper,
+} from 'components';
 import { NOTIFICATIONS } from 'actions/appActions';
 import { errorHandler } from 'components/OtpForm/utils';
 import { FLEX_CENTER_CLASSES } from 'config/constants';
 
 import STRINGS from 'config/localizedStrings';
 import withConfig from 'components/ConfigProvider/withConfig';
+import GoogleOAuthLogin from 'utils/googleOAuth';
 
 let errorTimeOut = null;
 
@@ -199,6 +208,41 @@ class Login extends Component {
 		localStorage.setItem('deposit_initial_display', true);
 	};
 
+	handleGoogleLogin = async (token) => {
+		try {
+			const res = await performGoogleLogin({ google_token: token });
+			if (res?.data?.token) this.setState({ token: res?.data?.token });
+			this.props.setPricesAndAssetPending();
+			storeLoginResult(res?.data?.token);
+			if (res?.data?.callbackUrl) {
+				this.redirectToService(res?.data?.callbackUrl);
+			} else {
+				this.redirectToHome();
+			}
+		} catch (err) {
+			const _error =
+				err.response && err.response.data
+					? err.response.data.message
+					: err.message;
+
+			let error = {};
+
+			if (_error === 'User is not activated') {
+				error._error = STRINGS['VALIDATIONS.FROZEN_ACCOUNT'];
+			} else {
+				error._error = _error;
+			}
+			if (
+				_error
+					?.toLowerCase()
+					?.includes('suspicious login detected, please check your email')
+			) {
+				this.props.router.replace('/email-confirm');
+			}
+			message.error(error?._error);
+		}
+	};
+
 	render() {
 		const {
 			logoutMessage,
@@ -215,17 +259,16 @@ class Login extends Component {
 						...FLEX_CENTER_CLASSES,
 						'flex-column',
 						'auth_wrapper',
+						'login-wrapper',
 						'w-100'
 					)}
 				>
 					<IconTitle
-						iconId="EXCHANGE_LOGO"
-						iconPath={ICONS['EXCHANGE_LOGO']}
 						stringId="LOGIN_TEXT"
 						text={STRINGS['LOGIN_TEXT']}
 						textType="title"
 						underline={true}
-						className="w-100 holla-logo"
+						className="w-100 holla-logo login-text"
 						imageWrapperClassName="auth_logo-wrapper"
 						subtitle={STRINGS.formatString(
 							STRINGS['LOGIN.LOGIN_TO'],
@@ -252,6 +295,22 @@ class Login extends Component {
 						<LoginForm onSubmit={this.onSubmitLogin} theme={activeTheme} />
 						{isMobile && <BottomLink />}
 					</div>
+					{!!constants?.google_oauth?.client_id && (
+						<div className="google-oauth-button-wrapper">
+							<EditWrapper stringId="LOGIN.GOOGLE_LOGIN">
+								<span>
+									{STRINGS.formatString(
+										STRINGS['LOGIN.GOOGLE_LOGIN'],
+										STRINGS['LOGIN_TEXT']
+									)}
+								</span>
+							</EditWrapper>
+							<GoogleOAuthLogin
+								onLoginSuccess={this.handleGoogleLogin}
+								googleOAuth={constants?.google_oauth}
+							/>
+						</div>
+					)}
 				</div>
 				{!isMobile && <BottomLink />}
 				<Dialog

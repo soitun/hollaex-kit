@@ -113,17 +113,21 @@ const P2PSettings = ({
 		setUserFee(p2p_config?.user_fee);
 		setSourceAccount(p2p_config?.source_account);
 		if (p2p_config?.source_account) {
-			getAllUserData({ id: p2p_config?.source_account }).then((res) => {
-				let emailData = {};
-				res &&
-					res?.forEach((item) => {
-						if (item.value === p2p_config?.source_account) {
-							emailData = item;
-						}
-					});
-				setSelectedEmailData(emailData);
-				setSourceAccount(Number(p2p_config?.source_account));
-			});
+			getAllUserData({ id: p2p_config?.source_account })
+				.then((res) => {
+					let emailData = {};
+					res &&
+						res?.forEach((item) => {
+							if (item.value === p2p_config?.source_account) {
+								emailData = item;
+							}
+						});
+					setSelectedEmailData(emailData);
+					setSourceAccount(Number(p2p_config?.source_account));
+				})
+				.catch((err) => {
+					console.error('error', err);
+				});
 		}
 		setP2pConfig(p2p_config);
 
@@ -511,6 +515,7 @@ const P2PSettings = ({
 								onChange={(e) => {
 									setSide(e);
 								}}
+								getPopupContainer={(triggerNode) => triggerNode?.parentNode}
 							>
 								<Select.Option value={'sell'}>Sell</Select.Option>
 								<Select.Option value={'buy'}>Buy</Select.Option>
@@ -612,6 +617,8 @@ const P2PSettings = ({
 								onChange={(e) => {
 									setTransactionDuration(e);
 								}}
+								className="select-box"
+								getPopupContainer={(triggerNode) => triggerNode?.parentNode}
 							>
 								{[10, 20, 30, 40, 50, 60].map((duration) => {
 									return (
@@ -741,6 +748,7 @@ const P2PSettings = ({
 									onChange={(e) => {
 										setUserTier(e);
 									}}
+									getPopupContainer={(triggerNode) => triggerNode?.parentNode}
 								>
 									{Object.values(tiers || {}).map((tier) => {
 										return (
@@ -767,6 +775,7 @@ const P2PSettings = ({
 								onChange={(e) => {
 									setMerchantTier(e);
 								}}
+								getPopupContainer={(triggerNode) => triggerNode?.parentNode}
 							>
 								{Object.values(tiers || {}).map((tier) => {
 									return (
@@ -942,6 +951,7 @@ const P2PSettings = ({
 										onChange={(text) => handleEmailChange(text)}
 										showAction={['focus', 'click']}
 										style={{ width: 200 }}
+										getPopupContainer={(triggerNode) => triggerNode?.parentNode}
 									>
 										{emailOptions &&
 											emailOptions.map((email) => (
