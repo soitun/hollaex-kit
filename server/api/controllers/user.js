@@ -130,39 +130,39 @@ const signUpUserWithGoogle = async (req, res) => {
 		ip
 	);
 
-    try {
-        // Enforce kit configuration: only allow when google_oauth configured
-        const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
-        if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
-            throw new Error(SERVICE_NOT_AVAILABLE);
-        }
+	try {
+		// Enforce kit configuration: only allow when google_oauth configured
+		const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
+		if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
+			throw new Error(SERVICE_NOT_AVAILABLE);
+		}
 
-        // Geo/IP check (enforce same blocking as email login)
-        await toolsLib.security.checkIp(ip);
+		// Geo/IP check (enforce same blocking as email login)
+		await toolsLib.security.checkIp(ip);
 
-        // Verify Google token and get user data
-        const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
-        const email = googleUserData.email.toLowerCase().trim();
+		// Verify Google token and get user data
+		const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
+		const email = googleUserData.email.toLowerCase().trim();
 
-        // Check if user already exists
-        const existingUser = await toolsLib.user.getUserByEmail(email, false);
-        if (existingUser) {
+		// Check if user already exists
+		const existingUser = await toolsLib.user.getUserByEmail(email, false);
+		if (existingUser) {
 			throw new Error('User already exists');
-        }
+		}
 
 		// Generate a random password for Google OAuth users
 		const randomPassword = crypto.randomBytes(16).toString('hex');
 
 		// Create user with Google data
-        const userData = {
-            email,
-            password: randomPassword,
-            referral,
-            google_id: googleUserData.google_id || googleUserData.sub,
-            name: googleUserData.name,
-            email_verified: true, // Google emails are already verified
-            activated: true
-        };
+		const userData = {
+			email,
+			password: randomPassword,
+			referral,
+			google_id: googleUserData.google_id || googleUserData.sub,
+			name: googleUserData.name,
+			email_verified: true, // Google emails are already verified
+			activated: true
+		};
 
 		await toolsLib.user.signUpUser(email, randomPassword, userData);
 
@@ -448,7 +448,7 @@ const loginPost = (req, res) => {
 
 			if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
 				let verification_code;
-				if (version === "v3") {
+				if (version === 'v3') {
 					const letters = Array.from({ length: 2 }, () =>
 						String.fromCharCode(65 + crypto.randomInt(0, 26))
 					).join('');
@@ -457,7 +457,7 @@ const loginPost = (req, res) => {
 				} else {
 					verification_code = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
 
-				};
+				}
 
 				const loginData = await toolsLib.user.createSuspiciousLogin(user, ip, device, country, domain, origin, referer, null, long_term);
 
@@ -474,7 +474,7 @@ const loginPost = (req, res) => {
 				await toolsLib.database.client.setexAsync(`user:confirm-login:${verification_code}`, 5 * 60, JSON.stringify(data));
 				await toolsLib.database.client.setexAsync(`user:freeze-account:${verification_code}`, 60 * 60 * 6, JSON.stringify(data));
 
-				sendEmail(version === "v3" ? MAILTYPE.SUSPICIOUS_LOGIN_CODE : MAILTYPE.SUSPICIOUS_LOGIN, user.email, data, user.settings, domain);
+				sendEmail(version === 'v3' ? MAILTYPE.SUSPICIOUS_LOGIN_CODE : MAILTYPE.SUSPICIOUS_LOGIN, user.email, data, user.settings, domain);
 				throw new Error('Suspicious login detected, please check your email.');
 			}
 
@@ -525,7 +525,7 @@ const loginPost = (req, res) => {
 				sendEmail(MAILTYPE.LOGIN, user.email, data, user.settings, domain);
 			}
 
-			let userRole
+			let userRole;
 			if (user.role) {
 				const roles = toolsLib.getRoles();
 				userRole = roles.find(role => role.role_name === user.role);
@@ -619,35 +619,35 @@ const loginWithGoogle = async (req, res) => {
 		referer
 	);
 
-    try {
-        // Enforce kit configuration: only allow when google_oauth configured
-        const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
-        if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
-            throw new Error(SERVICE_NOT_AVAILABLE);
-        }
+	try {
+		// Enforce kit configuration: only allow when google_oauth configured
+		const googleOAuthConfig = toolsLib?.getKitConfig?.()?.google_oauth?.client_id;
+		if (!googleOAuthConfig || (typeof googleOAuthConfig === 'string' && googleOAuthConfig.length === 0)) {
+			throw new Error(SERVICE_NOT_AVAILABLE);
+		}
 
-        // Enforce geo/IP restrictions the same as email login
-        await toolsLib.security.checkIp(ip);
+		// Enforce geo/IP restrictions the same as email login
+		await toolsLib.security.checkIp(ip);
 
-        // Verify Google token and get user data
-        const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
-        const email = googleUserData.email.toLowerCase().trim();
+		// Verify Google token and get user data
+		const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
+		const email = googleUserData.email.toLowerCase().trim();
 
-        // Check if user exists
-        const user = await toolsLib.user.getUserByEmail(email, false);
+		// Check if user exists
+		const user = await toolsLib.user.getUserByEmail(email, false);
 		if (!user) {
 			throw new Error(USER_NOT_FOUND);
 		}
 
-        // If user has google_id set and it does not match, reject
-        const tokenGoogleId = googleUserData.google_id || googleUserData.sub;
-        if (user.google_id && tokenGoogleId && user.google_id !== tokenGoogleId) {
-            throw new Error(GOOGLE_ACCOUNT_MISMATCH);
-        }
-        // If user has no google_id yet, link it now
-        if (!user.google_id && tokenGoogleId) {
-            await user.update({ google_id: tokenGoogleId }, { fields: ['google_id'], returning: true });
-        }
+		// If user has google_id set and it does not match, reject
+		const tokenGoogleId = googleUserData.google_id || googleUserData.sub;
+		if (user.google_id && tokenGoogleId && user.google_id !== tokenGoogleId) {
+			throw new Error(GOOGLE_ACCOUNT_MISMATCH);
+		}
+		// If user has no google_id yet, link it now
+		if (!user.google_id && tokenGoogleId) {
+			await user.update({ google_id: tokenGoogleId }, { fields: ['google_id'], returning: true });
+		}
 
 		if (user.verification_level === 0) {
 			throw new Error(USER_NOT_VERIFIED);
