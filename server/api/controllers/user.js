@@ -853,7 +853,8 @@ const resetPassword = (req, res) => {
 
 	toolsLib.security.resetUserPassword(code, new_password)
 		.then(() => {
-			return res.json({ message: 'Password updated.' });
+			const messageObj = errorMessageConverter({ message: 'Password updated.' }, req?.auth?.sub?.lang);
+			return res.json({ message: messageObj?.message, lang: messageObj?.lang });
 		})
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/resetPassword', err.message);
@@ -936,6 +937,7 @@ const changePassword = (req, res) => {
 const confirmChangePassword = (req, res) => {
 	const code = req.swagger.params.code.value;
 	const ip = req.headers['x-real-ip'];
+	const version = req.query?.version;
 
 	loggerUser.verbose(
 		req.uuid,
@@ -945,7 +947,12 @@ const confirmChangePassword = (req, res) => {
 	);
 
 	toolsLib.security.confirmChangeUserPassword(code)
-		.then(() => res.redirect(301, `${DOMAIN}/change-password-confirm/${code}?isSuccess=true`))
+		.then(() => {
+			if (version && version === 'v3') {
+				return res.json({ message: 'Password updated.' });
+			}
+			return res.redirect(301, `${DOMAIN}/change-password-confirm/${code}?isSuccess=true`);
+		})
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/confirmChangeUserPassword', err.message);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
