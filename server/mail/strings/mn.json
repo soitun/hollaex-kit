@@ -28,6 +28,10 @@
 			"html": "<div><p> Эрхэм хүндэт ${name} </p><p>Бид таны ${date} өдөр ${amount} дүнтэй ${currency} -р хийсэн орлогын гүйлгээг батлах боломжгүй байна. Тиймээс гүйлгээс систем автоматаар цуцалсан болно.</p><p>Танд асуух зүйл байвал, энэ и-мэйлд хариу бичнэ үү</p><p>Гүйлгээний №: ${txid}<br />Дүн: ${amount}<br />Төлөв: Татгалзсан</p><p> Хүндэтгэсэн<br> ${api_name} team </p></div>",
 			"title": "${currency} орлого цуцлагдлаа"
 		},
+		"CHANGE_PASSWORD_CODE": {
+			"html": "<div><p> Эрхэм ${name} </p><p>Та өөрийн бүртгэлийн <strong>нууц үгийг өөрчлөх</strong> хүсэлт илгээсэн байна.<br />Энэ өөрчлөлтийг баталгаажуулахын тулд доорх баталгаажуулах кодыг ашиглана уу.</p><div style=\"padding:1rem;background-color:#f5f5f5;border:1px dashed #999;font-family:monospace;font-size:1.5rem;letter-spacing:4px;text-align:center;margin-bottom:20px;\">${confirmation_code}</div><p>Энэ кодыг нууц үг өөрчлөхийг баталгаажуулах хуудсанд оруулна уу. Код хязгаарлагдмал хугацаанд хүчинтэй.</p><p>Хэрэв <strong>та биш</strong> бол даруй <a href=\"${freeze_account_link}\">бүртгэлээ царцааж</a> дэмжлэгтэй холбогдоно уу.</p><p><strong>Тэмдэглэл:</strong> Аюулгүй байдлын үүднээс нууц үг өөрчилсний дараа 24 цагийн турш татан авалт хязгаарлагдана.</p><p>Хүсэлтийг илгээсэн IP: ${ip}</p><p>Хүндэтгэсэн<br>${api_name} баг</p></div>",
+			"title": "Нууц үг өөрчлөх баталгаажуулах код"
+		},
 		"DEPOSIT_PENDING": {
 			"html": "<div><div><p> Эрхэм хүндэт ${name} </p><p> Таны ${amount} ${currency} орлого, таны ${api_name} хэтэвчинд орохоор хүлээгдэж байна. Гүйлгээ баталгаажиж таны хэтэвчинд ортол түр хүлээнэ үү.</p><p>Дүн: ${amount} ${currency}<br />Төлөв: ${status}<br />Хаяг: ${address}<br />Transaction ID: ${transaction_id}<br /><span id=\"network\">Сүлжээ: ${network}</span><br />Шимтгэл: ${fee} ${fee_coin}<br /><ul>${explorers}</ul></div><p> Хүндэтгэсэн<br> ${api_name} team </p></div>",
 			"title": "${currency} орлого хүлээгдэж байна"

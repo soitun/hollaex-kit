@@ -77,6 +77,25 @@ const messages = {
         "vi": "Không tìm thấy người dùng",
         "zh": "找不到用户"
     },
+    "Password updated.": {
+        "en": "Password updated.",
+        "de": "Passwort aktualisiert.",
+        "es": "Contraseña actualizada.",
+        "fa": "رمز عبور به‌روزرسانی شد.",
+        "fr": "Mot de passe mis à jour.",
+        "id": "Kata sandi diperbarui.",
+        "it": "Password aggiornata.",
+        "ja": "パスワードが更新されました。",
+        "ko": "비밀번호가 업데이트되었습니다.",
+        "mn": "Нууц үг шинэчлэгдлээ.",
+        "nl": "Wachtwoord bijgewerkt.",
+        "pt": "Senha atualizada.",
+        "ru": "Пароль обновлён.",
+        "tr": "Şifre güncellendi.",
+        "ur": "پاس ورڈ اپ ڈیٹ ہو گیا۔",
+        "vi": "Mật khẩu đã được cập nhật.",
+        "zh": "密码已更新。"
+    },
     "User already recovered": {
         "en": "User already recovered",
         "de": "Benutzer bereits wiederhergestellt",

@@ -78,6 +78,7 @@ const MAILTYPE = {
 	WITHDRAWAL_REQUEST_CODE: 'withdrawal_request_code',
 	RESET_PASSWORD_CODE: 'reset_password_code',
 	SIGNUP_CODE: 'signup_code',
+	CHANGE_PASSWORD_CODE: 'change_password_code',
 };
 
 const languageFile = (lang) => {
