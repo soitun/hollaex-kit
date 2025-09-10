@@ -913,7 +913,7 @@ const updateSettings = (req, res) => {
 const changePassword = (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/user/changePassword', req.auth.sub);
 	const email = req.auth.sub.email;
-	const { old_password, new_password, otp_code } = req.swagger.params.data.value;
+	const { old_password, new_password, otp_code, version } = req.swagger.params.data.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = API_HOST + HOLLAEX_NETWORK_BASE_URL;
 
@@ -924,7 +924,7 @@ const changePassword = (req, res) => {
 		otp_code
 	);
 
-	toolsLib.security.changeUserPassword(email, old_password, new_password, ip, domain, otp_code)
+	toolsLib.security.changeUserPassword(email, old_password, new_password, ip, domain, otp_code, version)
 		.then(() => res.json({ message: `Verification email to change password is sent to: ${email}` }))
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/changePassword', err.message);
