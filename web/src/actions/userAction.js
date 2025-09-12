@@ -122,6 +122,8 @@ export const otpActivate = (values) => axios.post('/user/activate-otp', values);
 export const otpRevoke = (values) => axios.post('/user/deactivate-otp', values);
 export const resetPassword = (values) =>
 	axios.post('/user/change-password', values);
+export const getConfirmationPassword = (code) =>
+	axios.get(`/confirm-change-password/${code}?version=v3`);
 export const otpSetActivated = (active = true) =>
 	active
 		? {

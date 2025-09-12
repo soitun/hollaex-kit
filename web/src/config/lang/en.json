@@ -721,7 +721,7 @@
 			"TITLE": "Password",
 			"ACTIVE": "ACTIVE",
 			"DIALOG": {
-				"EMAIL_CONFIRMATION": "An email is sent to you to authorize the password change."
+				"EMAIL_CONFIRMATION": "To finalize your password change, please check your email for the verification code and enter it in the next step."
 			},
 			"FORM": {
 				"BUTTON": "Change Password",
@@ -2814,5 +2814,17 @@
 		"TITLE_ASSET_INFORMATION": "Asset Information",
 		"TITLE_REFERRAL_EARNINGS_HISTORY": "Referral Earnings History",
 		"TITLE_STAKE_DETAILS": "Stake Details"
+	},
+	"VERIFY_CODE": {
+		"TITLE": "Verification code",
+		"DESCRIPTION": "we sent an email to {0}. To activate your account, please copy the code from the email and paste it below.",
+		"VERIFY_CODE_TEXT": "Verify Code",
+		"EXPIRED_MESSAGE": "Your email code has expired. Please go back and try again.",
+		"CODE_EXPIRED": "Code Expired",
+		"EMAIL_CONFIRMATION": "Email Confirmation",
+		"EMAIL_CONFIRMATION_DESCRIPTION": "To finalize your password change, please check your email for the verification code and enter it in the next step.",
+		"ENTER_EMAIL_CODE": "ENTER EMAIL CODE",
+		"PASSWORD_CHANGED": "Password Changed",
+		"PASSWORD_CHANGED_DESCRIPTION": "Your password has been successfully changed"
 	}
 }
