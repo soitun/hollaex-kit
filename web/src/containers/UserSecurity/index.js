@@ -880,7 +880,7 @@ class UserSecurity extends Component {
 			const errorMessage =
 				err?.response?.data?.message || err?.message || 'Error verifying code';
 			message.error(errorMessage);
-			if (err?.response?.data?.code === 142) {
+			if (err?.response?.data?.code === 136) {
 				this.setState({ error: errorMessage });
 			} else {
 				this.handleCloseVerifyCode();
@@ -936,17 +936,6 @@ class UserSecurity extends Component {
 					</div>
 				) : (
 					<>
-						<div className="text-align-center">
-							<EditWrapper stringId="VERIFY_CODE.DESCRIPTION">
-								<span className="fs-14 d-flex align-items-center justify-content-center">
-									{STRINGS.formatString(
-										STRINGS['VERIFY_CODE.DESCRIPTION'],
-										this.props.user?.email ||
-											STRINGS['HOME.EMAIL_TEXT'].toLowerCase()
-									)}
-								</span>
-							</EditWrapper>
-						</div>
 						<div className="verification-code-fields my-5 d-flex justify-content-center">
 							{(code || [])?.map((val, idx) => (
 								<div key={idx} className="d-flex align-items-center">
@@ -970,6 +959,19 @@ class UserSecurity extends Component {
 									)}
 								</div>
 							))}
+						</div>
+						<div className="text-align-center mb-4">
+							<EditWrapper stringId="VERIFY_CODE.DESCRIPTION">
+								<span className="fs-14">
+									{STRINGS.formatString(
+										STRINGS['VERIFY_CODE.DESCRIPTION'],
+										<span className="font-weight-bold">
+											{this.props.user?.email ||
+												STRINGS['HOME.EMAIL_TEXT'].toLowerCase()}
+										</span>
+									)}
+								</span>
+							</EditWrapper>
 						</div>
 						{this.state.error && (
 							<span className="fs-14 bold verification-code-error">

@@ -2817,7 +2817,7 @@
 	},
 	"VERIFY_CODE": {
 		"TITLE": "Verification code",
-		"DESCRIPTION": "we sent an email to {0}. To activate your account, please copy the code from the email and paste it below.",
+		"DESCRIPTION": "An email was sent to {0} with a unique code. Please copy and paste the code into the field above.",
 		"VERIFY_CODE_TEXT": "Verify Code",
 		"EXPIRED_MESSAGE": "Your email code has expired. Please go back and try again.",
 		"CODE_EXPIRED": "Code Expired",

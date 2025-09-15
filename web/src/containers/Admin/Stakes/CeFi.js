@@ -682,9 +682,6 @@ const CeFi = ({ coins, features, kit }) => {
 						<Input
 							style={{ backgroundColor: 'rgba(0,0,0,0.1)', color: 'white' }}
 							placeholder="Input the name of the staking pool"
-							disabled={
-								editMode && stakePoolCreation.status !== 'uninitialized'
-							}
 							onChange={(e) =>
 								setStakePoolCreation({
 									...stakePoolCreation,
@@ -753,17 +750,11 @@ const CeFi = ({ coins, features, kit }) => {
 								})
 							}
 							value={stakePoolCreation.duration}
-							disabled={
-								stakePoolCreation.perpetual_stake ||
-								(editMode && stakePoolCreation.status !== 'uninitialized')
-							}
+							disabled={stakePoolCreation.perpetual_stake}
 						/>
 					</div>
 					<div>
 						<Checkbox
-							disabled={
-								editMode && stakePoolCreation.status !== 'uninitialized'
-							}
 							onChange={(e) => {
 								setStakePoolCreation({
 									...stakePoolCreation,
@@ -835,9 +826,6 @@ const CeFi = ({ coins, features, kit }) => {
 
 					<div style={{ marginBottom: 40 }}>
 						<Radio.Group
-							disabled={
-								editMode && stakePoolCreation.status !== 'uninitialized'
-							}
 							onChange={(e) => {
 								setStakePoolCreation({
 									...stakePoolCreation,
@@ -911,10 +899,7 @@ const CeFi = ({ coins, features, kit }) => {
 						<InputNumber
 							style={{ backgroundColor: 'rgba(0,0,0,0.1)', color: 'white' }}
 							placeholder="Input the percentage to be deducted"
-							disabled={
-								!stakePoolCreation.early_unstake ||
-								(editMode && stakePoolCreation.status !== 'uninitialized')
-							}
+							disabled={!stakePoolCreation.early_unstake}
 							onChange={(value) => {
 								if (value > 100) {
 									message.error('value cannot be more than 100');
@@ -960,9 +945,6 @@ const CeFi = ({ coins, features, kit }) => {
 						}}
 					>
 						<Radio.Group
-							disabled={
-								editMode && stakePoolCreation.status !== 'uninitialized'
-							}
 							onChange={(e) => {
 								setStakePoolCreation({
 									...stakePoolCreation,
@@ -1001,9 +983,6 @@ const CeFi = ({ coins, features, kit }) => {
 												color: 'white',
 												width: '100%',
 											}}
-											disabled={
-												editMode && stakePoolCreation.status !== 'uninitialized'
-											}
 											placeholder="Input the percentage to be deducted"
 											onChange={(value) => {
 												if (value > 100) {
@@ -1202,9 +1181,6 @@ const CeFi = ({ coins, features, kit }) => {
 							<div className="mb-2">Account to source inventory from</div>
 							<div className="d-flex align-items-center">
 								<Select
-									disabled={
-										editMode && stakePoolCreation.status !== 'uninitialized'
-									}
 									ref={(inp) => {
 										searchRef.current = inp;
 									}}
@@ -1531,8 +1507,11 @@ const CeFi = ({ coins, features, kit }) => {
 						setSelectedPool();
 						setStep(1);
 					}}
+					className="stake-pool-modal"
 				>
-					<div>{renderStakePoolCreationModal()}</div>
+					<div className="stake-pool-modal-content">
+						{renderStakePoolCreationModal()}
+					</div>
 
 					<div
 						style={{
