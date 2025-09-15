@@ -1495,6 +1495,75 @@ table th {
 .errorText {
   color: var(--specials_notifications-alerts-warnings) !important; }
 
+.verify-code-modal .ReactModal__Content {
+  width: 40rem !important; }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .timer-divider {
+    width: 100%;
+    height: 2px;
+    background-color: var(--labels_secondary-inactive-label-text-graphics); }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .timer-text {
+    font-size: 1.2rem; }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .verification-code-title {
+    font-size: 2.2rem; }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .expired-message-wrapper .expired-message {
+    margin: 1.5rem 0; }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .verification-code-fields .verification-field-divider {
+    width: 1rem;
+    height: 2px;
+    background-color: var(--labels_secondary-inactive-label-text-graphics);
+    margin-right: 1rem; }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .verification-code-fields .verification-code-input {
+    width: 3.5rem;
+    height: 3.5rem;
+    text-align: center;
+    font-size: 1.8rem;
+    border-radius: 5px;
+    margin-right: 0.5rem;
+    background-color: var(--base_background); }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .verification-code-fields .verification-code-input:focus {
+    border: 1px solid var(--labels_secondary-inactive-label-text-graphics);
+    box-shadow: none;
+    outline: none; }
+  .verify-code-modal .ReactModal__Content .verify-code-wrapper .verification-code-error {
+    display: flex;
+    justify-content: center;
+    color: var(--trading_selling-related-elements); }
+
+.verification-success-modal .icon_title-wrapper {
+  margin-top: unset; }
+  .verification-success-modal .icon_title-wrapper .icon_title-text {
+    font-size: 2.2rem; }
+
+.verification-success-modal .success-modal-okay-btn {
+  margin-top: 8%; }
+
+.email-verification-wrapper {
+  width: 35rem; }
+  .email-verification-wrapper .icon_title-wrapper {
+    margin-top: unset; }
+    .email-verification-wrapper .icon_title-wrapper .icon_title-text {
+      font-size: 2.2rem; }
+    .email-verification-wrapper .icon_title-wrapper .icon_title-svg {
+      height: 5rem;
+      width: 8rem; }
+      .email-verification-wrapper .icon_title-wrapper .icon_title-svg svg {
+        height: 6rem;
+        width: 8rem; }
+  .email-verification-wrapper .email-confirmation-title {
+    font-size: 2.5rem; }
+
+.success-modal {
+  margin-top: 10%; }
+  .success-modal .success-popup-wrapper {
+    margin-top: 5%;
+    display: flex;
+    flex-direction: column;
+    gap: 10%; }
+    .success-modal .success-popup-wrapper .success-modal-title {
+      font-size: 2.5rem; }
+    .success-modal .success-popup-wrapper .success-modal-okay-btn {
+      margin-top: 10%; }
+
 .signup_success-wrapper {
   text-align: center; }
   .signup_success-wrapper .signup_success-content {
