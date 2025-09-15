@@ -184,6 +184,10 @@ module.exports = function (sequelize, DataTypes) {
 				type: DataTypes.STRING,
 				allowNull: true,
 				unique: true
+			},
+			is_subaccount: {
+				type: DataTypes.BOOLEAN,
+				defaultValue: false
 			}
 		},
 		{
