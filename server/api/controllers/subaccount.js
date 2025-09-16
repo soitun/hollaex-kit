@@ -128,6 +128,19 @@ const getSubaccountAuthToken = async (req, res) => {
 			sub.settings?.language
 		);
 
+		await toolsLib.user.registerUserLogin(
+			sub.id,
+			ip,
+			{
+				device: req.headers['user-agent'],
+				domain: req.headers['x-real-origin'],
+				origin: req.headers.origin,
+				referer: req.headers.referer,
+				token,
+				status: true
+			}
+		);
+
 		return res.json({ token });
 	} catch (err) {
 		loggerUser.error(req.uuid, 'controllers/subaccount/getSubaccountAuthToken', err.message);
