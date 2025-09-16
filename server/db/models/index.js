@@ -76,6 +76,8 @@ model = require(path.join(__dirname, './announcement'))(sequelize, Sequelize.Dat
 db[model.name] = model;
 model = require(path.join(__dirname, './role'))(sequelize, Sequelize.DataTypes);
 db[model.name] = model;
+model = require(path.join(__dirname, './subaccount'))(sequelize, Sequelize.DataTypes);
+db[model.name] = model;
 Object.keys(db).forEach(function (modelName) {
 	if ('associate' in db[modelName]) {
 		db[modelName].associate(db);

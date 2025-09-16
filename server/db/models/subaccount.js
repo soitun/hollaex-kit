@@ -18,12 +18,14 @@ module.exports = function (sequelize, DataTypes) {
 		Subaccount.belongsTo(models.User, {
 			onDelete: 'CASCADE',
 			foreignKey: 'sub_id',
-			targetKey: 'id'
+			targetKey: 'id',
+			as: 'sub'
 		});
-        Subaccount.belongsTo(models.User, {
+		Subaccount.belongsTo(models.User, {
 			onDelete: 'CASCADE',
 			foreignKey: 'master_id',
-			targetKey: 'id'
+			targetKey: 'id',
+			as: 'master'
 		});
 	};
 

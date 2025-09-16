@@ -70,7 +70,8 @@ const {
 	UNAUTHORIZED_UPDATE_METHOD,
 	INVALID_AUTOTRADE_CONFIG,
 	GOOGLE_TOKEN_INVALID_ISSUER,
-	GOOGLE_TOKEN_EXPIRED
+	GOOGLE_TOKEN_EXPIRED,
+	NOT_AUTHORIZED
 } = require(`${SERVER_PATH}/messages`);
 const { publisher, client } = require('./database/redis');
 const {
@@ -4513,6 +4514,83 @@ const verifyGoogleToken = async (token) => {
 	}
 };
 
+const createSubaccount = async (masterKitId, { email, password }) => {
+	if (!isEmail(email)) {
+		return reject(new Error(PROVIDE_VALID_EMAIL));
+	}
+	if (!isValidPassword(password)) {
+		return reject(new Error(INVALID_PASSWORD));
+	}
+
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) {
+		throw new Error(USER_NOT_FOUND);
+	}
+	if (master.is_subaccount) {
+		throw new Error(NOT_AUTHORIZED);
+	}
+
+	email = email.toLowerCase().trim();
+
+	const existing = await dbQuery.findOne('user', { where: { email }, attributes: ['email'] });
+	if (existing) {
+		throw new Error(USER_EXISTS);
+	}
+
+	return getModel('sequelize').transaction(async (transaction) => {
+		// create sub user on kit
+		const subUser = await getModel('user').create({
+			email,
+			password,
+			settings: INITIAL_SETTINGS(),
+			is_subaccount: true,
+			email_verified: false,
+			activated: true,
+			verification_level: 1
+		}, { transaction });
+
+		// create user on network
+		const networkUser = await getNodeLib().createUser(email);
+		await subUser.update({ network_id: networkUser.id }, { fields: ['network_id'], returning: true, transaction });
+
+		// link subaccount
+		await getModel('subaccount').create({ master_id: master.id, sub_id: subUser.id, active: true }, { transaction });
+
+		// send signup verification email to subaccount
+		let verification_code = uuid();
+		storeVerificationCode(subUser, verification_code);
+		sendEmail(MAILTYPE.SIGNUP, email, verification_code, {});
+
+		return omitUserFields(subUser.dataValues);
+	});
+};
+
+const transferBetweenMasterAndSub = async ({ masterKitId, subKitId, currency, amount, direction = 'to_sub', description = 'Subaccount Transfer' }) => {
+	if (!isString(currency) || amount <= 0) {
+		throw new Error('Invalid transfer payload');
+	}
+
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const sub = await getUserByKitId(subKitId, false);
+	if (!sub) throw new Error(USER_NOT_FOUND);
+	if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	// Verify relationship
+	const link = await dbQuery.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const senderKitId = direction === 'to_sub' ? master.id : sub.id;
+	const receiverKitId = direction === 'to_sub' ? sub.id : master.id;
+
+	const { transferAssetByKitIds } = require('./wallet');
+	return transferAssetByKitIds(senderKitId, receiverKitId, currency, amount, description, true, {
+		category: 'subaccount'
+	});
+};
+
 module.exports = {
 	loginUser,
 	getUserTier,
@@ -4609,5 +4687,7 @@ module.exports = {
 	createExchangeUserRole,
 	updateExchangeUserRole,
 	deleteExchangeUserRole,
-	verifyGoogleToken
+	verifyGoogleToken,
+	createSubaccount,
+	transferBetweenMasterAndSub
 };
