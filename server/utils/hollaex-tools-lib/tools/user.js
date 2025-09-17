@@ -124,7 +124,7 @@ const storeVerificationCode = (user, verification_code) => {
 	client.setexAsync(`verification_code:user${verification_code}`, 5 * 60, JSON.stringify(data));
 };
 
-const signUpUser = (email, password, opts = { referral: null }, version) => {
+const signUpUser = (email, password, opts, version) => {
 	if (!getKitConfig().new_user_is_activated) {
 		return reject(new Error(SIGNUP_NOT_AVAILABLE));
 	}
@@ -152,7 +152,7 @@ const signUpUser = (email, password, opts = { referral: null }, version) => {
 					email,
 					password,
 					verification_level: 1,
-					email_verified: false,
+					email_verified: opts.email_verified || false,
 					settings: INITIAL_SETTINGS(),
 					// Optional OAuth fields (ignored unless provided)
 					google_id: opts.google_id || null
@@ -503,7 +503,7 @@ const createSuspiciousLogin = async (user, ip, device, country, domain, origin, 
 
 	if (!loginData) {
 		loggerUser.verbose(
-			'tools/user/loginPost creating suspicious login record',
+			'tools/user/createSuspiciousLogin creating suspicious login record',
 			'user id',
 			user.id,
 			'country',
