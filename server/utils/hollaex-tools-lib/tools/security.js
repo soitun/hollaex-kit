@@ -167,9 +167,10 @@ const confirmChangeUserPassword = (code, domain) => {
 			return user.update({ password: dataValues.password }, { fields: ['password'], hooks: false });
 		})
 		.then(async (user) => {
-			const { revokeAllUserSessions } = require('./user');
+			const { revokeAllUserSessions, disableUserWithdrawal } = require('./user');
 
 			await revokeAllUserSessions(user.id);
+			await disableUserWithdrawal(user.id, { expiry_date: moment().add(24, 'hours').toISOString() });
 			sendEmail(
 				MAILTYPE.PASSWORD_CHANGED,
 				user.email,
@@ -181,7 +182,7 @@ const confirmChangeUserPassword = (code, domain) => {
 		});
 };
 
-const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode) => {
+const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode, version) => {
 	if (oldPassword === newPassword) {
 		return reject(new Error(SAME_PASSWORD));
 	}
@@ -202,13 +203,29 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 			if (!passwordIsValid) {
 				throw new Error(INVALID_CREDENTIALS);
 			}
-			return all([createChangePasswordCode(user.id, newPassword), user]);
+			return all([createChangePasswordCode(user.id, newPassword, version), user]);
 		})
-		.then(([code, user]) => {
+		.then(async ([code, user]) => {
+			if (version === 'v3') {
+				await client.setexAsync(
+					`user:freeze-account:${code}`,
+					60 * 60 * 6,
+					JSON.stringify({
+						id: code,
+						user_id: user.id,
+						email: user.email,
+						verification_code: code,
+						ip,
+						time: new Date().toISOString()
+					})
+				);
+			}
 			sendEmail(
-				MAILTYPE.CHANGE_PASSWORD,
+				version === 'v3' ? MAILTYPE.CHANGE_PASSWORD_CODE : MAILTYPE.CHANGE_PASSWORD,
 				email,
-				{ code, ip },
+				version === 'v3'
+					? { code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` }
+					: { code, ip },
 				user.settings,
 				domain
 			);
@@ -228,9 +245,18 @@ const getChangePasswordCode = (code) => {
 		});
 };
 
-const createChangePasswordCode = (userId, newPassword) => {
+const createChangePasswordCode = (userId, newPassword, version) => {
 	//Generate new random code
-	const code = crypto.randomBytes(20).toString('hex');
+	let code;
+	if (version === 'v3') {
+		const letters = Array.from({ length: 2 }, () =>
+			String.fromCharCode(65 + crypto.randomInt(0, 26))
+		).join('');
+		const numbers = Math.floor(10000 + Math.random() * 90000);
+		code = `${letters}-${numbers}`;
+	} else {
+		code = crypto.randomBytes(20).toString('hex');
+	}
 	//Code is expire in 5 mins
 	return generateHash(newPassword)
 		.then((hashedPassword) => {

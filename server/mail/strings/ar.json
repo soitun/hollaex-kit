@@ -80,6 +80,10 @@
 			"html": "<div><p> ${name}العزيز </p><p>لقد قدمت طلبًا لتغيير كلمة المرور الخاصة بحسابك.<br />لتأكيد تغيير كلمة المرور الخاصة بك ، انقر فوق الارتباط أدناه.<br /></p><div style=\"padding-top: 10px; margin-bottom: 10px;\"><a href=\"${link}\" target='_blank'><Button style=\"cursor: pointer; background-color: #333333; color: white; border: none; padding: 1rem; text-transform: uppercase; cursor: pointer !important; font-size: 14px; min-width: 11rem;\">تأكيد تغيير كلمة المرور الخاصة بي</Button></a></div><p>إذا تم تقديم هذا الطلب عن طريق الخطأ ، فمن الآمن تجاهله ؛ لن يتم إجراء أي تغييرات على حسابك.</p><p>تم بدء الطلب من: ${ip}</p><p> تحية<br> فريق${api_name} </p></div>",
 			"title": "تغيير تأكيد كلمة المرور"
 		},
+		"CHANGE_PASSWORD_CODE": {
+			"html": "<div><p> Dear ${name} </p><p>You requested to change your account password.<br />Use the verification code below to confirm this change.</p><div style=\"padding:1rem;background-color:#f5f5f5;border:1px dashed #999;font-family:monospace;font-size:1.5rem;letter-spacing:4px;text-align:center;margin-bottom:20px;\">${confirmation_code}</div><p>Enter this code on the password change confirmation screen. The code is valid for a limited time.</p><p>If this wasn't you, <a href=\"${freeze_account_link}\">freeze your account</a> immediately and contact support.</p><p><strong>Note:</strong> For security, withdrawals are restricted for 24 hours after a password change.</p><p>Request initiated from: ${ip}</p><p> Regards<br> ${api_name} team </p></div>",
+			"title": "Change Password Verification Code"
+		},
 		"DEPOSIT_PENDING": {
 			"html": "<div><div><p> ${name}العزيز </p><p> ${amount} لديك إيداع جديد بمبلغ ${currency} في قيد الانتظار في محفظتك ${api_name} .يرجى الانتظار حتى يتم تأكيد المعاملة وستتوفر أموالك في محفظتك. تتطلب معاملتك. ${confirmation} تأكيداً (تأكيداتٍ) على البلوك تشين.</p><p>المبلغ: ${amount} ${currency}<br />الحالة: ${status}<br />العنوان: ${address}<br />معرّف المعاملة: ${transaction_id}<br /><span id='network'>شبكة الاتصال: ${network}</span><br />الرسوم: ${fee} ${currency}<br /><ul>${explorers}</ul></div><p> تحية<br> فريق${api_name} </p></div>",
 			"title": "${currency} ايداع pending"

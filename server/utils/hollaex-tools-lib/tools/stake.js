@@ -7,6 +7,7 @@ const { getUserByKitId, createAuditLog } = require('./user');
 const { subscribedToCoin, getKitConfig, getAssetsPrices } = require('./common');
 const { transferAssetByKitIds, getUserBalanceByKitId } = require('./wallet');
 const { Op, fn, col } = require('sequelize');
+const { parse } = require('json2csv');
 const BigNumber = require('bignumber.js');
 const { paginationQuery, timeframeQuery, orderingQuery } = require('./database/helpers');
 const dbQuery = require('./database/query');
@@ -39,6 +40,7 @@ const {
 	STAKE_POOL_NOT_ACTIVE_FOR_UNSTAKING_STATUS,
 	UNSTAKE_PERIOD_ERROR,
 	STAKE_UNSUPPORTED_EXCHANGE_PLAN,
+	NO_ORACLE_PRICE_FOUND,
 	REWARD_CURRENCY_CANNOT_BE_SAME,
 	STAKE_MAX_ACTIVE
 
@@ -244,7 +246,6 @@ const createExchangeStakePool = async (stake) => {
 		duration,
 		slashing,
 		early_unstake,
-		max_amount,
 		status,
 		onboarding,
 	} = stake;
@@ -327,13 +328,7 @@ const updateExchangeStakePool = async (id, data, auditInfo) => {
 	const {
 		currency,
 		reward_currency,
-		name,
 		account_id,
-		duration,
-		slashing,
-		early_unstake,
-		slashing_principle_percentage,
-		slashing_earning_percentage,
 		status,
 		onboarding,
 	} = data;
@@ -344,14 +339,7 @@ const updateExchangeStakePool = async (id, data, auditInfo) => {
 
 	if (status !== 'uninitialized' && (
 		(currency && currency !== stakePool.currency)
-		|| (name && name !== stakePool.name)
 		|| (reward_currency && reward_currency !== stakePool.reward_currency)
-		|| (account_id && account_id !== stakePool.account_id)
-		|| (duration && duration !== stakePool.duration)
-		|| (slashing && slashing !== stakePool.slashing)
-		|| (early_unstake && early_unstake !== stakePool.early_unstake)
-		|| (slashing_principle_percentage && slashing_principle_percentage !== stakePool.slashing_principle_percentage)
-		|| (slashing_earning_percentage && slashing_earning_percentage !== stakePool.slashing_earning_percentage)
 	)) {
 		throw new Error(INVALID_STAKE_POOL_ACTION);
 	}

@@ -362,6 +362,10 @@ paths:
           required: true
           type: string
           maxLength: 256
+        - name: version
+          in: query
+          required: false
+          type: string
       responses:
         301:
           description: "301 redirect"
