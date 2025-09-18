@@ -279,6 +279,8 @@ definitions:
         description: OTP code when otp is enabled
         minLength: 6
         maxLength: 6
+      version:
+        type: string
   LoginsResponse:
     type: object
     properties:

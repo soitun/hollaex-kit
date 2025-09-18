@@ -96,6 +96,10 @@
 			"html": "<div><p> Dear ${name} </p><p>You have made a request to change the password for your account.<br />To confirm your password changed, click on the link below.<br /></p><div style=\"padding-top: 10px; margin-bottom: 10px;\"><a href=\"${link}\" target=\"_blank\"><Button style=\"cursor: pointer; background-color: #333333; color: white; border: none; padding: 1rem; text-transform: uppercase; cursor: pointer !important; font-size: 14px; min-width: 11rem;\">Confirm Change My Password</Button></a></div><p>If this request was made in error, it is safe to ignore it; no changes will be made to your account.</p><p>Request initiated from: ${ip}</p><p> Regards<br> ${api_name} team </p></div>",
 			"title": "Change Password Confirmation"
 		},
+		"CHANGE_PASSWORD_CODE": {
+			"html": "<div><p> Dear ${name} </p><p>You requested to change your account password.<br />Use the verification code below to confirm this change.</p><div style=\"padding:1rem;background-color:#f5f5f5;border:1px dashed #999;font-family:monospace;font-size:1.5rem;letter-spacing:4px;text-align:center;margin-bottom:20px;\">${confirmation_code}</div><p>Enter this code on the password change confirmation screen. The code is valid for a limited time.</p><p>If this wasn't you, <a href=\"${freeze_account_link}\">freeze your account</a> immediately and contact support.</p><p><strong>Note:</strong> For security, withdrawals are restricted for 24 hours after a password change.</p><p>Request initiated from: ${ip}</p><p> Regards<br> ${api_name} team </p></div>",
+			"title": "Change Password Verification Code"
+		},
 		"DOC_REJECTED": {
 			"html": "<div><p>Dear ${email} </p><p>Unfortunately, your uploaded KYC documents have been rejected.<br>The reasons for your documents being rejected are listed below.<br></p><div><ul>${doc_information}</ul></div><p>If you feel these reasons are invalid, please feel free to reply to this email.<br>Otherwise, please reupload valid documents in order to verify your identity.</p><p> Regards<br> ${api_name} team </p</div>",
 			"title": "KYC Documents Rejected"

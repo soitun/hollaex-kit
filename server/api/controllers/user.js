@@ -160,7 +160,7 @@ const signUpUserWithGoogle = async (req, res) => {
 			referral,
 			google_id: googleUserData.google_id || googleUserData.sub,
 			name: googleUserData.name,
-			email_verified: true, // Google emails are already verified
+			email_verified: false, // Google emails are already verified
 			activated: true
 		};
 
@@ -853,7 +853,8 @@ const resetPassword = (req, res) => {
 
 	toolsLib.security.resetUserPassword(code, new_password)
 		.then(() => {
-			return res.json({ message: 'Password updated.' });
+			const messageObj = errorMessageConverter({ message: 'Password updated.' }, req?.auth?.sub?.lang);
+			return res.json({ message: messageObj?.message, lang: messageObj?.lang });
 		})
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/resetPassword', err.message);
@@ -913,7 +914,7 @@ const updateSettings = (req, res) => {
 const changePassword = (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/user/changePassword', req.auth.sub);
 	const email = req.auth.sub.email;
-	const { old_password, new_password, otp_code } = req.swagger.params.data.value;
+	const { old_password, new_password, otp_code, version } = req.swagger.params.data.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = API_HOST + HOLLAEX_NETWORK_BASE_URL;
 
@@ -924,7 +925,7 @@ const changePassword = (req, res) => {
 		otp_code
 	);
 
-	toolsLib.security.changeUserPassword(email, old_password, new_password, ip, domain, otp_code)
+	toolsLib.security.changeUserPassword(email, old_password, new_password, ip, domain, otp_code, version)
 		.then(() => res.json({ message: `Verification email to change password is sent to: ${email}` }))
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/changePassword', err.message);
@@ -936,6 +937,7 @@ const changePassword = (req, res) => {
 const confirmChangePassword = (req, res) => {
 	const code = req.swagger.params.code.value;
 	const ip = req.headers['x-real-ip'];
+	const version = req.query?.version;
 
 	loggerUser.verbose(
 		req.uuid,
@@ -945,7 +947,12 @@ const confirmChangePassword = (req, res) => {
 	);
 
 	toolsLib.security.confirmChangeUserPassword(code)
-		.then(() => res.redirect(301, `${DOMAIN}/change-password-confirm/${code}?isSuccess=true`))
+		.then(() => {
+			if (version && version === 'v3') {
+				return res.json({ message: 'Password updated.' });
+			}
+			return res.redirect(301, `${DOMAIN}/change-password-confirm/${code}?isSuccess=true`);
+		})
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/confirmChangeUserPassword', err.message);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);

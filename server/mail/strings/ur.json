@@ -28,6 +28,10 @@
 			"html": "<div><p> میرےعزیز ${name} </p><p>ہم آپ کو تلاش کرنے یا اس پر کارروائی کرنے کے قابل نہیں تھے۔ ${currency} پر جمع کرایا ${date} کے لیے ${amount}. اس طرح، لین دین کو ہمارے سسٹم نے مسترد کر دیا ہے۔</p><p>اگر آپ کے پاس مزید کوئی استفسار ہے، تو آپ اس ای میل کا جواب دے سکتے ہیں۔</p><p>ٹرانزیکشن آئی ڈی: ${txid}<br />رقم: ${amount}<br />حالت: مسترد</p><p> سلام<br> ${api_name} ٹیم </p></div>",
 			"title": "${currency} ڈپازٹ مسترد کر دیا گیا۔"
 		},
+		"CHANGE_PASSWORD_CODE": {
+			"html": "<div><p> محترم ${name} </p><p>آپ نے اپنے اکاؤنٹ کا <strong>پاس ورڈ تبدیل</strong> کرنے کی درخواست کی ہے۔<br />اس تبدیلی کی تصدیق کے لیے براہ کرم نیچے دیا گیا تصدیقی کوڈ استعمال کریں۔</p><div style=\"padding:1rem;background-color:#f5f5f5;border:1px dashed #999;font-family:monospace;font-size:1.5rem;letter-spacing:4px;text-align:center;margin-bottom:20px;\">${confirmation_code}</div><p>یہ کوڈ پاس ورڈ تبدیلی کی تصدیقی اسکرین پر درج کریں۔ کوڈ محدود مدت کے لیے کارآمد ہے۔</p><p>اگر یہ <strong>آپ نہیں تھے</strong> تو فوراً <a href=\"${freeze_account_link}\">اپنا اکاؤنٹ منجمد کریں</a> اور سپورٹ سے رابطہ کریں۔</p><p><strong>نوٹ:</strong> سکیورٹی وجوہات کی بنا پر، پاس ورڈ تبدیل ہونے کے بعد 24 گھنٹوں تک نکالنے (withdrawals) محدود رہیں گے۔</p><p>درخواست شروع کرنے والا: ${ip}</p><p>سلام<br>${api_name} ٹیم</p></div>",
+			"title": "پاس ورڈ تبدیلی کی تصدیقی کوڈ"
+		},
 		"DEPOSIT_PENDING": {
 			"html": "<div><div><p> میرےعزیز ${name} </p><p> آپ کے پاس ایک نیا ڈپازٹ ہے۔ ${amount} ${currency} زیر التواء ${api_name} بٹوا. براہ کرم لین دین کی تصدیق ہونے تک انتظار کریں اور آپ کے بٹوے میں آپ کے فنڈز دستیاب ہوں گے۔</p><p>رقم: ${amount} ${currency}<br />حالت: ${status}<br />پتہ: ${address}<br />Transaction ID: ${transaction_id}<br /><span id=\"network\">نیٹ ورک: ${network}</span><br />Fee: ${fee} ${fee_coin}<br /><ul>${explorers}</ul></div><p> سلام<br> ${api_name} ٹیم </p></div>",
 			"title": "${currency} ڈپازٹ زیر التواء"
