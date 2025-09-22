@@ -786,6 +786,13 @@ class UserSecurity extends Component {
 						</span>
 					</EditWrapper>
 				</div>
+				<div className="text-center mt-3">
+					<EditWrapper stringId={STRINGS['VERIFY_CODE.SECURITY_PROTOCOL']}>
+						<span className="fs-14">
+							{STRINGS['VERIFY_CODE.SECURITY_PROTOCOL']}
+						</span>
+					</EditWrapper>
+				</div>
 				<Button
 					onClick={() => this.handleCloseSuccessDialog()}
 					className="success-modal-okay-btn"
@@ -862,6 +869,32 @@ class UserSecurity extends Component {
 			const nextInput = document.getElementById(`verify-code-input-${idx + 1}`);
 			if (nextInput) nextInput.focus();
 		}
+	};
+
+	handleVerifyCodePaste = (e, idx) => {
+		e.preventDefault();
+		let pastedData = e.clipboardData.getData('Text')?.trim();
+		if (!pastedData) return;
+		pastedData = pastedData?.replace(/[-\s]/g, '');
+
+		const { verifyCode } = this.state;
+		const code = verifyCode || Array(7).fill('');
+		const newCode = [...code];
+		for (let i = 0; i < pastedData?.length && idx + i < code?.length; i++) {
+			if (/^[0-9a-zA-Z]$/.test(pastedData[i])) {
+				newCode[idx + i] = pastedData[i];
+			}
+		}
+
+		this.setState({ verifyCode: newCode, error: '' }, () => {
+			const nextIndex = idx + pastedData?.length;
+			if (nextIndex < code?.length) {
+				const nextInput = document.getElementById(
+					`verify-code-input-${nextIndex}`
+				);
+				if (nextInput) nextInput.focus();
+			}
+		});
 	};
 
 	onHandleVerifyCode = async () => {
@@ -952,6 +985,7 @@ class UserSecurity extends Component {
 										className={`verification-code-input ${
 											idx === 1 ? 'mr-3' : ''
 										}`}
+										onPaste={(e) => this.handleVerifyCodePaste(e, idx)}
 										autoFocus={idx === 0}
 									/>
 									{idx === 1 && (
