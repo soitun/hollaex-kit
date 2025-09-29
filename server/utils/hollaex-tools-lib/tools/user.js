@@ -4514,7 +4514,7 @@ const verifyGoogleToken = async (token) => {
 	}
 };
 
-const createSubaccount = async (masterKitId, { email, password, virtual, label }) => {
+const createSubaccount = async (masterKitId, { email, password, virtual, label, color }) => {
 	if (!virtual && !isEmail(email)) {
 		return reject(new Error(PROVIDE_VALID_EMAIL));
 	}
@@ -4558,7 +4558,7 @@ const createSubaccount = async (masterKitId, { email, password, virtual, label }
 		await subUser.update({ network_id: networkUser.id }, { fields: ['network_id'], returning: true, transaction });
 
 		// link subaccount
-		await getModel('subaccount').create({ master_id: master.id, sub_id: subUser.id, active: true, label }, { transaction });
+		await getModel('subaccount').create({ master_id: master.id, sub_id: subUser.id, active: true, label, color }, { transaction });
 
 		if (!virtual) {
 			// send signup verification email to subaccount

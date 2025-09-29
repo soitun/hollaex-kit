@@ -10,6 +10,10 @@ module.exports = function (sequelize, DataTypes) {
 			label: {
 				type: DataTypes.STRING,
 				allowNull: false
+			},
+			color: {
+				type: DataTypes.STRING,
+				defaultValue: '#000000'
 			}
 		},
 		{

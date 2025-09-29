@@ -19,7 +19,24 @@ paths:
               data:
                 type: array
                 items:
-                  $ref: "#/definitions/UserResponse"
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                    label:
+                      type: string
+                    color:
+                      type: string
+                    email:
+                      type: string
+                    verification_level:
+                      type: number
+                    is_subaccount:
+                      type: boolean
+                    network_id:
+                      type: number
+                    created_at:
+                      type: string
         default:
           description: Error
           schema:
@@ -57,6 +74,10 @@ paths:
               label:
                 type: string
                 maxLength: 256
+              color:
+                type: string
+                description: Hex color code for the subaccount label
+                default: "#000000"
               virtual:
                 type: boolean
                 default: false

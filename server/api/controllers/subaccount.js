@@ -40,6 +40,7 @@ const getUserSubaccounts = async (req, res) => {
 			return {
 				id: user.id,
 				label: row.label,
+				color: row.color,
 				email: user.email,
 				verification_level: user.verification_level,
 				is_subaccount: user.is_subaccount,
@@ -61,13 +62,13 @@ const createSubaccount = async (req, res) => {
 
 	try {
 		const masterId = req?.auth?.sub?.id;
-		const { email, password, virtual, label } = req.swagger.params.data.value;
+		const { email, password, virtual, label, color } = req.swagger.params.data.value;
 
 		const master = await toolsLib.user.getUserByKitId(masterId, false);
 		if (!master) throw new Error(USER_NOT_FOUND);
 		if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
 
-		const sub = await toolsLib.user.createSubaccount(masterId, { email, password, virtual, label });
+		const sub = await toolsLib.user.createSubaccount(masterId, { email, password, virtual, label, color });
 		return res.status(201).json(sub);
 	} catch (err) {
 		loggerUser.error(req.uuid, 'controllers/subaccount/createSubaccount', err.message);
