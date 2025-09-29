@@ -39,8 +39,8 @@ const getUserSubaccounts = async (req, res) => {
 			const user = row.sub || {};
 			return {
 				id: user.id,
+				label: row.label,
 				email: user.email,
-				username: user.username,
 				verification_level: user.verification_level,
 				is_subaccount: user.is_subaccount,
 				network_id: user.network_id,
@@ -61,13 +61,13 @@ const createSubaccount = async (req, res) => {
 
 	try {
 		const masterId = req?.auth?.sub?.id;
-		const { email, password } = req.swagger.params.data.value;
+		const { email, password, virtual, label } = req.swagger.params.data.value;
 
 		const master = await toolsLib.user.getUserByKitId(masterId, false);
 		if (!master) throw new Error(USER_NOT_FOUND);
 		if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
 
-		const sub = await toolsLib.user.createSubaccount(masterId, { email, password });
+		const sub = await toolsLib.user.createSubaccount(masterId, { email, password, virtual, label });
 		return res.status(201).json(sub);
 	} catch (err) {
 		loggerUser.error(req.uuid, 'controllers/subaccount/createSubaccount', err.message);
@@ -115,6 +115,7 @@ const getSubaccountAuthToken = async (req, res) => {
 		const sub = await toolsLib.user.getUserByKitId(subaccount_id, false);
 		if (!sub) throw new Error(USER_NOT_FOUND);
 		if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+		if (!sub.activated) throw new Error(NOT_AUTHORIZED);
 
 		const link = await toolsLib.database.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id } });
 		if (!link) throw new Error(NOT_AUTHORIZED);

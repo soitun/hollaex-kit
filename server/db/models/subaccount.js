@@ -6,6 +6,10 @@ module.exports = function (sequelize, DataTypes) {
 			active: {
 				type: DataTypes.BOOLEAN,
 				defaultValue: true
+			},
+			label: {
+				type: DataTypes.STRING,
+				allowNull: false
 			}
 		},
 		{

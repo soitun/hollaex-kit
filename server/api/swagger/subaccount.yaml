@@ -46,8 +46,7 @@ paths:
           schema:
             type: object
             required:
-              - email
-              - password
+              - label
             properties:
               email:
                 type: string
@@ -55,6 +54,12 @@ paths:
               password:
                 type: string
                 maxLength: 256
+              label:
+                type: string
+                maxLength: 256
+              virtual:
+                type: boolean
+                default: false
       responses:
         201:
           description: Created

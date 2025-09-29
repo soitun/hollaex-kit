@@ -4514,11 +4514,11 @@ const verifyGoogleToken = async (token) => {
 	}
 };
 
-const createSubaccount = async (masterKitId, { email, password }) => {
-	if (!isEmail(email)) {
+const createSubaccount = async (masterKitId, { email, password, virtual, label }) => {
+	if (!virtual && !isEmail(email)) {
 		return reject(new Error(PROVIDE_VALID_EMAIL));
 	}
-	if (!isValidPassword(password)) {
+	if (!virtual && !isValidPassword(password)) {
 		return reject(new Error(INVALID_PASSWORD));
 	}
 
@@ -4532,6 +4532,10 @@ const createSubaccount = async (masterKitId, { email, password }) => {
 
 	email = email.toLowerCase().trim();
 
+	if (virtual) {
+		email = Date.now() + master.email
+	}
+
 	const existing = await dbQuery.findOne('user', { where: { email }, attributes: ['email'] });
 	if (existing) {
 		throw new Error(USER_EXISTS);
@@ -4540,7 +4544,7 @@ const createSubaccount = async (masterKitId, { email, password }) => {
 	return getModel('sequelize').transaction(async (transaction) => {
 		// create sub user on kit
 		const subUser = await getModel('user').create({
-			email,
+			email: virtual ? `${email}_virtual` : email,
 			password,
 			settings: INITIAL_SETTINGS(),
 			is_subaccount: true,
@@ -4554,12 +4558,14 @@ const createSubaccount = async (masterKitId, { email, password }) => {
 		await subUser.update({ network_id: networkUser.id }, { fields: ['network_id'], returning: true, transaction });
 
 		// link subaccount
-		await getModel('subaccount').create({ master_id: master.id, sub_id: subUser.id, active: true }, { transaction });
+		await getModel('subaccount').create({ master_id: master.id, sub_id: subUser.id, active: true, label }, { transaction });
 
-		// send signup verification email to subaccount
-		let verification_code = uuid();
-		storeVerificationCode(subUser, verification_code);
-		sendEmail(MAILTYPE.SIGNUP, email, verification_code, {});
+		if (!virtual) {
+			// send signup verification email to subaccount
+			let verification_code = uuid();
+			storeVerificationCode(subUser, verification_code);
+			sendEmail(MAILTYPE.SIGNUP, email, verification_code, {});
+		}
 
 		return omitUserFields(subUser.dataValues);
 	});

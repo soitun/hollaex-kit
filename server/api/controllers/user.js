@@ -161,7 +161,7 @@ const signUpUserWithGoogle = async (req, res) => {
 			referral,
 			google_id: googleUserData.google_id || googleUserData.sub,
 			name: googleUserData.name,
-			email_verified: false, // Google emails are already verified
+			email_verified: false,
 			activated: true
 		};
 

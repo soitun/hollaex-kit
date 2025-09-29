@@ -200,9 +200,15 @@ module.exports = function (sequelize, DataTypes) {
 		user.email = user.email.toLowerCase();
 		user.username = user.email.substr(0, user.email.indexOf('@'));
 		user.affiliation_code = generateAffiliationCode();
-		return generateHash(user.password).then((hash) => {
-			user.password = hash;
-		});
+		const isVirtualEmail = typeof user.email === 'string' && user.email.endsWith('_virtual');
+		if (!isVirtualEmail && user.password) {
+			return generateHash(user.password).then((hash) => {
+				user.password = hash;
+			});
+		} else {
+			user.password = 'virtual';
+		}
+		return;
 	});
 
 	User.beforeUpdate((user, options) => {
