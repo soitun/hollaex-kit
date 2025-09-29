@@ -13,6 +13,7 @@ module.exports = function (sequelize, DataTypes) {
 			},
 			color: {
 				type: DataTypes.STRING,
+				allowNull: true,
 				defaultValue: '#000000'
 			}
 		},

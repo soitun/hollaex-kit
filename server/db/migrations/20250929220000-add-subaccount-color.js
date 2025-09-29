@@ -7,6 +7,7 @@ module.exports = {
 	up: (queryInterface, Sequelize) =>
 		queryInterface.addColumn(TABLE, COLUMN, {
 			type: Sequelize.STRING,
+			allowNull: true,
 			defaultValue: '#000000'
 		}),
 	down: (queryInterface) =>

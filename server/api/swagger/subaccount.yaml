@@ -23,10 +23,6 @@ paths:
                   properties:
                     id:
                       type: number
-                    label:
-                      type: string
-                    color:
-                      type: string
                     email:
                       type: string
                     verification_level:
