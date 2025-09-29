@@ -416,6 +416,12 @@ class GeneralContent extends Component {
 				message.success('Updated successfully');
 				this.setState({ buttonSubmitting: false });
 				this.handleDisable(true);
+				if (!this.props?.user?.settings?.interface?.display_currency) {
+					localStorage.setItem(
+						'base_currnecy',
+						res?.kit?.native_currency || BASE_CURRENCY
+					);
+				}
 			})
 			.catch((err) => {
 				let error = err && err.data ? err.data.message : err.message;
