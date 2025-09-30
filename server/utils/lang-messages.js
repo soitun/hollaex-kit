@@ -4085,7 +4085,26 @@ const messages = {
 		'ur': 'گوگل اکاؤنٹ مماثل نہیں ہے',
 		'vi': 'Tài khoản Google không khớp',
 		'zh': 'Google 帐户不匹配'
-	}
+	},
+	'Subaccounts cannot generate deposit addresses': {
+		'en': 'Subaccounts cannot generate deposit addresses',
+		'de': 'Unterkonten können keine Einzahlungsadressen erstellen',
+		'es': 'Las subcuentas no pueden generar direcciones de depósito',
+		'fa': 'زیرحساب‌ها نمی‌توانند آدرس واریز تولید کنند',
+		'fr': 'Les sous-comptes ne peuvent pas générer des adresses de dépôt',
+		'id': 'Sub-akun tidak dapat membuat alamat setoran',
+		'it': 'Le sotto-conti non possono generare indirizzi di deposito',
+		'ja': 'サブアカウントは入金アドレスを生成できません',
+		'ko': '하위 계정은 입금 주소를 생성할 수 없습니다',
+		'mn': 'Дэд бүртгэлүүд хадгаламжийн хаяг үүсгэж чадахгүй',
+		'nl': 'Subaccounts kunnen geen stortingsadressen genereren',
+		'pt': 'Subcontas não podem gerar endereços de depósito',
+		'ru': 'Субаккаунты не могут создавать адреса для депозита',
+		'tr': 'Alt hesaplar para yatırma adresi oluşturamaz',
+		'ur': 'سب اکاؤنٹس ڈپازٹ ایڈریسز نہیں بنا سکتے',
+		'vi': 'Tài khoản phụ không thể tạo địa chỉ nạp tiền',
+		'zh': '子账户无法生成充值地址'
+	},
 };
 
 

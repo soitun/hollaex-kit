@@ -433,6 +433,8 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		throw new Error(USER_NOT_REGISTERED_ON_NETWORK);
 	} else if (user.verification_level < 1) {
 		throw new Error(UPGRADE_VERIFICATION_LEVEL(1));
+	} else if (user.is_subaccount) {
+		throw new Error(WITHDRAWAL_DISABLED);
 	} else if(user.withdrawal_blocked && moment().isBefore(moment(user.withdrawal_blocked))) {
 		throw new Error(WITHDRAWAL_DISABLED);	
 	}

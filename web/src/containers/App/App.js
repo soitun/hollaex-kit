@@ -104,6 +104,7 @@ class App extends Component {
 	limitTimeOut = null;
 	debouncedPricesAndAssets = null;
 	assetsPrice = null;
+	handlePricesAndAssets = null;
 
 	UNSAFE_componentWillMount() {
 		const chatIsClosed = getChatMinimized();
@@ -227,6 +228,10 @@ class App extends Component {
 		}
 	}
 
+	handlePricesAndAssets = debounce(() => {
+		this.props.setPricesAndAsset(this.props.balance, this.props.coins);
+	}, 100);
+
 	componentDidUpdate(prevProps) {
 		const { tools, activeTheme } = this.props;
 		const params = new URLSearchParams(window.location.search);
@@ -261,6 +266,9 @@ class App extends Component {
 			});
 			return;
 		}
+		if (prevProps.display_currency !== this.props.display_currency) {
+			this.handlePricesAndAssets();
+		}
 	}
 
 	componentWillUnmount() {
@@ -280,6 +288,7 @@ class App extends Component {
 		window.removeEventListener('online', this.updateNetworkStatus);
 		window.removeEventListener('offline', this.updateNetworkStatus);
 		this.debouncedPricesAndAssets && this.debouncedPricesAndAssets.cancel();
+		this.handlePricesAndAssets && this.handlePricesAndAssets.cancel();
 	}
 
 	updateNetworkStatus = () => {
@@ -1113,6 +1122,7 @@ const mapStateToProps = (store) => ({
 	user: store.user,
 	getBrowserTitle: browserTitleSelector(store),
 	coins: store.app.coins,
+	display_currency: store.user.settings.interface.display_currency,
 });
 
 const mapDispatchToProps = (dispatch) => ({

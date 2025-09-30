@@ -2825,6 +2825,7 @@
 		"EMAIL_CONFIRMATION_DESCRIPTION": "To finalize your password change, please check your email for the verification code and enter it in the next step.",
 		"ENTER_EMAIL_CODE": "ENTER EMAIL CODE",
 		"PASSWORD_CHANGED": "Password Changed",
-		"PASSWORD_CHANGED_DESCRIPTION": "Your password has been successfully changed"
+		"PASSWORD_CHANGED_DESCRIPTION": "Your password has been successfully changed.",
+		"SECURITY_PROTOCOL": "You will be logged out as a security protocol, and will need to login again."
 	}
 }

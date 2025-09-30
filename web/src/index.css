@@ -1529,13 +1529,14 @@ table th {
     justify-content: center;
     color: var(--trading_selling-related-elements); }
 
-.verification-success-modal .icon_title-wrapper {
-  margin-top: unset; }
-  .verification-success-modal .icon_title-wrapper .icon_title-text {
-    font-size: 2.2rem; }
-
-.verification-success-modal .success-modal-okay-btn {
-  margin-top: 8%; }
+.verification-success-modal .ReactModal__Content {
+  width: 35rem; }
+  .verification-success-modal .ReactModal__Content .icon_title-wrapper {
+    margin-top: unset; }
+    .verification-success-modal .ReactModal__Content .icon_title-wrapper .icon_title-text {
+      font-size: 2.2rem; }
+  .verification-success-modal .ReactModal__Content .success-modal-okay-btn {
+    margin-top: 8%; }
 
 .email-verification-wrapper {
   width: 35rem; }
