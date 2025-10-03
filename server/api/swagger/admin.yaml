@@ -4637,6 +4637,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     put:
       operationId: updateBrokerPair
       description: Edit a broker deal
@@ -4661,6 +4662,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     get:
       operationId: getBrokerPairs
       description: Get all broker deals
@@ -4686,6 +4688,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     delete:
       operationId: deleteBrokerPair
       description: Delete a broker deal
@@ -4710,6 +4713,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/markets:
     x-swagger-router-controller: broker
     get:
@@ -4739,6 +4743,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/test:
     x-swagger-router-controller: broker
     post:
@@ -4774,6 +4779,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/connect:
     x-swagger-router-controller: broker
     get:
@@ -4819,6 +4825,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/fees/csv:
     x-swagger-router-controller: admin
     get:

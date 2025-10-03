@@ -1500,6 +1500,8 @@ definitions:
         enum: ['withdrawal', 'deposit']
   BrokerPair:
     type: object
+    required:
+      - symbol
     properties:
       symbol:
         type: string
