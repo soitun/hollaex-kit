@@ -186,6 +186,7 @@ const signUpUserWithGoogle = async (req, res) => {
 const getVerifyUser = (req, res) => {
 	let email = req.swagger.params.email.value;
 	const resendEmail = req.swagger.params.resend.value;
+	const version = req.swagger.params.version && req.swagger.params.version.value;
 	const domain = req.headers['x-real-origin'];
 	let promiseQuery;
 
@@ -199,11 +200,20 @@ const getVerifyUser = (req, res) => {
 				throw new Error(USER_VERIFIED);
 			}
 			if (resendEmail) {
-				const verificationCode = uuid();
+				let verificationCode;
+				if (version === 'v3') {
+					const letters = Array.from({ length: 2 }, () =>
+						String.fromCharCode(65 + crypto.randomInt(0, 26))
+					).join('');
+					const numbers = Math.floor(10000 + Math.random() * 90000);
+					verificationCode = `${letters}-${numbers}`;
+				} else {
+					verificationCode = uuid();
+				}
 				toolsLib.user.storeVerificationCode(user, verificationCode);
 
 				sendEmail(
-					MAILTYPE.SIGNUP,
+					version === 'v3' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
 					email,
 					verificationCode,
 					{},
