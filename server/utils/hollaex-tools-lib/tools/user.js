@@ -4514,6 +4514,53 @@ const verifyGoogleToken = async (token) => {
 	}
 };
 
+/**
+ * Fetch paginated list of subaccounts for a master user
+ */
+const getUserSubaccounts = async (masterKitId, { limit, page } = {}) => {
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const { limit: _limit, offset } = paginationQuery(limit, page);
+
+	const SubaccountModel = getModel('subaccount');
+	const UserModel = getModel('user');
+
+	const result = await dbQuery.findAndCountAll('subaccount', {
+		where: { master_id: master.id },
+		include: [
+			{
+				model: UserModel,
+				as: 'sub',
+				attributes: ['id', 'email', 'username', 'verification_level', 'is_subaccount', 'network_id', 'created_at']
+			}
+		],
+		order: [['id', 'DESC']],
+		limit: _limit,
+		offset
+	}, SubaccountModel);
+
+	const count = result.count || (Array.isArray(result) ? result.length : 0);
+	const rows = result.rows || result || [];
+
+	const data = rows.map((row) => {
+		const user = row.sub || {};
+		return {
+			id: user.id,
+			label: row.label,
+			color: row.color,
+			email: user.email,
+			verification_level: user.verification_level,
+			is_subaccount: user.is_subaccount,
+			network_id: user.network_id,
+			created_at: user.created_at
+		};
+	});
+
+	return { count, data };
+};
+
 const createSubaccount = async (masterKitId, { email, password, virtual, label, color }) => {
 	if (!virtual && !isEmail(email)) {
 		return reject(new Error(PROVIDE_VALID_EMAIL));
@@ -4533,7 +4580,7 @@ const createSubaccount = async (masterKitId, { email, password, virtual, label, 
 	email = email.toLowerCase().trim();
 
 	if (virtual) {
-		email = Date.now() + master.email
+		email = Date.now() + master.email;
 	}
 
 	const existing = await dbQuery.findOne('user', { where: { email }, attributes: ['email'] });
@@ -4595,6 +4642,214 @@ const transferBetweenMasterAndSub = async ({ masterKitId, subKitId, currency, am
 	return transferAssetByKitIds(senderKitId, receiverKitId, currency, amount, description, true, {
 		category: 'subaccount'
 	});
+};
+
+/**
+ * Issue a JWT for a subaccount owned by a master user and register login
+ */
+const issueSubaccountToken = async ({ masterKitId, subKitId, ip, headers = {} }) => {
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const sub = await getUserByKitId(subKitId, false);
+	if (!sub) throw new Error(USER_NOT_FOUND);
+	if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+	if (!sub.activated) throw new Error(NOT_AUTHORIZED);
+
+	const link = await dbQuery.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const token = await require('./security').issueToken(
+		sub.id,
+		sub.network_id,
+		sub.email,
+		ip,
+		undefined,
+		sub.settings?.language
+	);
+
+	await registerUserLogin(
+		sub.id,
+		ip,
+		{
+			device: headers['user-agent'],
+			domain: headers['x-real-origin'],
+			origin: headers.origin,
+			referer: headers.referer,
+			token,
+			status: true
+		}
+	);
+
+	return token;
+};
+
+/**
+ * Create a sharedaccount relation between a main user (by kit id) and a shared user (by email)
+ */
+const createSharedaccount = async (mainKitId, { email, label }) => {
+	if (!email || !isEmail(email)) {
+		throw new Error(PROVIDE_VALID_EMAIL);
+	}
+
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	const normalizedEmail = String(email).toLowerCase().trim();
+	const shared = await getUserByEmail(normalizedEmail, false);
+	if (!shared) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	if (shared.id === main.id) {
+		throw new Error(NOT_AUTHORIZED);
+	}
+
+	return getModel('sequelize').transaction(async (transaction) => {
+		const existing = await dbQuery.findOne('sharedaccount', {
+			where: { main_id: main.id, shared_id: shared.id },
+			transaction
+		});
+
+		if (existing) {
+			throw new Error('Sharedaccount already exists');
+		}
+
+		const link = await getModel('sharedaccount').create({
+			main_id: main.id,
+			shared_id: shared.id,
+			active: true,
+			label
+		}, { transaction });
+
+		return link;
+	});
+};
+
+/**
+  * Fetch paginated list of sharedaccounts for a main user
+  */
+const getUserSharedaccounts = async (mainKitId, { limit, page } = {}) => {
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	const { limit: _limit, offset } = paginationQuery(limit, page);
+
+	const SharedaccountModel = getModel('sharedaccount');
+	const UserModel = getModel('user');
+
+	const result = await dbQuery.findAndCountAll('sharedaccount', {
+		where: { main_id: main.id },
+		include: [
+			{
+				model: UserModel,
+				as: 'shared',
+				attributes: ['id', 'email', 'created_at']
+			}
+		],
+		order: [['id', 'DESC']],
+		limit: _limit,
+		offset
+	}, SharedaccountModel);
+
+	const count = result.count || (Array.isArray(result) ? result.length : 0);
+	const rows = result.rows || result || [];
+
+	const data = rows.map((row) => {
+		const user = row.shared || {};
+		return {
+			id: row.id,
+			email: user.email,
+			created_at: user.created_at,
+			label: row.label,
+			active: row.active
+		};
+	});
+
+	return { count, data };
+};
+
+/**
+  * Fetch paginated list of sharedaccount links where the user is the shared_id
+  */
+const getUserAccessibleSharedaccounts = async (sharedKitId, { limit, page } = {}) => {
+	const user = await getUserByKitId(sharedKitId, false);
+	if (!user) throw new Error(USER_NOT_FOUND);
+
+	const { limit: _limit, offset } = paginationQuery(limit, page);
+
+	const SharedaccountModel = getModel('sharedaccount');
+	const UserModel = getModel('user');
+
+	const result = await dbQuery.findAndCountAll('sharedaccount', {
+		where: { shared_id: user.id, active: true },
+		include: [
+			{
+				model: UserModel,
+				as: 'main',
+				attributes: ['id', 'email', 'created_at']
+			}
+		],
+		order: [['id', 'DESC']],
+		limit: _limit,
+		offset
+	}, SharedaccountModel);
+
+	const count = result.count || (Array.isArray(result) ? result.length : 0);
+	const rows = result.rows || result || [];
+
+	const data = rows.map((row) => {
+		const main = row.main || {};
+		return {
+			id: row.id,
+			email: main.email,
+			created_at: main.created_at,
+			label: row.label,
+			active: row.active
+		};
+	});
+	return { count, data };
+};
+/**
+  * Issue a token for the main user using a sharedaccount link and register login
+  */
+const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, headers = {} }) => {
+	const sharedUser = await getUserByKitId(sharedKitId, false);
+	if (!sharedUser) throw new Error(USER_NOT_FOUND);
+
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, shared_id: sharedUser.id, active: true } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const main = await getUserByKitId(link.main_id, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+	if (!main.activated) throw new Error(NOT_AUTHORIZED);
+
+	const token = await require('./security').issueToken(
+		main.id,
+		main.network_id,
+		main.email,
+		ip,
+		undefined,
+		main.settings?.language
+	);
+
+	await registerUserLogin(
+		main.id,
+		ip,
+		{
+			device: headers['user-agent'],
+			domain: headers['x-real-origin'],
+			origin: headers.origin,
+			referer: headers.referer,
+			token,
+			status: true
+		}
+	);
+
+	return token;
 };
 
 module.exports = {
@@ -4694,6 +4949,12 @@ module.exports = {
 	updateExchangeUserRole,
 	deleteExchangeUserRole,
 	verifyGoogleToken,
+	getUserSubaccounts,
 	createSubaccount,
-	transferBetweenMasterAndSub
+	transferBetweenMasterAndSub,
+	issueSubaccountToken,
+	createSharedaccount,
+	getUserSharedaccounts,
+	getUserAccessibleSharedaccounts,
+	issueSharedaccountToken,
 };

@@ -6,7 +6,7 @@ module.exports = {
 	up: async (queryInterface, Sequelize) => {
 		await queryInterface.addColumn(TABLE, 'label', {
 			type: Sequelize.STRING,
-      allowNull: true
+			allowNull: true
 		});
 	},
 
