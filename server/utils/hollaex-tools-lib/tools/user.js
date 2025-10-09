@@ -2173,26 +2173,7 @@ const getExchangeUserSessions = (opts = {
 		order: [ordering],
 		...(!opts.format && pagination),
 	};
-
-	if (opts.format) {
-		query.attributes = ['id', 'login_id', 'status', 'last_seen', 'expiry_date', 'role', 'created_at', 'updated_at'];
-		return dbQuery.fetchAllRecords('session', query)
-			.then((sessions) => {
-				if (opts.format && opts.format === 'csv') {
-					if (sessions.data.length === 0) {
-						throw new Error(NO_DATA_FOR_CSV);
-					}
-
-					const csv = parse(sessions.data, Object.keys(sessions.data[0]));
-					return csv;
-				} else {
-					return sessions;
-				}
-			});
-	} else {
-		return dbQuery.findAndCountAllWithRows('session', query);
-	}
-
+	return dbQuery.findAndCountAllWithRows('session', query);
 };
 
 const revokeExchangeUserSession = async (sessionId, userId = null) => {
