@@ -378,6 +378,81 @@ class HollaExNetwork {
 	}
 
 	/**
+	 * Create a crypto address for user
+	 * @param {number} userId - User id on network.
+	 * @param {string} crypto - Crypto asset to create address for.
+	 * @param {object} opts - Optional parameters.
+	 * @param {string} opts.network - Crypto's blockchain network
+	 * @param {object} opts.additionalHeaders - Object storing addtional headers to send with request.
+	 * @return {object} Object with new address
+	 */
+	createUserWallet(userId, crypto, address, opts = {
+		network: null,
+		additionalHeaders: null
+	}) {
+		checkKit(this.exchange_id);
+
+		if (!userId) {
+			return reject(parameterError('userId', 'cannot be null'));
+		} else if (!crypto) {
+			return reject(parameterError('crypto', 'cannot be null'));
+		}
+
+		const verb = 'POST';
+		const data = { address, currency: crypto, user_id: userId };
+		if (opts.network) {
+			data.network = opts.network;
+		}
+
+		let path = `${this.baseUrl}/network/${this.exchange_id}/wallet`;
+
+		const headers = generateHeaders(
+			isPlainObject(opts.additionalHeaders) ? { ...this.headers, ...opts.additionalHeaders } : this.headers,
+			this.apiSecret,
+			verb,
+			path,
+			this.apiExpiresAfter,
+			data
+		);
+
+		return createRequest(verb, `${this.apiUrl}${path}`, headers, { data });
+	}
+
+	/**
+	 * Create a crypto address for user
+	 * @param {number} userId - User id on network.
+	 * @param {string} crypto - Crypto asset to create address for.
+	 * @param {object} opts - Optional parameters.
+	 * @param {string} opts.network - Crypto's blockchain network
+	 * @param {object} opts.additionalHeaders - Object storing addtional headers to send with request.
+	 * @return {object} Object with new address
+	 */
+	deleteUserWallet(wallet_id, opts = {
+		network: null,
+		additionalHeaders: null
+	}) {
+		checkKit(this.exchange_id);
+
+		if (!wallet_id) {
+			return reject(parameterError('wallet_id', 'cannot be null'));
+		}
+
+		const verb = 'DELETE';
+
+		let path = `${this.baseUrl}/network/${this.exchange_id}/wallet?wallet_id=${wallet_id}`;
+
+		const headers = generateHeaders(
+			isPlainObject(opts.additionalHeaders) ? { ...this.headers, ...opts.additionalHeaders } : this.headers,
+			this.apiSecret,
+			verb,
+			path,
+			this.apiExpiresAfter
+		);
+
+		return createRequest(verb, `${this.apiUrl}${path}`, headers);
+	}
+
+	/**
 	 * Get list of wallets in the exchange
 	 * @param {object} opts - Optional parameters.
 	 * @param {number} opts.userId - User's id to filter wallet addresses
