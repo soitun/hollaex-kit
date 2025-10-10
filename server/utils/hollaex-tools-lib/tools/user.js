@@ -2173,7 +2173,18 @@ const getExchangeUserSessions = (opts = {
 		order: [ordering],
 		...(!opts.format && pagination),
 	};
-	return dbQuery.findAndCountAllWithRows('session', query);
+	return dbQuery.findAndCountAllWithRows('session', query)
+		.then((result) => {
+			if (opts.format && opts.format === 'csv') {
+				if (result.data.length === 0) {
+					throw new Error(NO_DATA_FOR_CSV);
+				}
+				const csv = parse(result.data, Object.keys(result.data[0]));
+				return csv;
+			} else {
+				return result;
+			}
+		});
 };
 
 const revokeExchangeUserSession = async (sessionId, userId = null) => {
