@@ -4668,17 +4668,39 @@ const deactivateSubaccount = async (masterKitId, subKitId) => {
 
 	await link.update({ active: false }, { fields: ['active'], returning: true });
 
-	try {
-		// notify the subaccount user with a templated email
-		sendEmail(
-			MAILTYPE.USER_DEACTIVATED,
-			sub.email,
-			{ type: 'deactivated' },
-			sub.settings
-		);
-	} catch (e) {
-		// ignore email errors
-	}
+    // Revoke all sessions and softly deactivate the subaccount user
+    try {
+        await revokeAllUserSessions(sub.id);
+    } catch (e) {
+        loggerUser.error('tools/user/deactivateSubaccount/revokeAllUserSessions', e.message);
+    }
+
+    try {
+        const userModel = getModel('user');
+        const subUser = await userModel.findOne({ where: { id: sub.id }, attributes: ['id', 'email', 'activated'] });
+        if (subUser) {
+            const currentEmail = subUser.email || '';
+            const newEmail = currentEmail.includes('_deleted') ? currentEmail : `${currentEmail}_deleted`;
+            await subUser.update(
+                { email: newEmail, activated: false },
+                { fields: ['email', 'activated'], returning: true }
+            );
+        }
+    } catch (e) {
+        loggerUser.error('tools/user/deactivateSubaccount/updateUserSoftDelete', e.message);
+    }
+
+    try {
+        // notify the master user with a specific subaccount removed template
+        sendEmail(
+            MAILTYPE.SUBACCOUNT_REMOVED,
+            master.email,
+            { sub_email: sub.email },
+            master.settings
+        );
+    } catch (e) {
+        loggerUser.error('tools/user/deactivateSubaccount/sendEmail', e.message);
+    }
 
 	return true;
 };
