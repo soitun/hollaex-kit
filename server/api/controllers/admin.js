@@ -2844,7 +2844,7 @@ const disableUserWithdrawal = (req, res) => {
 		expiry_date
 	);
 
-	toolsLib.user.disableUserWithdrawal(user_id, { expiry_date })
+    toolsLib.user.disableUserWithdrawal(user_id, { expiry_date, override: true })
 		.then((data) => {
 			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], req?.swagger?.params?.data?.value);
 			loggerAdmin.info(

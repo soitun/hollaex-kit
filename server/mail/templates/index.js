@@ -506,6 +506,11 @@ const replaceHTMLContent = (type, html = '', email, data, language, domain) => {
 		html = html.replace(/\$\{name\}/g, email || '');
 		html = html.replace(/\$\{api_name\}/g, API_NAME() || '');
 	}
+	else if (type === MAILTYPE.SUBACCOUNT_REMOVED) {
+		html = html.replace(/\$\{name\}/g, email || '');
+		html = html.replace(/\$\{api_name\}/g, API_NAME() || '');
+		html = html.replace(/\$\{sub_email\}/g, data.sub_email || '');
+	}
 	else if (type === MAILTYPE.OTP_DISABLED) {
 		html = html.replace(/\$\{time\}/g, data.time || '');
 		html = html.replace(/\$\{country\}/g, data.country || '');

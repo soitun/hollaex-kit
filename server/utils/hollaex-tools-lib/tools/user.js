@@ -1751,24 +1751,41 @@ const setUsernameById = (userId, username) => {
 		});
 };
 
-const disableUserWithdrawal = async (user_id, opts = { expiry_date: null }) => {
-	const user = await getUserByKitId(user_id, false);
-	let { expiry_date } = opts;
+const disableUserWithdrawal = async (user_id, opts = { expiry_date: null, override: false }) => {
+    const user = await getUserByKitId(user_id, false);
+    let { expiry_date, override } = opts;
 
-	if (!user) {
-		throw new Error(USER_NOT_FOUND);
-	}
+    if (!user) {
+        throw new Error(USER_NOT_FOUND);
+    }
 
-	let withdrawal_blocked = null;
+    // Determine the currently set block date (if any) and whether it's still in the future
+    const now = moment();
+    const currentBlockedMoment = user.withdrawal_blocked ? moment(user.withdrawal_blocked) : null;
+    const hasActiveFutureBlock = !!(currentBlockedMoment && currentBlockedMoment.isAfter(now));
 
-	if (expiry_date) {
-		withdrawal_blocked = moment(expiry_date).toISOString();
-	}
+    // Determine proposed new block moment from provided expiry_date (or null for clearing)
+    const proposedBlockedMoment = expiry_date ? moment(expiry_date) : null;
 
-	return user.update(
-		{ withdrawal_blocked },
-		{ fields: ['withdrawal_blocked'], returning: true }
-	);
+    // If there's an active future block and the new proposal shortens it (or clears it),
+    // then only allow if override === true.
+    if (hasActiveFutureBlock) {
+        const isShortening = !proposedBlockedMoment || proposedBlockedMoment.isBefore(currentBlockedMoment);
+        if (isShortening && !override) {
+            // Do not update; return the current user instance as-is
+            return user;
+        }
+    }
+
+    let withdrawal_blocked = null;
+    if (proposedBlockedMoment) {
+        withdrawal_blocked = proposedBlockedMoment.toISOString();
+    }
+
+    return user.update(
+        { withdrawal_blocked },
+        { fields: ['withdrawal_blocked'], returning: true }
+    );
 };
 
 
@@ -4520,7 +4537,7 @@ const getUserSubaccounts = async (masterKitId, { limit, page } = {}) => {
 	const UserModel = getModel('user');
 
 	const result = await dbQuery.findAndCountAll('subaccount', {
-		where: { master_id: master.id },
+		where: { master_id: master.id, active: true },
 		include: [
 			{
 				model: UserModel,
@@ -4634,6 +4651,75 @@ const transferBetweenMasterAndSub = async ({ masterKitId, subKitId, currency, am
 	return transferAssetByKitIds(senderKitId, receiverKitId, currency, amount, description, true, {
 		category: 'subaccount'
 	});
+};
+
+/**
+ * Deactivate (soft-delete) a subaccount link after ensuring zero balances
+ */
+const deactivateSubaccount = async (masterKitId, subKitId) => {
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const sub = await getUserByKitId(subKitId, false);
+	if (!sub) throw new Error(USER_NOT_FOUND);
+	if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const link = await dbQuery.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id, active: true } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const { getUserBalanceByKitId } = require('./wallet');
+	const balance = await getUserBalanceByKitId(sub.id);
+	let hasAnyAvailable = false;
+	if (balance && typeof balance === 'object') {
+		for (const key of Object.keys(balance)) {
+			if (/_balance$/.test(key) && Number(balance[key]) > 0) {
+				hasAnyAvailable = true;
+				break;
+			}
+		}
+	}
+	if (hasAnyAvailable) {
+		throw new Error('Subaccount has non-zero balance and cannot be removed');
+	}
+
+	await link.update({ active: false }, { fields: ['active'], returning: true });
+
+    // Revoke all sessions and softly deactivate the subaccount user
+    try {
+        await revokeAllUserSessions(sub.id);
+    } catch (e) {
+        loggerUser.error('tools/user/deactivateSubaccount/revokeAllUserSessions', e.message);
+    }
+
+    try {
+        const userModel = getModel('user');
+        const subUser = await userModel.findOne({ where: { id: sub.id }, attributes: ['id', 'email', 'activated'] });
+        if (subUser) {
+            const currentEmail = subUser.email || '';
+            const newEmail = currentEmail.includes('_deleted') ? currentEmail : `${currentEmail}_deleted`;
+            await subUser.update(
+                { email: newEmail, activated: false },
+                { fields: ['email', 'activated'], returning: true }
+            );
+        }
+    } catch (e) {
+        loggerUser.error('tools/user/deactivateSubaccount/updateUserSoftDelete', e.message);
+    }
+
+    try {
+        // notify the master user with a specific subaccount removed template
+        sendEmail(
+            MAILTYPE.SUBACCOUNT_REMOVED,
+            master.email,
+            { sub_email: sub.email },
+            master.settings
+        );
+    } catch (e) {
+        loggerUser.error('tools/user/deactivateSubaccount/sendEmail', e.message);
+    }
+
+	return true;
 };
 
 /**
@@ -4944,6 +5030,7 @@ module.exports = {
 	getUserSubaccounts,
 	createSubaccount,
 	transferBetweenMasterAndSub,
+	deactivateSubaccount,
 	issueSubaccountToken,
 	createSharedaccount,
 	getUserSharedaccounts,

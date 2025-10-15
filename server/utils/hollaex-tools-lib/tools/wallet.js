@@ -1311,6 +1311,32 @@ const getUserWithdrawalCode = async () => {
 	return latestToken;
 };
 
+const createUserWalletByNetworkId = (networkId, currency, address, opts = {
+	network: null,
+	additionalHeaders: null
+}) => {
+	if (!networkId) {
+		return reject(new Error(USER_NOT_REGISTERED_ON_NETWORK));
+	}
+	return getNodeLib().createUserWallet(networkId, currency, address, opts);
+};
+
+const createUserWalletByKitId = async (kitId, currency, address, opts = {
+	network: null,
+	additionalHeaders: null
+}) => {
+	// check mapKitIdToNetworkId
+	const idDictionary = await mapKitIdToNetworkId([kitId]);
+
+	if (!has(idDictionary, kitId)) {
+		throw new Error(USER_NOT_FOUND);
+	} else if (!idDictionary[kitId]) {
+		throw new Error(USER_NOT_REGISTERED_ON_NETWORK);
+	}
+
+	return getNodeLib().createUserWallet(idDictionary[kitId], currency, address, opts);
+};
+
 module.exports = {
 	sendRequestWithdrawalEmail,
 	validateWithdrawal,
@@ -1340,5 +1366,7 @@ module.exports = {
 	validateDeposit,
 	getWallets,
 	calculateWithdrawalMax,
-	getUserWithdrawalCode
+	getUserWithdrawalCode,
+	createUserWalletByNetworkId,
+	createUserWalletByKitId
 };
