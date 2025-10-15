@@ -375,6 +375,11 @@ const nestedIcons = {
 	LIVE_TRADE_ICON: '/assets/images/live-trade-icon.svg',
 
 	HIGH_SLIPPAGE_WARNING: '/assets/images/high-slippage-warning.svg',
+
+	SUB_ACCOUNT: {
+		CONFIRMATION_ICON: '/assets/images/sub-account-created.svg',
+		HEADER_ICON: '/assets/images/sub-account-main.svg',
+	},
 };
 
 const icons = flatten(nestedIcons, options);
