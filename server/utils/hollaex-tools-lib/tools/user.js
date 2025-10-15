@@ -1751,24 +1751,41 @@ const setUsernameById = (userId, username) => {
 		});
 };
 
-const disableUserWithdrawal = async (user_id, opts = { expiry_date: null }) => {
-	const user = await getUserByKitId(user_id, false);
-	let { expiry_date } = opts;
+const disableUserWithdrawal = async (user_id, opts = { expiry_date: null, override: false }) => {
+    const user = await getUserByKitId(user_id, false);
+    let { expiry_date, override } = opts;
 
-	if (!user) {
-		throw new Error(USER_NOT_FOUND);
-	}
+    if (!user) {
+        throw new Error(USER_NOT_FOUND);
+    }
 
-	let withdrawal_blocked = null;
+    // Determine the currently set block date (if any) and whether it's still in the future
+    const now = moment();
+    const currentBlockedMoment = user.withdrawal_blocked ? moment(user.withdrawal_blocked) : null;
+    const hasActiveFutureBlock = !!(currentBlockedMoment && currentBlockedMoment.isAfter(now));
 
-	if (expiry_date) {
-		withdrawal_blocked = moment(expiry_date).toISOString();
-	}
+    // Determine proposed new block moment from provided expiry_date (or null for clearing)
+    const proposedBlockedMoment = expiry_date ? moment(expiry_date) : null;
 
-	return user.update(
-		{ withdrawal_blocked },
-		{ fields: ['withdrawal_blocked'], returning: true }
-	);
+    // If there's an active future block and the new proposal shortens it (or clears it),
+    // then only allow if override === true.
+    if (hasActiveFutureBlock) {
+        const isShortening = !proposedBlockedMoment || proposedBlockedMoment.isBefore(currentBlockedMoment);
+        if (isShortening && !override) {
+            // Do not update; return the current user instance as-is
+            return user;
+        }
+    }
+
+    let withdrawal_blocked = null;
+    if (proposedBlockedMoment) {
+        withdrawal_blocked = proposedBlockedMoment.toISOString();
+    }
+
+    return user.update(
+        { withdrawal_blocked },
+        { fields: ['withdrawal_blocked'], returning: true }
+    );
 };
 
 
