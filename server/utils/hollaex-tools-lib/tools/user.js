@@ -4520,7 +4520,7 @@ const getUserSubaccounts = async (masterKitId, { limit, page } = {}) => {
 	const UserModel = getModel('user');
 
 	const result = await dbQuery.findAndCountAll('subaccount', {
-		where: { master_id: master.id },
+		where: { master_id: master.id, active: true },
 		include: [
 			{
 				model: UserModel,
@@ -4634,6 +4634,53 @@ const transferBetweenMasterAndSub = async ({ masterKitId, subKitId, currency, am
 	return transferAssetByKitIds(senderKitId, receiverKitId, currency, amount, description, true, {
 		category: 'subaccount'
 	});
+};
+
+/**
+ * Deactivate (soft-delete) a subaccount link after ensuring zero balances
+ */
+const deactivateSubaccount = async (masterKitId, subKitId) => {
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const sub = await getUserByKitId(subKitId, false);
+	if (!sub) throw new Error(USER_NOT_FOUND);
+	if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const link = await dbQuery.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id, active: true } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const { getUserBalanceByKitId } = require('./wallet');
+	const balance = await getUserBalanceByKitId(sub.id);
+	let hasAnyAvailable = false;
+	if (balance && typeof balance === 'object') {
+		for (const key of Object.keys(balance)) {
+			if (/_balance$/.test(key) && Number(balance[key]) > 0) {
+				hasAnyAvailable = true;
+				break;
+			}
+		}
+	}
+	if (hasAnyAvailable) {
+		throw new Error('Subaccount has non-zero balance and cannot be removed');
+	}
+
+	await link.update({ active: false }, { fields: ['active'], returning: true });
+
+	try {
+		// notify the subaccount user with a templated email
+		sendEmail(
+			MAILTYPE.USER_DEACTIVATED,
+			sub.email,
+			{ type: 'deactivated' },
+			sub.settings
+		);
+	} catch (e) {
+		// ignore email errors
+	}
+
+	return true;
 };
 
 /**
@@ -4944,6 +4991,7 @@ module.exports = {
 	getUserSubaccounts,
 	createSubaccount,
 	transferBetweenMasterAndSub,
+	deactivateSubaccount,
 	issueSubaccountToken,
 	createSharedaccount,
 	getUserSharedaccounts,

@@ -93,6 +93,40 @@ paths:
         - hmac
       x-security-scopes:
         - user
+    delete:
+      operationId: deleteSubaccount
+      description: Deactivate a subaccount link. Will fail if the subaccount has any non-zero available balance.
+      tags:
+        - User
+        - Subaccount
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - subaccount_id
+            properties:
+              subaccount_id:
+                type: number
+                format: int32
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/MessageResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-security-scopes:
+        - user
   /subaccount/transfer:
     x-swagger-router-controller: subaccount
     post:

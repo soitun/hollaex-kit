@@ -83,9 +83,27 @@ const getSubaccountAuthToken = async (req, res) => {
 	}
 };
 
+const deleteSubaccount = async (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/subaccount/deleteSubaccount auth', req.auth);
+
+	try {
+		const masterId = req?.auth?.sub?.id;
+		const { subaccount_id } = req.swagger.params.data.value;
+
+		await toolsLib.user.deactivateSubaccount(masterId, Number(subaccount_id));
+
+		return res.json({ message: 'Subaccount removed' });
+	} catch (err) {
+		loggerUser.error(req.uuid, 'controllers/subaccount/deleteSubaccount', err.message);
+		const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+		return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+	}
+};
+
 module.exports = {
 	getUserSubaccounts,
 	createSubaccount,
 	transferBetweenAccounts,
-	getSubaccountAuthToken
+	getSubaccountAuthToken,
+	deleteSubaccount
 };
