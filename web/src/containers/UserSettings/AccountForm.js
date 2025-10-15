@@ -23,6 +23,7 @@ import {
 import { required, username } from 'components/Form/validations';
 import { getErrorLocalized } from 'utils/errors';
 import STRINGS from 'config/localizedStrings';
+import SubAccountSystem from './SubAccountSystem';
 
 export const generateUsernameFormValues = (disabled = false) => ({
 	username: {
@@ -146,11 +147,17 @@ class Form extends Component {
 			formFields,
 			ICONS,
 			openContactForm,
+			coins,
+			user,
+			balance,
 		} = this.props;
 
 		return (
 			<Fragment>
 				<div className="settings-form-wrapper">
+					<div className="settings-form">
+						<SubAccountSystem coins={coins} user={user} balance={balance} />
+					</div>
 					<div className="settings-form">
 						<IconTitle
 							stringId="USER_SETTINGS.TITLE_CHAT"
@@ -246,7 +253,11 @@ class Form extends Component {
 	}
 }
 
-const mapStateToProps = () => ({});
+const mapStateToProps = (state) => ({
+	coins: state.app.coins,
+	user: state.user,
+	balance: state.user.balance,
+});
 
 const mapDispatchToProps = (dispatch) => ({
 	openContactForm: bindActionCreators(openContactForm, dispatch),
