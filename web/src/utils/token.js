@@ -3,7 +3,6 @@ import {
 	TOKEN_KEY,
 	DASH_TOKEN_KEY,
 	MAIN_ACCOUNT_TOKEN,
-	SUB_ACCOUNT_TOKEN,
 } from '../config/constants';
 
 const TOKEN_TIME_KEY = 'time';
@@ -29,17 +28,12 @@ export const mainAccountToken = (token) => {
 	localStorage.setItem(MAIN_ACCOUNT_TOKEN, token);
 };
 
-export const subAccountToken = (token) => {
-	localStorage.setItem(SUB_ACCOUNT_TOKEN, token);
-};
-
 export const removeToken = () => {
 	localStorage.removeItem(TOKEN_KEY);
 	localStorage.removeItem(TOKEN_TIME_KEY);
 	localStorage.removeItem(DASH_TOKEN_KEY);
 	localStorage.removeItem(DASH_TOKEN_TIME_KEY);
 	localStorage.removeItem(MAIN_ACCOUNT_TOKEN);
-	localStorage.removeItem(SUB_ACCOUNT_TOKEN);
 };
 
 export const isLoggedIn = () => {
