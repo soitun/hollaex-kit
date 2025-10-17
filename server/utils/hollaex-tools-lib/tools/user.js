@@ -450,7 +450,7 @@ const registerUserLogin = (
 	return getModel('login').create(login)
 		.then((loginData) => {
 			if (opts.token && opts.status) {
-				return createSession(opts.token, loginData.id, userId, opts.expiry);
+				return createSession(opts.token, loginData.id, userId, opts.expiry, opts.meta);
 			}
 			return loginData;
 		})
@@ -1752,40 +1752,40 @@ const setUsernameById = (userId, username) => {
 };
 
 const disableUserWithdrawal = async (user_id, opts = { expiry_date: null, override: false }) => {
-    const user = await getUserByKitId(user_id, false);
-    let { expiry_date, override } = opts;
+	const user = await getUserByKitId(user_id, false);
+	let { expiry_date, override } = opts;
 
-    if (!user) {
-        throw new Error(USER_NOT_FOUND);
-    }
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
 
-    // Determine the currently set block date (if any) and whether it's still in the future
-    const now = moment();
-    const currentBlockedMoment = user.withdrawal_blocked ? moment(user.withdrawal_blocked) : null;
-    const hasActiveFutureBlock = !!(currentBlockedMoment && currentBlockedMoment.isAfter(now));
+	// Determine the currently set block date (if any) and whether it's still in the future
+	const now = moment();
+	const currentBlockedMoment = user.withdrawal_blocked ? moment(user.withdrawal_blocked) : null;
+	const hasActiveFutureBlock = !!(currentBlockedMoment && currentBlockedMoment.isAfter(now));
 
-    // Determine proposed new block moment from provided expiry_date (or null for clearing)
-    const proposedBlockedMoment = expiry_date ? moment(expiry_date) : null;
+	// Determine proposed new block moment from provided expiry_date (or null for clearing)
+	const proposedBlockedMoment = expiry_date ? moment(expiry_date) : null;
 
-    // If there's an active future block and the new proposal shortens it (or clears it),
-    // then only allow if override === true.
-    if (hasActiveFutureBlock) {
-        const isShortening = !proposedBlockedMoment || proposedBlockedMoment.isBefore(currentBlockedMoment);
-        if (isShortening && !override) {
-            // Do not update; return the current user instance as-is
-            return user;
-        }
-    }
+	// If there's an active future block and the new proposal shortens it (or clears it),
+	// then only allow if override === true.
+	if (hasActiveFutureBlock) {
+		const isShortening = !proposedBlockedMoment || proposedBlockedMoment.isBefore(currentBlockedMoment);
+		if (isShortening && !override) {
+			// Do not update; return the current user instance as-is
+			return user;
+		}
+	}
 
-    let withdrawal_blocked = null;
-    if (proposedBlockedMoment) {
-        withdrawal_blocked = proposedBlockedMoment.toISOString();
-    }
+	let withdrawal_blocked = null;
+	if (proposedBlockedMoment) {
+		withdrawal_blocked = proposedBlockedMoment.toISOString();
+	}
 
-    return user.update(
-        { withdrawal_blocked },
-        { fields: ['withdrawal_blocked'], returning: true }
-    );
+	return user.update(
+		{ withdrawal_blocked },
+		{ fields: ['withdrawal_blocked'], returning: true }
+	);
 };
 
 
@@ -2204,43 +2204,6 @@ const getExchangeUserSessions = (opts = {
 		});
 };
 
-const revokeExchangeUserSession = async (sessionId, userId = null) => {
-	const session = await getModel('session').findOne({
-		include: [
-			{
-				model: getModel('login'),
-				as: 'login',
-				attributes: ['user_id'],
-				...(userId && { where: { user_id: userId } })
-			}
-		],
-		where: { id: sessionId }
-	});
-
-
-	if (!session) {
-		throw new Error(SESSION_NOT_FOUND);
-	}
-
-	if (!session.status) {
-		throw new Error(SESSION_ALREADY_REVOKED);
-	}
-
-	if (userId && session.login.user_id !== userId) {
-		throw new Error(WRONG_USER_SESSION);
-	}
-
-	client.delAsync(session.token);
-
-	const updatedSession = await session.update({ status: false }, {
-		fields: ['status']
-	});
-
-	delete updatedSession.dataValues.token;
-	updatedSession.dataValues.user_id = session.login.user_id;
-	return updatedSession.dataValues;
-};
-
 const getAllBalancesAdmin = async (opts = {
 	user_id: null,
 	currency: null,
@@ -2312,6 +2275,43 @@ const revokeAllUserSessions = async (userId) => {
 		client.delAsync(session.token);
 	}
 	return true;
+};
+
+const revokeUserSession = async (sessionId, userId = null) => {
+	const session = await getModel('session').findOne({
+		include: [
+			{
+				model: getModel('login'),
+				as: 'login',
+				attributes: ['user_id'],
+				...(userId && { where: { user_id: userId } })
+			}
+		],
+		where: { id: sessionId }
+	});
+
+
+	if (!session) {
+		throw new Error(SESSION_NOT_FOUND);
+	}
+
+	if (!session.status) {
+		throw new Error(SESSION_ALREADY_REVOKED);
+	}
+
+	if (userId && session.login.user_id !== userId) {
+		throw new Error(WRONG_USER_SESSION);
+	}
+
+	client.delAsync(session.token);
+
+	const updatedSession = await session.update({ status: false }, {
+		fields: ['status']
+	});
+
+	delete updatedSession.dataValues.token;
+	updatedSession.dataValues.user_id = session.login.user_id;
+	return updatedSession.dataValues;
 };
 
 const deleteKitUser = async (userId, sendEmail = true) => {
@@ -4685,39 +4685,39 @@ const deactivateSubaccount = async (masterKitId, subKitId) => {
 
 	await link.update({ active: false }, { fields: ['active'], returning: true });
 
-    // Revoke all sessions and softly deactivate the subaccount user
-    try {
-        await revokeAllUserSessions(sub.id);
-    } catch (e) {
-        loggerUser.error('tools/user/deactivateSubaccount/revokeAllUserSessions', e.message);
-    }
+	// Revoke all sessions and softly deactivate the subaccount user
+	try {
+		await revokeAllUserSessions(sub.id);
+	} catch (e) {
+		loggerUser.error('tools/user/deactivateSubaccount/revokeAllUserSessions', e.message);
+	}
 
-    try {
-        const userModel = getModel('user');
-        const subUser = await userModel.findOne({ where: { id: sub.id }, attributes: ['id', 'email', 'activated'] });
-        if (subUser) {
-            const currentEmail = subUser.email || '';
-            const newEmail = currentEmail.includes('_deleted') ? currentEmail : `${currentEmail}_deleted`;
-            await subUser.update(
-                { email: newEmail, activated: false },
-                { fields: ['email', 'activated'], returning: true }
-            );
-        }
-    } catch (e) {
-        loggerUser.error('tools/user/deactivateSubaccount/updateUserSoftDelete', e.message);
-    }
+	try {
+		const userModel = getModel('user');
+		const subUser = await userModel.findOne({ where: { id: sub.id }, attributes: ['id', 'email', 'activated'] });
+		if (subUser) {
+			const currentEmail = subUser.email || '';
+			const newEmail = currentEmail.includes('_deleted') ? currentEmail : `${currentEmail}_deleted`;
+			await subUser.update(
+				{ email: newEmail, activated: false },
+				{ fields: ['email', 'activated'], returning: true }
+			);
+		}
+	} catch (e) {
+		loggerUser.error('tools/user/deactivateSubaccount/updateUserSoftDelete', e.message);
+	}
 
-    try {
-        // notify the master user with a specific subaccount removed template
-        sendEmail(
-            MAILTYPE.SUBACCOUNT_REMOVED,
-            master.email,
-            { sub_email: sub.email },
-            master.settings
-        );
-    } catch (e) {
-        loggerUser.error('tools/user/deactivateSubaccount/sendEmail', e.message);
-    }
+	try {
+		// notify the master user with a specific subaccount removed template
+		sendEmail(
+			MAILTYPE.SUBACCOUNT_REMOVED,
+			master.email,
+			{ sub_email: sub.email },
+			master.settings
+		);
+	} catch (e) {
+		loggerUser.error('tools/user/deactivateSubaccount/sendEmail', e.message);
+	}
 
 	return true;
 };
@@ -4863,7 +4863,7 @@ const getUserAccessibleSharedaccounts = async (sharedKitId, { limit, page } = {}
 	const UserModel = getModel('user');
 
 	const result = await dbQuery.findAndCountAll('sharedaccount', {
-		where: { shared_id: user.id, active: true },
+		where: { shared_id: user.id },
 		include: [
 			{
 				model: UserModel,
@@ -4923,11 +4923,118 @@ const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, heade
 			origin: headers.origin,
 			referer: headers.referer,
 			token,
-			status: true
+			status: true,
+			meta: {
+				is_sharedaccount: true,
+				sharedaccount_id: link.id,
+				shared_initiator_user_id: sharedUser.id
+			}
 		}
 	);
 
 	return token;
+};
+
+/**
+ * Pause a sharedaccount link by setting active=false and revoke sessions of the shared user
+ */
+const pauseSharedaccount = async (mainKitId, sharedaccountId) => {
+	console.log(mainKitId, sharedaccountId);
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	// find the link ensuring it belongs to main
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, main_id: main.id, active: true } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	// deactivate link
+	await link.update({ active: false }, { fields: ['active'], returning: true });
+
+	// revoke only the main user's sessions created via this sharedaccount link
+	try {
+		const SessionModel = getModel('session');
+		const sessions = await SessionModel.findAll({
+			where: { status: true },
+			include: [
+				{
+					model: getModel('login'),
+					as: 'login',
+					attributes: ['user_id'],
+					where: { user_id: main.id }
+				}
+			]
+		});
+
+		for (const session of sessions) {
+			const m = session.meta || {};
+			if (m.is_sharedaccount === true && Number(m.sharedaccount_id) === Number(link.id)) {
+				await revokeUserSession(session.id, main.id);
+			}
+		}
+	} catch (e) {
+		loggerUser.error('tools/user/pauseSharedaccount/revokeSharedaccountSessions', e.message);
+	}
+
+	return true;
+};
+
+/**
+ * Delete a sharedaccount link and revoke sessions with matching sharedaccount meta
+ */
+const deleteSharedaccount = async (mainKitId, sharedaccountId) => {
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, main_id: main.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	// revoke only the main user's sessions created via this sharedaccount link
+	try {
+		const SessionModel = getModel('session');
+		const sessions = await SessionModel.findAll({
+			where: { status: true },
+			include: [
+				{
+					model: getModel('login'),
+					as: 'login',
+					attributes: ['user_id'],
+					where: { user_id: main.id }
+				}
+			]
+		});
+
+		for (const session of sessions) {
+			const m = session.meta || {};
+			if (m.is_sharedaccount === true && Number(m.sharedaccount_id) === Number(link.id)) {
+				await revokeUserSession(session.id, main.id);
+			}
+		}
+	} catch (e) {
+		loggerUser.error('tools/user/deleteSharedaccount/revokeSharedaccountSessions', e.message);
+	}
+
+	// remove the link from db
+	await link.destroy();
+
+	return true;
+};
+
+/**
+ * Resume a paused sharedaccount link (set active=true). Only allowed if currently inactive
+ */
+const resumeSharedaccount = async (mainKitId, sharedaccountId) => {
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, main_id: main.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	if (link.active === true) {
+		throw new Error('Sharedaccount already active');
+	}
+
+	await link.update({ active: true }, { fields: ['active'], returning: true });
+	return true;
 };
 
 module.exports = {
@@ -4979,7 +5086,7 @@ module.exports = {
 	updateUserInfo,
 	updateLoginAttempt,
 	getExchangeUserSessions,
-	revokeExchangeUserSession,
+	revokeUserSession,
 	updateLoginStatus,
 	findUserLatestLogin,
 	createUserLogin,
@@ -5036,4 +5143,7 @@ module.exports = {
 	getUserSharedaccounts,
 	getUserAccessibleSharedaccounts,
 	issueSharedaccountToken,
+	pauseSharedaccount,
+	deleteSharedaccount,
+	resumeSharedaccount,
 };

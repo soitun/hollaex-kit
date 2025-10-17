@@ -485,6 +485,77 @@
 	}
 }
 
+.deactivate-account-popup,
+.deactivated-success-popup {
+	.ReactModal__Content {
+		width: 35rem;
+
+		.deactivate-account-wrapper,
+		.deactivated-success-wrapper {
+			.deactivate-account-icon,
+			.deactivated-success-icon {
+				svg {
+					width: 5rem;
+					height: 5rem;
+				}
+			}
+
+			.deactivate-account-title,
+			.deactivated-success-title {
+				font-size: 1.9rem;
+				font-weight: 600;
+			}
+
+			.deactivate-account-info-box {
+				width: 100%;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+
+				.color-icon {
+					width: 1.5rem;
+					height: 1.5rem;
+					border-radius: 50%;
+				}
+			}
+
+			.deactivate-account-warning {
+				padding: 2%;
+				background-color: $app-background-color;
+				color: $colors-notification-pending;
+			}
+
+			.deactivate-account-button-wrapper,
+			.deactivated-success-button-wrapper {
+				display: flex;
+
+				button {
+					background-color: $link !important;
+					color: $colors-main-black;
+				}
+			}
+
+			.deactivate-account-button-wrapper {
+				gap: 2%;
+
+				.deactivate-account-cancel-btn,
+				.deactivate-account-submit-btn {
+					width: 50%;
+				}
+			}
+
+			.deactivated-success-button-wrapper {
+				justify-content: center;
+
+				.deactivated-success-btn {
+					width: 85%;
+				}
+			}
+		}
+	}
+}
+
 @media (max-width: 1060px) {
 	.settings_container {
 		.settings-form-wrapper {

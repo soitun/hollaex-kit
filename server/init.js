@@ -24,6 +24,7 @@ const {
 const { isNumber, difference } = require('lodash');
 const yaml = require('js-yaml');
 const fs = require('fs');
+const path = require('path');
 
 let nodeLib;
 
@@ -126,8 +127,27 @@ const checkStatus = () => {
 					status.update({ kit_version: version }, { fields: ['kit_version'] });
 				}
 				secrets = status.secrets;
-				configuration.kit = status.kit;
-				configuration.email = status.email;
+                configuration.kit = status.kit;
+
+                // Sync missing email template keys from static files into status.email
+                try {
+                    const staticEmailTemplates = loadStaticEmailTemplates();
+                    const { updatedEmails, changed } = mergeStatusEmailsWithStatic(status.email || {}, staticEmailTemplates);
+                    if (changed) {
+                        configuration.email = updatedEmails;
+                        // Persist the update so migrations are not required for future runs
+                        Status.update(
+                            { email: updatedEmails },
+                            { where: { id: status.id } }
+                        );
+                        loggerInit.info('init/checkStatus/emailSync applied missing email templates from static files');
+                    } else {
+                        configuration.email = status.email;
+                    }
+                } catch (e) {
+                    loggerInit.error('init/checkStatus/emailSync error', e.message);
+                    configuration.email = status.email;
+                }
 
 				status.constants.fee_markups = status.kit.coin_customizations;
 				return all([
@@ -462,6 +482,55 @@ const extractEndpointDescriptions = (swaggerObj) => {
 	}
 
 	return descriptions;
+}
+
+// Loads static email templates from server/mail/strings/*.json
+function loadStaticEmailTemplates() {
+    const stringsDir = path.join(__dirname, 'mail', 'strings');
+    const result = {};
+
+    try {
+        const files = fs.readdirSync(stringsDir).filter((f) => f.endsWith('.json'));
+        for (const file of files) {
+            try {
+                const fullPath = path.join(stringsDir, file);
+                const raw = fs.readFileSync(fullPath, 'utf8');
+                const parsed = JSON.parse(raw);
+                const lang = Object.keys(parsed)[0];
+                if (lang && parsed[lang] && typeof parsed[lang] === 'object') {
+                    result[lang] = parsed[lang];
+                }
+            } catch (e) {
+                loggerInit.error('init/loadStaticEmailTemplates read/parse error', `${file} ${e.message}`);
+            }
+        }
+    } catch (e) {
+        loggerInit.error('init/loadStaticEmailTemplates readdir error', e.message);
+    }
+    return result;
+}
+
+// Merges missing keys from static templates into existing status emails without overriding existing keys
+function mergeStatusEmailsWithStatic(existingEmails = {}, staticTemplates = {}) {
+    const updatedEmails = { ...existingEmails };
+    let changed = false;
+
+    for (const lang of Object.keys(existingEmails)) {
+        const current = { ...(existingEmails[lang] || {}) };
+        const staticForLang = staticTemplates[lang] || staticTemplates['en'] || {};
+
+        for (const key of Object.keys(staticForLang)) {
+            if (!Object.prototype.hasOwnProperty.call(current, key)) {
+                loggerInit.info('init/emailSync/missing_template', `lang=${lang} key=${key}`);
+                current[key] = staticForLang[key];
+                changed = true;
+            }
+        }
+
+        updatedEmails[lang] = current;
+    }
+
+    return { updatedEmails, changed };
 }
 
 

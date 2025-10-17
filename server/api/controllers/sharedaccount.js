@@ -71,10 +71,61 @@ const getSharedaccountAuthToken = async (req, res) => {
 	}
 };
 
+const pauseSharedaccount = async (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/sharedaccount/pauseSharedaccount auth', req.auth);
+
+	try {
+		const mainId = req?.auth?.sub?.id;
+		const { sharedaccount_id } = req.swagger.params.data.value;
+
+		await toolsLib.user.pauseSharedaccount(mainId, Number(sharedaccount_id));
+		return res.json({ message: 'Paused' });
+	} catch (err) {
+		loggerUser.error(req.uuid, 'controllers/sharedaccount/pauseSharedaccount', err.message);
+		const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+		return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+	}
+};
+
+const deleteSharedaccount = async (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/sharedaccount/deleteSharedaccount auth', req.auth);
+
+	try {
+		const mainId = req?.auth?.sub?.id;
+		const { sharedaccount_id } = req.swagger.params.data.value;
+
+		await toolsLib.user.deleteSharedaccount(mainId, Number(sharedaccount_id));
+		return res.json({ message: 'Deleted' });
+	} catch (err) {
+		loggerUser.error(req.uuid, 'controllers/sharedaccount/deleteSharedaccount', err.message);
+		const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+		return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+	}
+};
+
+const resumeSharedaccount = async (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/sharedaccount/resumeSharedaccount auth', req.auth);
+
+	try {
+		const mainId = req?.auth?.sub?.id;
+		const { sharedaccount_id } = req.swagger.params.data.value;
+
+		await toolsLib.user.resumeSharedaccount(mainId, Number(sharedaccount_id));
+		return res.json({ message: 'Resumed' });
+	} catch (err) {
+		loggerUser.error(req.uuid, 'controllers/sharedaccount/resumeSharedaccount', err.message);
+		const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+		return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+	}
+};
+
 
 module.exports = {
 	createSharedaccount,
 	getUserSharedaccounts,
 	getUserAccessibleSharedaccounts,
-	getSharedaccountAuthToken
+	getSharedaccountAuthToken,
+	pauseSharedaccount,
+	deleteSharedaccount,
+	resumeSharedaccount
 };

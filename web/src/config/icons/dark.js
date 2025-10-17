@@ -379,6 +379,7 @@ const nestedIcons = {
 	SUB_ACCOUNT: {
 		CONFIRMATION_ICON: '/assets/images/sub-account-created.svg',
 		HEADER_ICON: '/assets/images/sub-account-main.svg',
+		DEACTIVATE_ICON: '/assets/images/deactivate-sub-account.svg',
 	},
 };
 

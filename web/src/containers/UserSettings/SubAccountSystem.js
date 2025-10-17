@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, {
+	useEffect,
+	useState,
+	useMemo,
+	useCallback,
+	useRef,
+} from 'react';
 import { withRouter } from 'react-router';
 import { Input, Select, Tooltip, Button, message } from 'antd';
 import {
@@ -16,9 +22,10 @@ import {
 	getSubAccounts,
 	transferSubAccountFunds,
 	switchSubAccount,
+	deactivateSubAccount,
 } from './actions';
 import { requestUserData } from 'containers/Admin/User/actions';
-import { setToken, subAccountToken } from 'utils/token';
+import { setToken } from 'utils/token';
 import { handlePopupContainer } from 'utils/utils';
 
 const { Option } = Select;
@@ -53,6 +60,7 @@ const INITIAL_CREATED_ACCOUNT = {
 };
 
 const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
+	const switchTimeoutRef = useRef(null);
 	const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 	const [subAccounts, setSubAccounts] = useState([]);
 	const [isCreateSubAccount, setIsCreateSubAccount] = useState(false);
@@ -68,6 +76,13 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 		INITIAL_CREATED_ACCOUNT
 	);
 	const [transferData, setTransferData] = useState(INITIAL_TRANSFER_DATA);
+	const [isDeactivateDialog, setIsDeactivateDialog] = useState(false);
+	const [isDeactivatedSuccessDialog, setIsDeactivatedSuccessDialog] = useState(
+		false
+	);
+	const [selectedDeactivateAccount, setSelectedDeactivateAccount] = useState(
+		null
+	);
 
 	const handleInputChange = useCallback((field, value) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -172,6 +187,14 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 		}
 		//eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isTransferDialog, transferData, getUser]);
+
+	useEffect(() => {
+		return () => {
+			if (switchTimeoutRef.current) {
+				clearTimeout(switchTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	const handleOpenTransferDialog = useCallback(
 		(direction, account) => {
@@ -289,9 +312,8 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 
 			message.success(STRINGS?.['SUB_ACCOUNT_SYSTEM.SWITCH_SUCCESS']);
 
-			setTimeout(() => {
+			switchTimeoutRef.current = setTimeout(() => {
 				setToken(response?.token);
-				subAccountToken(response?.token);
 				router.push('/summary');
 				window.location.reload();
 			}, 500);
@@ -311,6 +333,39 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 		setIsSubAccountConfirmation(false);
 		setCreatedAccountData(INITIAL_CREATED_ACCOUNT);
 		setFormData(INITIAL_FORM_DATA);
+	}, []);
+
+	const handleOpenDeactivateDialog = useCallback((account) => {
+		setSelectedDeactivateAccount(account);
+		setIsDeactivateDialog(true);
+	}, []);
+
+	const handleCloseDeactivateDialog = useCallback(() => {
+		setIsDeactivateDialog(false);
+		setSelectedDeactivateAccount(null);
+	}, []);
+
+	const handleConfirmDeactivate = useCallback(async () => {
+		if (!selectedDeactivateAccount) return;
+
+		try {
+			await deactivateSubAccount(selectedDeactivateAccount?.id);
+
+			setIsDeactivateDialog(false);
+			setIsDeactivatedSuccessDialog(true);
+			fetchSubAccounts();
+		} catch (error) {
+			message.error(
+				error?.data?.message ??
+					error?.message ??
+					STRINGS?.['SUB_ACCOUNT_SYSTEM.DEACTIVATE_FAILED']
+			);
+		}
+	}, [selectedDeactivateAccount, fetchSubAccounts]);
+
+	const handleCloseDeactivatedSuccessDialog = useCallback(() => {
+		setIsDeactivatedSuccessDialog(false);
+		setSelectedDeactivateAccount(null);
 	}, []);
 
 	const getAvailableAccounts = useMemo(() => {
@@ -498,6 +553,17 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 											</span>
 										</EditWrapper>
 									</Button>
+									<Button
+										className="transfer-btn"
+										type="link"
+										onClick={() => handleOpenDeactivateDialog(data)}
+									>
+										<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.DEACTIVATE_TEXT">
+											<span className="caps">
+												{STRINGS?.['SUB_ACCOUNT_SYSTEM.DEACTIVATE_TEXT']}
+											</span>
+										</EditWrapper>
+									</Button>
 								</>
 							)}
 						</div>
@@ -505,7 +571,11 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 				),
 			},
 		],
-		[handleOpenTransferDialog, handleSwitchAccountClick]
+		[
+			handleOpenTransferDialog,
+			handleSwitchAccountClick,
+			handleOpenDeactivateDialog,
+		]
 	);
 
 	const data = useMemo(() => {
@@ -1199,6 +1269,127 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 						<Button
 							onClick={handleCloseSubAccountCreatedDialog}
 							className="sub-account-confirmation-done-btn no-border"
+						>
+							<EditWrapper stringId="REFERRAL_LINK.OKAY">
+								{STRINGS?.['REFERRAL_LINK.OKAY']}
+							</EditWrapper>
+						</Button>
+					</div>
+				</div>
+			</Dialog>
+
+			<Dialog
+				isOpen={isDeactivateDialog}
+				onCloseDialog={handleCloseDeactivateDialog}
+				className="deactivate-account-popup"
+				label="deactivate-account-dialog"
+			>
+				<div className="deactivate-account-wrapper">
+					<div className="d-flex flex-column align-items-center mb-4">
+						<Image
+							iconId="SUB_ACCOUNT_DEACTIVATE_ICON"
+							icon={ICONS?.['SUB_ACCOUNT_DEACTIVATE_ICON']}
+							wrapperClassName="deactivate-account-icon"
+						/>
+						<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.DEACTIVATE_SUB_ACCOUNT_TITLE">
+							<span className="deactivate-account-title">
+								{STRINGS?.['SUB_ACCOUNT_SYSTEM.DEACTIVATE_SUB_ACCOUNT_TITLE']}
+							</span>
+						</EditWrapper>
+						<div className="deactivate-account-desc mt-2">
+							<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.DEACTIVATE_SUB_ACCOUNT_DESC">
+								{STRINGS?.['SUB_ACCOUNT_SYSTEM.DEACTIVATE_SUB_ACCOUNT_DESC']}
+							</EditWrapper>
+						</div>
+					</div>
+
+					{selectedDeactivateAccount && (
+						<div className="deactivate-account-info-box mb-3">
+							<div className="account-type-label mb-2">
+								{selectedDeactivateAccount?.email?.endsWith('_virtual')
+									? `${STRINGS?.['SUB_ACCOUNT_SYSTEM.VIRTUAL_TEXT']} ${STRINGS?.['SUB_ACCOUNT_SYSTEM.SUB_ACCOUNT']}`?.toUpperCase()
+									: `${STRINGS?.['SUB_ACCOUNT_SYSTEM.REAL_EMAIL_TEXT']} ${STRINGS?.['SUB_ACCOUNT_SYSTEM.SUB_ACCOUNT']}`?.toUpperCase()}
+							</div>
+							<div className="d-flex align-items-start">
+								<span
+									className="mt-1 color-icon"
+									style={{ backgroundColor: selectedDeactivateAccount?.color }}
+								></span>
+								<div className="ml-2">
+									<div className="account-email-text">
+										{selectedDeactivateAccount?.email}
+									</div>
+									{selectedDeactivateAccount?.label && (
+										<div className="account-label-text secondary-text">
+											({selectedDeactivateAccount?.label})
+										</div>
+									)}
+								</div>
+							</div>
+						</div>
+					)}
+
+					<div className="deactivate-account-warning text-center">
+						<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.DEACTIVATE_ACCOUNT_WARNING">
+							{STRINGS?.['SUB_ACCOUNT_SYSTEM.DEACTIVATE_ACCOUNT_WARNING']}
+						</EditWrapper>
+					</div>
+
+					<div className="deactivate-account-button-wrapper mt-5">
+						<Button
+							onClick={handleCloseDeactivateDialog}
+							className="deactivate-account-cancel-btn no-border"
+						>
+							<EditWrapper stringId="BACK_TEXT">
+								{STRINGS?.['BACK_TEXT']}
+							</EditWrapper>
+						</Button>
+						<Button
+							onClick={handleConfirmDeactivate}
+							className="deactivate-account-submit-btn no-border"
+						>
+							<EditWrapper stringId="CEFI_STAKE.CONFIRM_BUTTON">
+								{STRINGS?.['CEFI_STAKE.CONFIRM_BUTTON']}
+							</EditWrapper>
+						</Button>
+					</div>
+				</div>
+			</Dialog>
+
+			<Dialog
+				isOpen={isDeactivatedSuccessDialog}
+				onCloseDialog={handleCloseDeactivatedSuccessDialog}
+				className="deactivated-success-popup"
+				label="deactivated-success-dialog"
+			>
+				<div className="deactivated-success-wrapper">
+					<div className="d-flex flex-column align-items-center">
+						<Image
+							iconId="SUB_ACCOUNT_DEACTIVATE_ICON"
+							icon={ICONS?.['SUB_ACCOUNT_DEACTIVATE_ICON']}
+							wrapperClassName="deactivated-success-icon"
+						/>
+						<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.ACCOUNT_DEACTIVATED_TITLE">
+							<span className="deactivated-success-title">
+								{STRINGS?.['SUB_ACCOUNT_SYSTEM.ACCOUNT_DEACTIVATED_TITLE']}
+							</span>
+						</EditWrapper>
+						<div className="deactivated-success-desc text-center mt-3 mb-4 secondary-text">
+							<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.ACCOUNT_DEACTIVATED_DESC">
+								{STRINGS?.formatString(
+									STRINGS?.['SUB_ACCOUNT_SYSTEM.ACCOUNT_DEACTIVATED_DESC'],
+									<span className="important-text">
+										{selectedDeactivateAccount?.email}
+									</span>
+								)}
+							</EditWrapper>
+						</div>
+					</div>
+
+					<div className="deactivated-success-button-wrapper">
+						<Button
+							onClick={handleCloseDeactivatedSuccessDialog}
+							className="deactivated-success-btn no-border"
 						>
 							<EditWrapper stringId="REFERRAL_LINK.OKAY">
 								{STRINGS?.['REFERRAL_LINK.OKAY']}

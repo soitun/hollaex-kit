@@ -7519,6 +7519,96 @@ table th {
   .layout-mobile .settings_container .settings-form-wrapper .settings-form .wallet-assets_block .wallet-assets_block-table tr {
     font-size: 1.2rem !important; }
 
+.deactivate-account-popup .ReactModal__Content,
+.deactivated-success-popup .ReactModal__Content {
+  width: 35rem; }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-icon svg,
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-icon svg,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-icon svg,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-icon svg,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-icon svg,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-icon svg,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-icon svg,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-icon svg {
+    width: 5rem;
+    height: 5rem; }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-title,
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-title,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-title,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-title,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-title,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-title,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-title,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-title {
+    font-size: 1.9rem;
+    font-weight: 600; }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; }
+    .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box .color-icon,
+    .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box .color-icon,
+    .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box .color-icon,
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box .color-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%; }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-warning,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-warning,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-warning,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-warning {
+    padding: 2%;
+    background-color: var(--base_background);
+    color: var(--specials_pending-waiting-caution); }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper {
+    display: flex; }
+    .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper button,
+    .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper button,
+    .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper button,
+    .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper button {
+      background-color: var(--specials_buttons-links-and-highlights) !important;
+      color: var(--labels_important-active-labels-text-graphics); }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper {
+    gap: 2%; }
+    .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn {
+      width: 50%; }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper {
+    justify-content: center; }
+    .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn {
+      width: 85%; }
+
 @media (max-width: 1060px) {
   .settings_container .settings-form-wrapper .settings-form .icon_title-wrapper .icon_title-text {
     margin: 1rem;

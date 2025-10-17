@@ -30,3 +30,11 @@ export const switchSubAccount = (subaccountId) => {
 	};
 	return requestAuthenticated('/subaccount/auth', options);
 };
+
+export const deactivateSubAccount = (subaccountId) => {
+	const options = {
+		method: 'DELETE',
+		body: JSON.stringify({ subaccount_id: subaccountId }),
+	};
+	return requestAuthenticated('/subaccount', options);
+};

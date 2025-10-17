@@ -912,7 +912,7 @@ const verifyHmacTokenPromise = (apiKey, apiSignature, apiExpires, method, origin
 };
 
 
-const createSession = async (token, loginId, userId) => {
+const createSession = async (token, loginId, userId, expiry = null, meta = {}) => {
 
 	const user = await dbQuery.findOne('user', { where: { id: userId } });
 	const userRole = user.role || 'user';
@@ -928,7 +928,8 @@ const createSession = async (token, loginId, userId) => {
 		login_id: loginId,
 		status: true,
 		last_seen: new Date(),
-		expiry_date: new Date(decoded.exp * 1000)
+		expiry_date: new Date(decoded.exp * 1000),
+		meta
 	});
 };
 

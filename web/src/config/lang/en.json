@@ -2877,6 +2877,14 @@
 		"ACCOUNT_CREATED_DESC": "To finalize the creation of your sub account, a confirmation email has been sent to {0}.",
 		"ACCOUNT_CREATED_DESC_VIRTUAL": "You've successfully created the sub account. You can now transfer funds to this account.",
 		"SWITCH_TO_MAIN_ACCOUNT": "Switch to Main Account",
-		"MANAGE_SUB_ACCOUNT": "Manage Sub Account"
+		"MANAGE_SUB_ACCOUNT": "Manage Sub Account",
+		"DEACTIVATE_TEXT": "Deactivate",
+		"DEACTIVATE_SUB_ACCOUNT_TITLE": "Deactivate Sub Account",
+		"DEACTIVATE_SUB_ACCOUNT_DESC": "This will render the account inaccessible.",
+		"DEACTIVATE_ACCOUNT_WARNING": "If you have funds on this account it is advised to transfer them out.",
+		"DEACTIVATE_SUCCESS": "Sub account deactivated successfully",
+		"DEACTIVATE_FAILED": "Failed to deactivate sub account",
+		"ACCOUNT_DEACTIVATED_TITLE": "Account Deactivated Successfully",
+		"ACCOUNT_DEACTIVATED_DESC": "This account {0} is now deactivated."
 	}
 }

@@ -277,7 +277,6 @@ const AccountList = ({
 			setIsToolTipVisible(false);
 			setIsIconActive(false);
 			setToken(mainAccountToken);
-			localStorage.removeItem('sub_account_token');
 			window.location.reload();
 		}
 	};
