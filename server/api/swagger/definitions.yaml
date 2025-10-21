@@ -608,6 +608,8 @@ definitions:
           user_payments:
             type: object
           google_oauth:
+            type: object,
+          auto_deposit
             type: object
       secrets:
         type: object

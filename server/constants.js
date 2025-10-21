@@ -32,7 +32,8 @@ let configuration = {
 		offramp: {},
 		user_payments: {},
 		dust: {},
-		google_oauth: {}
+		google_oauth: {},
+		auto_deposit: {}
 	},
 	email: {}
 };
@@ -118,7 +119,8 @@ const resetAllConfig = () => {
 			offramp: {},
 			user_payments: {},
 			dust: {},
-			google_oauth: {}
+			google_oauth: {},
+			auto_deposit: {}
 		},
 		email: {}
 	};
@@ -230,7 +232,8 @@ exports.KIT_CONFIG_KEYS = [
 	'suspicious_login',
 	'apps',
 	'timezone',
-	'google_oauth'
+	'google_oauth',
+	'auto_deposit'
 ];
 
 exports.KIT_SECRETS_KEYS = [
