@@ -73,7 +73,8 @@ const kit = {
 	offramp: {},
 	user_payments: {},
 	dust: {},
-	google_oauth: {}
+	google_oauth: {},
+	auto_deposit: {}
 };
 
 const secrets = {

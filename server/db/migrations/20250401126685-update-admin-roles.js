@@ -255,7 +255,8 @@ const configRoles = {
 		'emails',
 		'security',
 		'smtp',
-		'google_oauth'
+		'google_oauth',
+		'auto_deposit'
 	]
 };
 

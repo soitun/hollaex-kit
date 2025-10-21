@@ -73,7 +73,8 @@ Status.findOne()
 			auto_trade_config: existingKitConfigurations.auto_trade_config || {},
 			apps: existingKitConfigurations.apps || {},
 			timezone: existingKitConfigurations?.timezone || existingSecrets.emails ? (existingSecrets.emails.timzeone || process.env.EMAILS_TIMEZONE || '') : (process.env.EMAILS_TIMEZONE || ''),
-			google_oauth: existingKitConfigurations.google_oauth || {}
+			google_oauth: existingKitConfigurations.google_oauth || {},
+			auto_deposit: existingKitConfigurations.auto_deposit || { active: true }
 		};
 
 		const secrets = {
