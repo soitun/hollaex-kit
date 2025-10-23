@@ -1058,7 +1058,8 @@ const issueToken = (
 	lang = 'en',
 	permissions = [],
 	configs = [],
-	role = 'user'
+	role = 'user',
+	extra = {}
 ) => {
 	// Default scope is ['user']
 	let scopes = [].concat(BASE_SCOPES);
@@ -1080,7 +1081,8 @@ const issueToken = (
 			},
 			scopes,
 			ip,
-			iss: ISSUER
+			iss: ISSUER,
+			...extra
 		},
 		SECRET,
 		{
