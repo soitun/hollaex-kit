@@ -388,6 +388,7 @@ class HollaExNetwork {
 	 */
 	createUserWallet(userId, crypto, address, opts = {
 		network: null,
+		skipValidate: false,
 		additionalHeaders: null
 	}) {
 		checkKit(this.exchange_id);
@@ -402,6 +403,9 @@ class HollaExNetwork {
 		const data = { address, currency: crypto, user_id: userId };
 		if (opts.network) {
 			data.network = opts.network;
+		}
+		if (opts.skipValidate) {
+			data.skipValidate = opts.skipValidate;
 		}
 
 		let path = `${this.baseUrl}/network/${this.exchange_id}/wallet`;
