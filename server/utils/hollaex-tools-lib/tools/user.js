@@ -4162,6 +4162,12 @@ const createExchangeUserRole = async ({ name, description, rolePermissions, conf
 			throw new Error(INVALID_OTP_CODE);
 		}
 	}
+
+	// Prevent creating reserved role names
+	const normalizedRoleName = String(name).toLowerCase().replace(/\s+/g, '');
+	if (normalizedRoleName === 'user') {
+		throw new Error('Role name \'user\' is reserved and cannot be created');
+	}
 	
 	const validationGroups = {
 		route: [],
@@ -4250,7 +4256,7 @@ const createExchangeUserRole = async ({ name, description, rolePermissions, conf
 
 
 	return Role.create({
-		role_name: name.toLowerCase().replace(/\s+/g, ''),
+		role_name: normalizedRoleName,
 		description,
 		permissions: permissionsToStore,
 		configs: configsToStore,
