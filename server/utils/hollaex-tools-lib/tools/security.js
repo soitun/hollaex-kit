@@ -1064,9 +1064,12 @@ const issueToken = (
 	// Default scope is ['user']
 	let scopes = [].concat(BASE_SCOPES);
 
+	// Normalize role to 'user' if null/undefined/empty
+	const normalizedRole = role || 'user';
+
 	if (checkAdminIp(getKitSecrets().admin_whitelist, ip)) {
-		if (role) {
-			scopes.push(role);
+		if (normalizedRole && !scopes.includes(normalizedRole)) {
+			scopes.push(normalizedRole);
 		}
 	}
 
@@ -1077,7 +1080,7 @@ const issueToken = (
 				email,
 				networkId,
 				lang,
-				role
+				role: normalizedRole
 			},
 			scopes,
 			ip,
