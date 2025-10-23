@@ -608,7 +608,7 @@ definitions:
           user_payments:
             type: object
           google_oauth:
-            type: object,
+            type: object
           auto_deposit:
             type: object
       secrets:
