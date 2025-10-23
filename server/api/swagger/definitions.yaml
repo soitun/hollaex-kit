@@ -609,7 +609,7 @@ definitions:
             type: object
           google_oauth:
             type: object,
-          auto_deposit
+          auto_deposit:
             type: object
       secrets:
         type: object
