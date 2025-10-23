@@ -4744,7 +4744,11 @@ const issueSubaccountToken = async ({ masterKitId, subKitId, ip, headers = {} })
 		sub.email,
 		ip,
 		undefined,
-		sub.settings?.language
+		sub.settings?.language,
+		undefined,
+		undefined,
+		undefined,
+		{ is_subaccount: true }
 	);
 
 	await registerUserLogin(
@@ -4911,7 +4915,11 @@ const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, heade
 		main.email,
 		ip,
 		undefined,
-		main.settings?.language
+		main.settings?.language,
+		undefined,
+		undefined,
+		undefined,
+		{ is_sharedaccount: true }
 	);
 
 	await registerUserLogin(
