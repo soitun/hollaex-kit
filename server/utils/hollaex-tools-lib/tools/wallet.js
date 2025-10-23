@@ -1313,6 +1313,7 @@ const getUserWithdrawalCode = async () => {
 
 const createUserWalletByNetworkId = (networkId, currency, address, opts = {
 	network: null,
+	skipValidate: false,
 	additionalHeaders: null
 }) => {
 	if (!networkId) {
@@ -1323,6 +1324,7 @@ const createUserWalletByNetworkId = (networkId, currency, address, opts = {
 
 const createUserWalletByKitId = async (kitId, currency, address, opts = {
 	network: null,
+	skipValidate: false,
 	additionalHeaders: null
 }) => {
 	// check mapKitIdToNetworkId
