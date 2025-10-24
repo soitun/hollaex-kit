@@ -31,6 +31,227 @@
 	color: $colors-deactivate;
 }
 
+.account-share-tab {
+	.settings-form {
+		.icon_title-svg {
+			width: 5rem;
+			height: 4rem;
+
+			svg {
+				width: 4rem;
+				height: 4rem;
+			}
+		}
+
+		.danger-zone {
+			.danger-zone-title {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+			}
+		}
+	}
+}
+
+.account-share-warning-dialog {
+	.ReactModal__Content {
+		max-width: 40rem;
+
+		.icon_title-wrapper {
+			margin-top: 0;
+		}
+
+		.account-share-warning-box {
+			background-color: $app-light-background;
+			padding: 4%;
+
+			.warning-text {
+				color: $medium-intensity;
+				font-size: 14px;
+			}
+		}
+
+		.ant-checkbox-wrapper {
+			.ant-checkbox {
+				.ant-checkbox-inner {
+					background-color: $base_footer_text;
+					border-color: $app-bar-background-color;
+				}
+
+				&.ant-checkbox-checked .ant-checkbox-inner {
+					background-color: $base_footer_text;
+					border-color: $app-bar-background-color;
+
+					&::after {
+						border-color: $app-bar-background-color;
+					}
+				}
+
+				&:hover .ant-checkbox-inner,
+				.ant-checkbox-input:focus + .ant-checkbox-inner {
+					border-color: $app-bar-background-color !important;
+					box-shadow: none !important;
+					outline: none !important;
+				}
+
+				&.ant-checkbox-checked:not(.ant-checkbox-disabled):hover
+					.ant-checkbox-inner {
+					border-color: $app-bar-background-color !important;
+					background-color: $base_footer_text !important;
+					box-shadow: none !important;
+				}
+
+				.ant-checkbox-input:focus {
+					outline: none !important;
+					box-shadow: none !important;
+				}
+			}
+		}
+	}
+}
+
+.account-share-info-dialog {
+	.ReactModal__Content {
+		width: 37rem;
+
+		.account-share-info {
+			max-width: 32rem;
+
+			.icon_title-wrapper {
+				flex-direction: inherit;
+			}
+
+			.icon_title-svg {
+				width: 3rem;
+				height: 3rem;
+
+				svg {
+					width: 3rem;
+					height: 3rem;
+				}
+			}
+
+			.account-info-name-tooltip {
+				svg {
+					height: 12px;
+					width: auto;
+					vertical-align: bottom;
+				}
+			}
+
+			.box-header {
+				color: $form-color-underline-focus;
+
+				.icon_title-wrapper {
+					justify-content: inherit;
+					margin-top: 0px;
+				}
+
+				.header-text {
+					font-size: 3rem;
+				}
+			}
+
+			.ant-input {
+				background-color: transparent;
+				color: $form-color-underline-focus;
+				border: 1px solid $form-color-underline-focus;
+			}
+
+			.ant-input:focus,
+			.ant-input-focused,
+			.ant-input:hover {
+				border-color: $form-color-underline-focus;
+				box-shadow: none !important;
+			}
+		}
+	}
+}
+
+.account-tab-options-tooltip {
+	max-width: 22.7rem;
+	font-size: 10px;
+
+	.rc-tooltip-content {
+		.rc-tooltip-arrow {
+			background-color: transparent;
+			border-right-color: $chat-message-background-even;
+		}
+
+		.rc-tooltip-inner {
+			font-size: 11px;
+			background-color: $chat-message-background-even;
+			color: $form-color-underline-focus;
+			padding: 1% 4%;
+			border: transparent;
+		}
+	}
+}
+
+.account-share-verification-dialog {
+	.ReactModal__Content {
+		.email-verification-wrapper {
+			width: 37rem;
+		}
+
+		.verify-code-wrapper {
+			max-width: 36rem;
+
+			.timer-divider {
+				width: 100%;
+				height: 2px;
+				background-color: $colors-black;
+			}
+
+			.timer-text {
+				font-size: 1.2rem;
+			}
+
+			.verification-code-title {
+				font-size: 2.2rem;
+			}
+
+			.expired-message-wrapper {
+				.expired-message {
+					margin: 1.5rem 0;
+				}
+			}
+
+			.verification-code-fields {
+				.verification-field-divider {
+					width: 1rem;
+					height: 2px;
+					background-color: $colors-black;
+					margin-right: 1rem;
+				}
+
+				.verification-code-input {
+					width: 3.5rem;
+					height: 3.5rem;
+					text-align: center;
+					font-size: 1.8rem;
+					border-radius: 5px;
+					margin-right: 0.5rem;
+					background-color: $app-background-color;
+					border: 1px solid $colors-border;
+				}
+
+				.verification-code-input:focus {
+					border: 1px solid $colors-black;
+					box-shadow: none;
+					outline: none;
+				}
+			}
+
+			.verification-code-error {
+				display: flex;
+				justify-content: center;
+				color: $sell;
+			}
+		}
+	}
+}
+
 .settings_container {
 	.icon_title-wrapper {
 		flex-direction: row;
@@ -165,6 +386,44 @@
 
 					&:active {
 						transform: scale(0.98);
+					}
+				}
+			}
+
+			.account-share-table {
+				overflow-x: auto;
+				.account-sharing-btn {
+					width: max-content;
+					background: transparent !important;
+					border: 1px solid $colors-notifications-blue;
+					color: $colors-notifications-blue;
+					font-size: 1rem;
+				}
+				.share-inactive {
+					opacity: 0.5;
+				}
+				.sharing-status-active {
+					width: 8px;
+					height: 8px;
+					background-color: $colors-notifications-red;
+					border-radius: 50%;
+					display: inline-block;
+				}
+				.sharing-status-inactive {
+					color: $colors-notification-pending;
+					font-weight: bolder;
+					font-size: 1.2rem;
+				}
+				.account-no-data-wrapper {
+					margin-bottom: 5%;
+
+					.icon_title-svg {
+						height: 4rem;
+
+						svg {
+							width: 3rem;
+							height: 3rem;
+						}
 					}
 				}
 			}
@@ -486,14 +745,25 @@
 }
 
 .deactivate-account-popup,
-.deactivated-success-popup {
+.deactivated-success-popup,
+.account-share-success-dialog,
+.account-share-login-dialog {
 	.ReactModal__Content {
 		width: 35rem;
 
 		.deactivate-account-wrapper,
-		.deactivated-success-wrapper {
+		.deactivated-success-wrapper,
+		.account-share-success-wrapper,
+		.account-share-login-wrapper {
+			.sharing-complete-title-wrapper {
+				display: flex;
+				gap: 1rem;
+				align-items: flex-end;
+			}
+
 			.deactivate-account-icon,
-			.deactivated-success-icon {
+			.deactivated-success-icon,
+			.account-share-icon {
 				svg {
 					width: 5rem;
 					height: 5rem;
@@ -501,7 +771,9 @@
 			}
 
 			.deactivate-account-title,
-			.deactivated-success-title {
+			.deactivated-success-title,
+			.account-share-title,
+			.account-share-title {
 				font-size: 1.9rem;
 				font-weight: 600;
 			}

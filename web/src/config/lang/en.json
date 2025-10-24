@@ -2886,5 +2886,75 @@
 		"DEACTIVATE_FAILED": "Failed to deactivate sub account",
 		"ACCOUNT_DEACTIVATED_TITLE": "Account Deactivated Successfully",
 		"ACCOUNT_DEACTIVATED_DESC": "This account {0} is now deactivated."
+	},
+	"ACCOUNT_SHARING": {
+		"SHARE": "SHARE",
+		"TITLE": "Account Sharing",
+		"ACCOUNT_SHARING_DESCRIPTION": "Share your account with others so that they can view our assets and trade. Useful for family offices and high trust networks.",
+		"SHARE_ACCOUNT_LABEL": "Want to share your account? Click {0}.",
+		"SHARED_ACCOUNT_NOTIFICATION": "YOU ARE CURRENTLY LOGGED INTO A SHARED ACCOUNT",
+		"ACCOUNT_DANGER_ZONE_DESCRIPTION": "You should only share your account with people your trust.",
+		"BACK_TO_ACCOUNTS": " to accounts",
+		"SHARED_ACCOUNT": "Shared Account",
+		"SHARED_ACCOUNT_TOOLTIP": "This active session originates from a Shared Account",
+		"SHARED_ACCOUNT_DESCRIPTION": "This session origin is from a {0}",
+		"SHARED_BY_YOU": {
+			"TAB_LABEL": "Shared by you",
+			"HEADING": "You shared",
+			"DESCRIPTION_1": "Below is a list of people you've shared your account with and their status.",
+			"DESCRIPTION_2": "Account sharing is a sensitive action and must only be done with people you trust.",
+			"NOTE": "Note:",
+			"SHARE_ACCOUNT": "Share Account",
+			"TABLE": {
+				"HEADER": {
+					"DATE_SHARED": "Date shared",
+					"MANAGE": "Manage"
+				},
+				"DATA": {
+					"STATUS": {
+						"SHARING_IS_LIVE": "SHARING IS LIVE",
+						"SHARING_PAUSED": "SHARING PAUSED"
+					},
+					"BUTTON": {
+						"REMOVE_PERMANENTLY": "REMOVE PERMANENTLY",
+						"PAUSE_SHARING": "Pause Sharing"
+					}
+				},
+				"NO_DATA": "Share your account with others so they can trade and view your assets.",
+				"SHARE_YOUR_ACCOUNT": "Share Your Account"
+			}
+		},
+		"SHARED_WITH_YOU": {
+			"TAB_LABEL": "Shared with you",
+			"HEADING": "Accounts shared with you",
+			"DESCRIPTION": "Below is a list of accounts shared with you. Accessing another person's account is sensitive responsibility. Make sure your own account is secured with {0} before accepting responsibility for someone else's account.",
+			"TABLE": {
+				"LOGIN_TO_ACCOUNT": "LOGIN TO ACCOUNT",
+				"NO_DATA": "Nobody has shared thier account with you yet."
+			}
+		},
+		"IMPORTANT": "IMPORTANT:",
+		"SHARING_YOUR_ACCOUNT": "Sharing Your Account",
+		"DESCRIPTION": "By sharing your account, others will be able to trade and view the assets you hold. This feature is useful for family offices, businesses, or trusted family and friends.",
+		"DESCRIPTION_1": "People you share your account with can initiate withdrawals, but only you can give the final confirmation before any funds are released.",
+		"WARINNG_DESC": "Please only share your account with individuals you fully trust!",
+		"CONFORMATION_MESSAGE": "I understand and I accepts the risks of sharing my account.",
+		"REMOVE_USER": "Remove User",
+		"REMOVE_USER_DESCRIPTION": "Remove this user from your account sharing list:",
+		"REMOVE_USER_DESCRIPTION_1": "This user will not be able to login, trade or view your assets after removal",
+		"SHARE_ACCOUNT_AGAIN": "Share Account Again",
+		"SHARE_ACCOUNT_AGAIN_DESCRIPTION": "This account {0} is now disabled.",
+		"PAUSE_SHARING_DESCRIPTION": "Pause sharing your account with {0}.",
+		"SHARE_ACCOUNT_INFO_DESCRIPTION": "Input the email of the person you'd like to share your account with. This user needs to have an account on the platform and be someone your trust.",
+		"SHARE_ACCOUNT_INFO_EMAIL_PLACEHOLDER": "Input email of person to share account with",
+		"SHARE_ACCOUNT_INFO_NAME_PLACEHOLDER": "Input a label, name or other descriptive information",
+		"SHARE_ACCOUNT_INFO_TOOLTIP": "Add a name to help identify this person you are sharing your account with",
+		"EMAIL_VERIFICATION_DESCRIPTION": "To finalize the {0}, please check your email for the verification code and enter it in the next step.",
+		"SHARE_SUCCESS_TITLE": "Sharing Successfully",
+		"SHARE_SUCCESS_DESCRIPTION_1": "You have successfully shared a account with {0}",
+		"SHARE_SUCCESS_DESCRIPTION_2": "They can now trade, view your assets and initiate withdrawals on your account",
+		"LOGIN_TO_SHARED_ACCOUNT": "Login to Shared Account",
+		"LOGIN_DESCRIPTION": "You are about to login to the shared account of {0}.",
+		"LOGIN_WARNING": "Remember, you are accessing someone else's account. Please act responsibly."
 	}
 }

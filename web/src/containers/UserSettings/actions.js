@@ -38,3 +38,39 @@ export const deactivateSubAccount = (subaccountId) => {
 	};
 	return requestAuthenticated('/subaccount', options);
 };
+
+export const getSharedAccounts = () => {
+	return requestAuthenticated(`/sharedaccounts/shared`);
+};
+
+export const getSharedWithAccounts = () => {
+	return requestAuthenticated(`/sharedaccounts/access`);
+};
+
+export const addShareAccount = (values = {}) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify(values),
+	};
+	const req = requestAuthenticated(`/sharedaccount`, options);
+	return req;
+};
+
+export const requestShareAccount = (values = {}) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify(values),
+	};
+	const req = requestAuthenticated(`/sharedaccount/auth`, options);
+	return req;
+};
+
+export const updateSharedAccount = ({ shareId, type = '' }) => {
+	if (type === '') return false;
+	let endpoint = '/sharedaccount/' + type;
+	const options = {
+		method: 'POST',
+		body: JSON.stringify({ sharedaccount_id: shareId }),
+	};
+	return requestAuthenticated(endpoint, options);
+};
