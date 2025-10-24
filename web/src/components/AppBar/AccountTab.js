@@ -20,6 +20,7 @@ import {
 	removeToken,
 	getMainAccountToken,
 	setToken,
+	checkAccountStatus,
 } from 'utils/token';
 import {
 	setIsMarketDropdownVisible,
@@ -329,7 +330,7 @@ const AccountList = ({
 						)}
 					</div>
 					<div>
-						{user?.is_subaccount && getMainAccountToken() ? (
+						{checkAccountStatus('is_subaccount') ? (
 							<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.SWITCH_TO_MAIN_ACCOUNT">
 								<span
 									className="blue-link text-decoration-underline mt-2 pointer"

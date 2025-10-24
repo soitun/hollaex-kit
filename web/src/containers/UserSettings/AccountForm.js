@@ -24,6 +24,7 @@ import { required, username } from 'components/Form/validations';
 import { getErrorLocalized } from 'utils/errors';
 import STRINGS from 'config/localizedStrings';
 import SubAccountSystem from './SubAccountSystem';
+import AccountSharing from './AccountSharing';
 
 export const generateUsernameFormValues = (disabled = false) => ({
 	username: {
@@ -158,6 +159,7 @@ class Form extends Component {
 					<div className="settings-form">
 						<SubAccountSystem coins={coins} user={user} balance={balance} />
 					</div>
+					<AccountSharing />
 					<div className="settings-form">
 						<IconTitle
 							stringId="USER_SETTINGS.TITLE_CHAT"

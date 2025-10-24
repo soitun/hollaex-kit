@@ -126,3 +126,9 @@ export const removeDashToken = () => {
 export const getDashTokenTimestamp = () => {
 	return localStorage.getItem(DASH_TOKEN_TIME_KEY);
 };
+
+export const checkAccountStatus = (key = '') => {
+	const token = getToken();
+	if (!token || token === undefined || !key?.trim()?.length) return false;
+	return jwtDecode(token)[key] || false;
+};

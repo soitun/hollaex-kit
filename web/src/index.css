@@ -393,6 +393,10 @@ table th {
   min-height: 100vh;
   background-color: var(--base_background);
   color: var(--labels_important-active-labels-text-graphics); }
+  .app_container .shared-account-notification-bar .notification-link {
+    transition: opacity 0.2s; }
+    .app_container .shared-account-notification-bar .notification-link:hover {
+      opacity: 0.7; }
   .app_container.layout-desktop .app_container-content {
     height: auto;
     flex: 1; }
@@ -764,6 +768,13 @@ table th {
           font-size: 12px; }
       .layout-mobile .footer-bar-more-options-container .options-container .hot-options-container .secondary-text {
         font-size: 12px; }
+
+@media screen and (max-width: 420px) {
+  .app_container .shared-account-notification-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center; } }
 
 .light-auth-body {
   background-repeat: no-repeat;
@@ -1310,6 +1321,10 @@ table th {
   justify-content: flex-start !important;
   flex-direction: row;
   align-items: center; }
+
+.user-security-container .session-table td .shared-account-icon-session-table svg {
+  height: 1rem;
+  width: 1rem; }
 
 .user-security-container .checkbutton-input-wrapper {
   margin-top: 0px !important; }
@@ -7227,6 +7242,133 @@ table th {
 .deactive_risk_data {
   color: var(--labels_secondary-inactive-label-text-graphics); }
 
+.account-share-tab .settings-form .icon_title-svg {
+  width: 5rem;
+  height: 4rem; }
+  .account-share-tab .settings-form .icon_title-svg svg {
+    width: 4rem;
+    height: 4rem; }
+
+.account-share-tab .settings-form .danger-zone .danger-zone-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; }
+
+.account-share-warning-dialog .ReactModal__Content {
+  max-width: 40rem; }
+  .account-share-warning-dialog .ReactModal__Content .icon_title-wrapper {
+    margin-top: 0; }
+  .account-share-warning-dialog .ReactModal__Content .account-share-warning-box {
+    background-color: var(--base_secondary-navigation-bar);
+    padding: 4%; }
+    .account-share-warning-dialog .ReactModal__Content .account-share-warning-box .warning-text {
+      color: var(--specials_my-username-in-chat);
+      font-size: 14px; }
+  .account-share-warning-dialog .ReactModal__Content .ant-checkbox-wrapper .ant-checkbox .ant-checkbox-inner {
+    background-color: var(--calculated_base_footer_text);
+    border-color: var(--base_top-bar-navigation); }
+  .account-share-warning-dialog .ReactModal__Content .ant-checkbox-wrapper .ant-checkbox.ant-checkbox-checked .ant-checkbox-inner {
+    background-color: var(--calculated_base_footer_text);
+    border-color: var(--base_top-bar-navigation); }
+    .account-share-warning-dialog .ReactModal__Content .ant-checkbox-wrapper .ant-checkbox.ant-checkbox-checked .ant-checkbox-inner::after {
+      border-color: var(--base_top-bar-navigation); }
+  .account-share-warning-dialog .ReactModal__Content .ant-checkbox-wrapper .ant-checkbox:hover .ant-checkbox-inner,
+  .account-share-warning-dialog .ReactModal__Content .ant-checkbox-wrapper .ant-checkbox .ant-checkbox-input:focus + .ant-checkbox-inner {
+    border-color: var(--base_top-bar-navigation) !important;
+    box-shadow: none !important;
+    outline: none !important; }
+  .account-share-warning-dialog .ReactModal__Content .ant-checkbox-wrapper .ant-checkbox.ant-checkbox-checked:not(.ant-checkbox-disabled):hover .ant-checkbox-inner {
+    border-color: var(--base_top-bar-navigation) !important;
+    background-color: var(--calculated_base_footer_text) !important;
+    box-shadow: none !important; }
+  .account-share-warning-dialog .ReactModal__Content .ant-checkbox-wrapper .ant-checkbox .ant-checkbox-input:focus {
+    outline: none !important;
+    box-shadow: none !important; }
+
+.account-share-info-dialog .ReactModal__Content {
+  width: 37rem; }
+  .account-share-info-dialog .ReactModal__Content .account-share-info {
+    max-width: 32rem; }
+    .account-share-info-dialog .ReactModal__Content .account-share-info .icon_title-wrapper {
+      flex-direction: inherit; }
+    .account-share-info-dialog .ReactModal__Content .account-share-info .icon_title-svg {
+      width: 3rem;
+      height: 3rem; }
+      .account-share-info-dialog .ReactModal__Content .account-share-info .icon_title-svg svg {
+        width: 3rem;
+        height: 3rem; }
+    .account-share-info-dialog .ReactModal__Content .account-share-info .account-info-name-tooltip svg {
+      height: 12px;
+      width: auto;
+      vertical-align: bottom; }
+    .account-share-info-dialog .ReactModal__Content .account-share-info .box-header {
+      color: var(--labels_important-active-labels-text-graphics); }
+      .account-share-info-dialog .ReactModal__Content .account-share-info .box-header .icon_title-wrapper {
+        justify-content: inherit;
+        margin-top: 0px; }
+      .account-share-info-dialog .ReactModal__Content .account-share-info .box-header .header-text {
+        font-size: 3rem; }
+    .account-share-info-dialog .ReactModal__Content .account-share-info .ant-input {
+      background-color: transparent;
+      color: var(--labels_important-active-labels-text-graphics);
+      border: 1px solid var(--labels_important-active-labels-text-graphics); }
+    .account-share-info-dialog .ReactModal__Content .account-share-info .ant-input:focus,
+    .account-share-info-dialog .ReactModal__Content .account-share-info .ant-input-focused,
+    .account-share-info-dialog .ReactModal__Content .account-share-info .ant-input:hover {
+      border-color: var(--labels_important-active-labels-text-graphics);
+      box-shadow: none !important; }
+
+.account-tab-options-tooltip {
+  max-width: 22.7rem;
+  font-size: 10px; }
+  .account-tab-options-tooltip .rc-tooltip-content .rc-tooltip-arrow {
+    background-color: transparent;
+    border-right-color: var(--base_background); }
+  .account-tab-options-tooltip .rc-tooltip-content .rc-tooltip-inner {
+    font-size: 11px;
+    background-color: var(--base_background);
+    color: var(--labels_important-active-labels-text-graphics);
+    padding: 1% 4%;
+    border: transparent; }
+
+.account-share-verification-dialog .ReactModal__Content .email-verification-wrapper {
+  width: 37rem; }
+
+.account-share-verification-dialog .ReactModal__Content .verify-code-wrapper {
+  max-width: 36rem; }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .timer-divider {
+    width: 100%;
+    height: 2px;
+    background-color: var(--labels_secondary-inactive-label-text-graphics); }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .timer-text {
+    font-size: 1.2rem; }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .verification-code-title {
+    font-size: 2.2rem; }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .expired-message-wrapper .expired-message {
+    margin: 1.5rem 0; }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .verification-code-fields .verification-field-divider {
+    width: 1rem;
+    height: 2px;
+    background-color: var(--labels_secondary-inactive-label-text-graphics);
+    margin-right: 1rem; }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .verification-code-fields .verification-code-input {
+    width: 3.5rem;
+    height: 3.5rem;
+    text-align: center;
+    font-size: 1.8rem;
+    border-radius: 5px;
+    margin-right: 0.5rem;
+    background-color: var(--base_background);
+    border: 1px solid var(--calculated_secondary-border); }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .verification-code-fields .verification-code-input:focus {
+    border: 1px solid var(--labels_secondary-inactive-label-text-graphics);
+    box-shadow: none;
+    outline: none; }
+  .account-share-verification-dialog .ReactModal__Content .verify-code-wrapper .verification-code-error {
+    display: flex;
+    justify-content: center;
+    color: var(--trading_selling-related-elements); }
+
 .settings_container .icon_title-wrapper {
   flex-direction: row;
   justify-content: flex-start; }
@@ -7321,6 +7463,33 @@ table th {
       opacity: 0.9; }
     .settings_container .settings-form-wrapper .settings-form .sub-account-system-container .transfer-btn:active {
       transform: scale(0.98); }
+  .settings_container .settings-form-wrapper .settings-form .account-share-table {
+    overflow-x: auto; }
+    .settings_container .settings-form-wrapper .settings-form .account-share-table .account-sharing-btn {
+      width: max-content;
+      background: transparent !important;
+      border: 1px solid var(--specials_buttons-links-and-highlights);
+      color: var(--specials_buttons-links-and-highlights);
+      font-size: 1rem; }
+    .settings_container .settings-form-wrapper .settings-form .account-share-table .share-inactive {
+      opacity: 0.5; }
+    .settings_container .settings-form-wrapper .settings-form .account-share-table .sharing-status-active {
+      width: 8px;
+      height: 8px;
+      background-color: var(--specials_notifications-alerts-warnings);
+      border-radius: 50%;
+      display: inline-block; }
+    .settings_container .settings-form-wrapper .settings-form .account-share-table .sharing-status-inactive {
+      color: var(--specials_pending-waiting-caution);
+      font-weight: bolder;
+      font-size: 1.2rem; }
+    .settings_container .settings-form-wrapper .settings-form .account-share-table .account-no-data-wrapper {
+      margin-bottom: 5%; }
+      .settings_container .settings-form-wrapper .settings-form .account-share-table .account-no-data-wrapper .icon_title-svg {
+        height: 4rem; }
+        .settings_container .settings-form-wrapper .settings-form .account-share-table .account-no-data-wrapper .icon_title-svg svg {
+          width: 3rem;
+          height: 3rem; }
 
 .settings_container .settings-form-wrapper .holla-button {
   width: 300px; }
@@ -7520,32 +7689,161 @@ table th {
     font-size: 1.2rem !important; }
 
 .deactivate-account-popup .ReactModal__Content,
-.deactivated-success-popup .ReactModal__Content {
+.deactivated-success-popup .ReactModal__Content,
+.account-share-success-dialog .ReactModal__Content,
+.account-share-login-dialog .ReactModal__Content {
   width: 35rem; }
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .sharing-complete-title-wrapper,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .sharing-complete-title-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .sharing-complete-title-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .sharing-complete-title-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .sharing-complete-title-wrapper,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .sharing-complete-title-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .sharing-complete-title-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .sharing-complete-title-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .sharing-complete-title-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .sharing-complete-title-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .sharing-complete-title-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .sharing-complete-title-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .sharing-complete-title-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .sharing-complete-title-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .sharing-complete-title-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .sharing-complete-title-wrapper {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end; }
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-icon svg,
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-icon svg,
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .account-share-icon svg,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-icon svg,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-icon svg,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .account-share-icon svg,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-icon svg,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-icon svg,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .account-share-icon svg,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-icon svg,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-icon svg,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .account-share-icon svg,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-icon svg,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-icon svg,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .account-share-icon svg,
   .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-icon svg,
-  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-icon svg {
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-icon svg,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .account-share-icon svg,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-icon svg,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-icon svg,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .account-share-icon svg,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-icon svg,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-icon svg,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .account-share-icon svg,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-icon svg,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-icon svg,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .account-share-icon svg,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-icon svg,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-icon svg,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .account-share-icon svg,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-icon svg,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-icon svg,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .account-share-icon svg,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-icon svg,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-icon svg,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .account-share-icon svg,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-icon svg,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-icon svg,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .account-share-icon svg,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-icon svg,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-icon svg,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .account-share-icon svg,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-icon svg,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-icon svg,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .account-share-icon svg,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-icon svg,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-icon svg,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .account-share-icon svg {
     width: 5rem;
     height: 5rem; }
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-title,
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-title,
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .account-share-title,
+  .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .account-share-title,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-title,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-title,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .account-share-title,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .account-share-title,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-title,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-title,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .account-share-title,
+  .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .account-share-title,
   .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-title,
-  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-title {
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-title,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .account-share-title,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-title,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-title,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-title,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-title,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .account-share-title,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-title,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-title,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-title,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-title,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .account-share-title,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .account-share-title {
     font-size: 1.9rem;
     font-weight: 600; }
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box,
-  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box {
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box {
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -7553,15 +7851,39 @@ table th {
     justify-content: center; }
     .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box .color-icon,
     .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box .color-icon,
+    .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box .color-icon,
+    .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box .color-icon,
     .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box .color-icon,
-    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box .color-icon {
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box .color-icon,
+    .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box .color-icon,
+    .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-info-box .color-icon,
+    .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-info-box .color-icon {
       width: 1.5rem;
       height: 1.5rem;
       border-radius: 50%; }
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-warning,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-warning,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-warning,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-warning,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-warning,
-  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-warning {
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-warning,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-warning,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-warning,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-warning,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-warning,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-warning,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-warning,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-warning,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-warning,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-warning,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-warning {
     padding: 2%;
     background-color: var(--base_background);
     color: var(--specials_pending-waiting-caution); }
@@ -7569,44 +7891,152 @@ table th {
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
   .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
-  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper {
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper {
     display: flex; }
     .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper button,
     .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper button,
     .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper button,
     .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper button,
+    .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper button,
+    .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper button,
+    .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper button,
+    .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper button,
     .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper button,
     .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper button,
     .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper button,
-    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper button {
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper button,
+    .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper button,
+    .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper button,
+    .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper button {
       background-color: var(--specials_buttons-links-and-highlights) !important;
       color: var(--labels_important-active-labels-text-graphics); }
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
-  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper {
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper {
     gap: 2%; }
     .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
     .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
     .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
     .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
     .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
     .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
     .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
-    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn {
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn,
+    .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-cancel-btn,
+    .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivate-account-button-wrapper .deactivate-account-submit-btn {
       width: 50%; }
   .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
   .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper,
   .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
-  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper {
+  .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper,
+  .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper {
     justify-content: center; }
     .deactivate-account-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
     .deactivate-account-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .deactivate-account-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .deactivate-account-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
     .deactivated-success-popup .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
-    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn {
+    .deactivated-success-popup .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .deactivated-success-popup .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .deactivated-success-popup .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-success-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-success-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-success-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-success-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-login-dialog .ReactModal__Content .deactivate-account-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-login-dialog .ReactModal__Content .deactivated-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-login-dialog .ReactModal__Content .account-share-success-wrapper .deactivated-success-button-wrapper .deactivated-success-btn,
+    .account-share-login-dialog .ReactModal__Content .account-share-login-wrapper .deactivated-success-button-wrapper .deactivated-success-btn {
       width: 85%; }
 
 @media (max-width: 1060px) {
