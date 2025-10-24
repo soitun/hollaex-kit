@@ -16,7 +16,7 @@ import querystring from 'query-string';
 import { setSideBarState, getSideBarState } from 'utils/sideBar';
 import AppMenuSidebar from 'components/AppMenuSidebar';
 import { addElements, injectHTML } from 'utils/script';
-import { SuccessDisplay } from 'components';
+import { EditWrapper, SuccessDisplay } from 'components';
 
 import {
 	NOTIFICATIONS,
@@ -35,7 +35,12 @@ import STRINGS from 'config/localizedStrings';
 
 import { getChatMinimized, setChatMinimized } from 'utils/theme';
 // eslint-disable-next-line
-import { isLoggedIn, isAdmin, hasPermissions } from 'utils/token';
+import {
+	isLoggedIn,
+	getMainAccountToken,
+	setToken,
+	checkAccountStatus,
+} from 'utils/token';
 import {
 	AppBar,
 	AppMenuBar,
@@ -317,6 +322,14 @@ class App extends Component {
 			}
 		}
 		document.body.appendChild(sheet);
+	};
+
+	handleSwitchToMainAccount = () => {
+		const mainAccountToken = getMainAccountToken();
+		if (mainAccountToken) {
+			setToken(mainAccountToken);
+			window.location.reload();
+		}
 	};
 
 	handleFitHeight = (path) => {
@@ -900,21 +913,47 @@ class App extends Component {
 							/>
 							<div className="d-flex flex-column f-1 w-100">
 								{!isChartEmbed && (
-									<AppBar
-										router={router}
-										menuItems={menuItems}
-										activePath={this.state.activeMenu}
-										onMenuChange={this.handleMenuChange}
-										isHome={isHome}
-									>
-										{isBrowser && (
-											<AppMenuBar
-												menuItems={menuItems}
-												activePath={this.state.activeMenu}
-												onMenuChange={this.handleMenuChange}
-											/>
+									<div>
+										{checkAccountStatus('is_sharedaccount') && isLoggedIn() && (
+											<div className="w-100 bg-primary text-center important-text py-3 border-bottom border-dark shared-account-notification-bar">
+												<EditWrapper stringId="ACCOUNT_SHARING.SHARED_ACCOUNT_NOTIFICATION">
+													{
+														STRINGS[
+															'ACCOUNT_SHARING.SHARED_ACCOUNT_NOTIFICATION'
+														]
+													}
+												</EditWrapper>
+												<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.SWITCH_TO_MAIN_ACCOUNT">
+													<span
+														className="ml-3 px-3 py-1 important-text underline-text font-semibold rounded pointer notification-link"
+														onClick={this.handleSwitchToMainAccount}
+													>
+														{
+															STRINGS[
+																'SUB_ACCOUNT_SYSTEM.SWITCH_TO_MAIN_ACCOUNT'
+															]
+														}
+													</span>
+												</EditWrapper>
+											</div>
 										)}
-									</AppBar>
+
+										<AppBar
+											router={router}
+											menuItems={menuItems}
+											activePath={this.state.activeMenu}
+											onMenuChange={this.handleMenuChange}
+											isHome={isHome}
+										>
+											{isBrowser && (
+												<AppMenuBar
+													menuItems={menuItems}
+													activePath={this.state.activeMenu}
+													onMenuChange={this.handleMenuChange}
+												/>
+											)}
+										</AppBar>
+									</div>
 								)}
 								{isBrowser && !isHome && !isChartEmbed && (
 									<PairTabs
