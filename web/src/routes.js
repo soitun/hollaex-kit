@@ -330,6 +330,11 @@ const MarginTrading = Loadable({
 	loading: LoadingComponent,
 });
 
+const AccountSharing = Loadable({
+	loader: () => import('./containers/UserSettings/AccountSharingForm'),
+	loading: LoadingComponent,
+});
+
 ReactGA.initialize('UA-154626247-1'); // Google analytics. Set your own Google Analytics values
 browserHistory.listen((location) => {
 	if (window) {
@@ -605,6 +610,12 @@ export const generateRoutes = (routes = []) => {
 					onEnter={requireAuth}
 				/>
 				<Route path="settings" name="Settings" component={Account} />
+				<Route
+					path="/account-sharing"
+					name="account-sharing"
+					component={AccountSharing}
+					onEnter={requireAuth}
+				/>
 				<Route path="apps" name="Apps" component={Apps} />
 				<Route
 					path="apps/details/:app"

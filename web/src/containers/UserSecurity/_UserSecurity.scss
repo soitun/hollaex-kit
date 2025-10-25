@@ -355,6 +355,16 @@ $padding-input: 4rem;
 		flex-direction: row;
 		align-items: center;
 	}
+	.session-table {
+		td {
+			.shared-account-icon-session-table {
+				svg {
+					height: 1rem;
+					width: 1rem;
+				}
+			}
+		}
+	}
 
 	.checkbutton-input-wrapper {
 		margin-top: 0px !important;

@@ -381,6 +381,14 @@ const nestedIcons = {
 		HEADER_ICON: '/assets/images/sub-account-main.svg',
 		DEACTIVATE_ICON: '/assets/images/deactivate-sub-account.svg',
 	},
+	ACCOUNT_SHARING: {
+		HEADER_ICON: '/assets/images/account-sharing.svg',
+		SHARED_ACCOUNT_WITH_YOU: '/assets/images/account-shared-with-you-empty.svg',
+		SHARED_ACCOUNT_BY_YOU: '/assets/images/account-shared-by-you.svg',
+		SHARING_COMPLETE_ICON: '/assets/images/sharing-complete.svg',
+		PAUSE_SHARING_ICON: '/assets/images/pause-sharing.svg',
+		REMOVE_SHARING_ICON: '/assets/images/remove-sharing-account.svg',
+	},
 };
 
 const icons = flatten(nestedIcons, options);
