@@ -291,6 +291,8 @@ exports.WEBSOCKET_CHANNEL = (topic, symbolOrUserId) => {
 			return `orderbook:${symbolOrUserId}`;
 		case 'trade':
 			return `trade:${symbolOrUserId}`;
+        case 'price':
+            return 'price';
 		case 'order':
 			return `order:${symbolOrUserId}`;
 		case 'usertrade':
