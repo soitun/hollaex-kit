@@ -152,14 +152,7 @@ const AccountSharingForm = ({ icons: ICONS, router }) => {
 			label: STRINGS?.['ACCOUNT_SHARING.SHARED_BY_YOU.TABLE.HEADER.MANAGE'],
 			key: 'manage',
 			renderCell: (data, key) => (
-				<td
-					key={key}
-					className={`${
-						data?.active
-							? 'account-share-content share-active'
-							: 'account-share-content share-inactive'
-					} p-3`}
-				>
+				<td key={key} className="account-share-content share-active p-3">
 					<div className="d-flex justify-content-start gap-1">
 						<AntButton
 							className="account-sharing-btn"
