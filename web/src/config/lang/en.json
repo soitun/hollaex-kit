@@ -35,6 +35,7 @@
 	},
 	"HELP_TELEGRAM_TEXT": "Check out open API documentation:",
 	"HELP_TELEGRAM_LINK": "https://apidocs.hollaex.com",
+	"ADDITIONAL_HELP": "Additional help:",
 	"NEED_HELP_TEXT": "Need help?",
 	"HELP_TEXT": "help",
 	"SUCCESS_TEXT": "Success",

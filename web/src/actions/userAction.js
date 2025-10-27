@@ -275,15 +275,42 @@ export const setUsernameStore = (username) => ({
 // 	payload: axios.get('/fees')
 // });
 
-export const createAddress = (crypto, network) => ({
-	type: 'CREATE_ADDRESS',
-	payload: axios.get('/user/create-address', {
-		params: {
-			crypto,
-			...(network ? { network } : {}),
-		},
-	}),
-});
+export const createAddress = (crypto, network) => {
+	return (dispatch, getState) => {
+		const state = getState();
+		const { plugins } = state.app;
+
+		const walletPlugin = plugins?.find(
+			(plugin) => plugin?.type === 'wallet' && plugin?.enabled
+		);
+		let endpoint = '/user/create-address';
+
+		if (walletPlugin) {
+			endpoint = `/plugins/${walletPlugin?.name}/create-address`;
+
+			dispatch({
+				type: 'CREATE_ADDRESS',
+				payload: axios.get(endpoint, {
+					baseURL: PLUGIN_URL,
+					params: {
+						crypto,
+						...(network ? { network } : {}),
+					},
+				}),
+			});
+		} else {
+			dispatch({
+				type: 'CREATE_ADDRESS',
+				payload: axios.get(endpoint, {
+					params: {
+						crypto,
+						...(network ? { network } : {}),
+					},
+				}),
+			});
+		}
+	};
+};
 
 export const cleanCreateAddress = () => ({
 	type: 'CLEAN_CREATE_ADDRESS',
