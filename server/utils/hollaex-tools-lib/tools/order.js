@@ -883,6 +883,59 @@ const getAllUserOrdersByNetworkId = (networkId, symbol, side, status, open, limi
 	});
 };
 
+// Match a user's order (by Kit user id) on the network
+const matchUserOrderByKitId = async (userKitId, orderId, symbol, size = null, opts = { additionalHeaders: null }) => {
+	if (symbol && !subscribedToPair(symbol)) {
+		return reject(new Error(INVALID_SYMBOL(symbol)));
+	}
+	// check mapKitIdToNetworkId
+	const idDictionary = await mapKitIdToNetworkId([userKitId]);
+
+	if (!has(idDictionary, userKitId)) {
+		throw new Error(USER_NOT_FOUND);
+	} else if (!idDictionary[userKitId]) {
+		throw new Error(USER_NOT_REGISTERED_ON_NETWORK);
+	}
+
+	const user = await getUserByKitId(userKitId);
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+
+	const feeData = generateOrderFeeData(
+		user.verification_level,
+		symbol,
+		{ discount: user.discount }
+	);
+
+	return getNodeLib().matchOrder(idDictionary[userKitId], orderId, feeData.fee_structure, size, opts);
+};
+
+// Match a user's order (by Network id) on the network
+const matchUserOrderByNetworkId = async (networkId, orderId, symbol, size = null, opts = { additionalHeaders: null }) => {
+	if (!networkId) {
+		throw new Error(USER_NOT_REGISTERED_ON_NETWORK);
+	}
+
+	if (symbol && !subscribedToPair(symbol)) {
+		return reject(new Error(INVALID_SYMBOL(symbol)));
+	}
+
+	const user = await getUserByNetworkId(networkId);
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	const feeData = generateOrderFeeData(
+		user.verification_level,
+		symbol,
+		{ discount: user.discount }
+	);
+
+	return getNodeLib().matchOrder(networkId, orderId, feeData.fee_structure, size, opts);
+};
+
 const cancelAllUserOrdersByKitId = async (userKitId, symbol, opts = {
 	additionalHeaders: null
 }) => {
@@ -1794,7 +1847,9 @@ module.exports = {
 	findConversionRate,
 	createMarginTransferByKitId,
 	closeMarginPositionByKitId,
-	getUserMarginPositionByKitId
+	getUserMarginPositionByKitId,
+	matchUserOrderByKitId,
+	matchUserOrderByNetworkId
 	// getUserTradesByKitIdStream,
 	// getUserTradesByNetworkIdStream,
 	// getAllTradesNetworkStream,

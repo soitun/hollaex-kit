@@ -8,6 +8,7 @@ const moment = require('moment-timezone');
 const { Op } = require('sequelize');
 
 const { loggerPlugin } = require('../config/logger');
+const { delay } = require('bluebird');
 
 
 let kitTimezone;
@@ -554,15 +555,30 @@ const executeTrade = async (autoTradeConfig) => {
 };
 
 const statusModel = toolsLib.database.getModel('status');
-statusModel.findOne({})
-	.then(res => {
+
+// Initialize jobs; retry the status fetch after 60 seconds on failure or missing timezone
+const initializeJobsWithStatus = async () => {
+	try {
+		await delay(10 * 1000)
+		const res = await statusModel.findOne({});
+		if (!res || !res.kit || !res.kit.timezone) {
+			throw new Error('Status not ready');
+		}
 		kitTimezone = res.kit.timezone;
 		scheduleAutoTrade();
 		unstakingCheckRunner();
 		updateRewardsCheckRunner();
 		referralTradesRunner();
-	})
-	.catch(err => err);
+		// Start OTC order monitor
+		require('./otc-order-monitor');	
+	} catch (err) {
+		loggerPlugin.error('plugins/job/initializeJobsWithStatus error', err.message);
+		await delay(60 * 1000);
+		await initializeJobsWithStatus();
+	}
+};
+
+initializeJobsWithStatus();
 
 
 

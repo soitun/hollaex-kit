@@ -488,6 +488,29 @@ definitions:
       updated_at:
         type: string
         format: date-time
+  AdminMatchOrderRequest:
+    type: object
+    required:
+      - user_id
+      - order_id
+      - symbol
+    properties:
+      user_id:
+        type: number
+        format: int32
+        description: Kit user id who owns the order
+      order_id:
+        type: string
+        maxLength: 256
+        description: Order id to match
+      symbol:
+        type: string
+        maxLength: 256
+        description: Symbol of the order (e.g. btc-usdt)
+      size:
+        type: number
+        format: double
+        description: Optional partial size to match
   OrdersResponse:
     type: object
     properties:
