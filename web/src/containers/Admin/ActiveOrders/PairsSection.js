@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Tabs, Row, Col, Table, Tooltip, Button, Spin } from 'antd';
+import { Tabs, Row, Col, Table, Tooltip, Button, Spin, Modal } from 'antd';
 import { CSVLink } from 'react-csv';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -35,11 +35,10 @@ const renderExchangeUser = (user) => (
 				<Link to={`/admin/user?id=${user?.id}`}>{user?.id}</Link>
 			</Button>
 		</Tooltip>
-		<p className="pl-3 mb-0">{user?.email}</p>
 	</div>
 );
 
-const getColumns = (userId, onCancel) => {
+const getColumns = (userId, onCancel, onOpen) => {
 	let columns = [];
 	if (!userId) {
 		columns = [
@@ -57,12 +56,35 @@ const getColumns = (userId, onCancel) => {
 		{ title: 'Symbol', dataIndex: 'symbol', key: 'symbol' },
 		{ title: 'Size', dataIndex: 'size', key: 'size', render: formatNum },
 		{ title: 'Price', dataIndex: 'price', key: 'price', render: formatNum },
+		{ title: 'Stop', dataIndex: 'stop', key: 'stop', render: formatNum },
+		{
+			title: 'Average',
+			dataIndex: 'average',
+			key: 'average',
+			render: formatNum,
+		},
 		{ title: 'Filled', dataIndex: 'filled', key: 'filled', render: formatNum },
 		{
 			title: 'Time',
 			dataIndex: 'updated_at',
 			key: 'updated_at',
 			render: formatDate,
+		},
+		{
+			title: 'Details',
+			dataIndex: 'id',
+			key: 'details',
+			render: (v, record) => (
+				<Button
+					type="link"
+					onClick={(ev) => {
+						ev.stopPropagation();
+						onOpen(record);
+					}}
+				>
+					View
+				</Button>
+			),
 		},
 	];
 	if (userId) {
@@ -76,7 +98,10 @@ const getColumns = (userId, onCancel) => {
 					<Tooltip placement="bottom" title={`Cancel order`}>
 						<Button
 							type="primary"
-							onClick={() => onCancel(e, userId)}
+							onClick={(ev) => {
+								ev.stopPropagation();
+								onCancel(e, userId);
+							}}
 							className="green-btn"
 						>
 							Cancel
@@ -89,7 +114,7 @@ const getColumns = (userId, onCancel) => {
 	return columns;
 };
 
-const getThisExchangeOrders = (onCancel) => {
+const getThisExchangeOrders = (onCancel, onOpen) => {
 	let columns = [];
 
 	columns = [
@@ -97,6 +122,13 @@ const getThisExchangeOrders = (onCancel) => {
 		{ title: 'Symbol', dataIndex: 'symbol', key: 'symbol' },
 		{ title: 'Size', dataIndex: 'size', key: 'size', render: formatNum },
 		{ title: 'Price', dataIndex: 'price', key: 'price', render: formatNum },
+		{ title: 'Stop', dataIndex: 'stop', key: 'stop', render: formatNum },
+		{
+			title: 'Average',
+			dataIndex: 'average',
+			key: 'average',
+			render: formatNum,
+		},
 		{ title: 'Filled', dataIndex: 'filled', key: 'filled', render: formatNum },
 		{
 			title: 'Time',
@@ -111,6 +143,22 @@ const getThisExchangeOrders = (onCancel) => {
 			render: (v, data) => renderExchangeUser(data.User),
 		},
 		{
+			title: 'Details',
+			dataIndex: 'id',
+			key: 'details',
+			render: (v, record) => (
+				<Button
+					type="link"
+					onClick={(ev) => {
+						ev.stopPropagation();
+						onOpen(record);
+					}}
+				>
+					View
+				</Button>
+			),
+		},
+		{
 			title: 'Cancel order',
 			dataIndex: '',
 			key: '',
@@ -118,7 +166,10 @@ const getThisExchangeOrders = (onCancel) => {
 				<Tooltip placement="bottom" title={`Cancel order`}>
 					<Button
 						type="primary"
-						onClick={() => onCancel(e, e?.User?.id)}
+						onClick={(ev) => {
+							ev.stopPropagation();
+							onCancel(e, e?.User?.id);
+						}}
 						className="green-btn"
 					>
 						Cancel
@@ -136,6 +187,8 @@ const SCV_COLUMNS = [
 	{ label: 'Symbol', dataIndex: 'symbol', key: 'symbol' },
 	{ label: 'Size', dataIndex: 'size', key: 'size' },
 	{ label: 'Price', dataIndex: 'price', key: 'price' },
+	{ label: 'Stop', dataIndex: 'stop', key: 'stop' },
+	{ label: 'Average', dataIndex: 'average', key: 'average' },
 	{ label: 'Filled', dataIndex: 'filled', key: 'filled' },
 	{ label: 'Time', dataIndex: 'updated_at', key: 'updated_at' },
 ];
@@ -163,6 +216,8 @@ class PairsSection extends Component {
 			buyCurrentTablePage: 1,
 			sellCurrentTablePage: 1,
 			activeTab: 'buy',
+			orderModalVisible: false,
+			selectedOrder: null,
 		};
 	}
 
@@ -258,6 +313,20 @@ class PairsSection extends Component {
 			});
 	};
 
+	openOrderModal = (order) => {
+		this.setState({ orderModalVisible: true, selectedOrder: order });
+	};
+
+	closeOrderModal = () => {
+		this.setState({ orderModalVisible: false, selectedOrder: null });
+	};
+
+	deriveUserId = (order) => {
+		return order?.User?.id || order?.created_by || this.props.userId;
+	};
+
+	// no modal actions; read-only details
+
 	pageChange = (count, pageSize) => {
 		const { buyOrders = {}, sellOrders = {}, limit } = this.state;
 		const pageCount = count % 5 === 0 ? 5 : count % 5;
@@ -335,8 +404,8 @@ class PairsSection extends Component {
 		} = this.state;
 
 		const COLUMNS = this.props.getThisExchangeOrder
-			? getThisExchangeOrders(this.onCancelOrder)
-			: getColumns(this.props.userId, this.onCancelOrder);
+			? getThisExchangeOrders(this.onCancelOrder, this.openOrderModal)
+			: getColumns(this.props.userId, this.onCancelOrder, this.openOrderModal);
 		return (
 			<div className="f-1 admin-user-container">
 				<Tabs onChange={this.tabChange} activeKey={this.state.activeTab}>
@@ -361,6 +430,10 @@ class PairsSection extends Component {
 												return data.id;
 											}}
 											dataSource={buyOrders.data}
+											onRow={(record) => ({
+												onClick: () => this.openOrderModal(record),
+												style: { cursor: 'pointer' },
+											})}
 											pagination={{
 												current: buyCurrentTablePage,
 												onChange: this.pageChange,
@@ -392,6 +465,10 @@ class PairsSection extends Component {
 												return data.id;
 											}}
 											dataSource={sellOrders.data}
+											onRow={(record) => ({
+												onClick: () => this.openOrderModal(record),
+												style: { cursor: 'pointer' },
+											})}
 											pagination={{
 												current: sellCurrentTablePage,
 												onChange: this.pageChange,
@@ -403,6 +480,65 @@ class PairsSection extends Component {
 						</Row>
 					</TabPane>
 				</Tabs>
+				<Modal
+					title={<span style={{ color: 'white' }}>Order details</span>}
+					visible={this.state.orderModalVisible}
+					onCancel={this.closeOrderModal}
+					footer={null}
+				>
+					{this.state.selectedOrder && (
+						<div>
+							<div className="d-flex flex-column mb-3">
+								<div>
+									<strong>ID:</strong> {this.state.selectedOrder.id}
+								</div>
+								<div>
+									<strong>User ID:</strong>{' '}
+									{this.deriveUserId(this.state.selectedOrder)}
+									{this.state.selectedOrder?.User?.email
+										? ` (${this.state.selectedOrder.User.email})`
+										: ''}
+								</div>
+								<div>
+									<strong>Symbol:</strong> {this.state.selectedOrder.symbol}
+								</div>
+								<div>
+									<strong>Side:</strong> {this.state.selectedOrder.side}
+								</div>
+								<div>
+									<strong>Type:</strong> {this.state.selectedOrder.type}
+								</div>
+								<div>
+									<strong>Price:</strong> {this.state.selectedOrder.price}
+								</div>
+								<div>
+									<strong>Size:</strong> {this.state.selectedOrder.size}
+								</div>
+								<div>
+									<strong>Filled:</strong> {this.state.selectedOrder.filled}
+								</div>
+								<div>
+									<strong>Stop:</strong> {this.state.selectedOrder.stop || ''}
+								</div>
+								<div>
+									<strong>Average:</strong>{' '}
+									{this.state.selectedOrder.average || ''}
+								</div>
+								<div>
+									<strong>Status:</strong> {this.state.selectedOrder.status}
+								</div>
+								<div>
+									<strong>Updated:</strong>{' '}
+									{this.state.selectedOrder.updated_at}
+								</div>
+								<div>
+									<strong>Created:</strong>{' '}
+									{this.state.selectedOrder.created_at}
+								</div>
+							</div>
+						</div>
+					)}
+				</Modal>
 			</div>
 		);
 	}
