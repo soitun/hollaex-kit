@@ -643,7 +643,8 @@ class HollaExNetwork {
 	 * @param {boolean} opts.rejected - Rejected status of the deposits to get. Leave blank to get all rejected and unrejected deposits
 	 * @param {boolean} opts.processing - Processing status of the deposits to get. Leave blank to get all processing and unprocessing deposits
 	 * @param {boolean} opts.waiting - Waiting status of the deposits to get. Leave blank to get all waiting and unwaiting deposits
-	 * @param {number} opts.limit - Amount of trades per page. Maximum: 50. Default: 50
+	 * @param {boolean} opts.onhold - Onhold status of the deposits to get. Leave blank to get all onhold and not onhold deposits
+ 	 * @param {number} opts.limit - Amount of trades per page. Maximum: 50. Default: 50
 	 * @param {number} opts.page - Page of trades data. Default: 1
 	 * @param {string} opts.orderBy - The field to order data by e.g. amount, id.
 	 * @param {string} opts.order - Ascending (asc) or descending (desc).
@@ -663,6 +664,7 @@ class HollaExNetwork {
 			rejected: null,
 			processing: null,
 			waiting: null,
+			onhold: null,
 			limit: null,
 			page: null,
 			orderBy: null,
@@ -741,6 +743,9 @@ class HollaExNetwork {
 		if (isBoolean(opts.waiting)) {
 			path += `&waiting=${opts.waiting}`;
 		}
+		if (isBoolean(opts.onhold)) {
+			path += `&onhold=${opts.onhold}`;
+		}
 
 		if (isString(opts.format)) {
 			path += `&format=${opts.format}`;
@@ -767,7 +772,8 @@ class HollaExNetwork {
 	 * @param {boolean} opts.rejected - Rejected status of the deposits to get. Leave blank to get all rejected and unrejected deposits
 	 * @param {boolean} opts.processing - Processing status of the deposits to get. Leave blank to get all processing and unprocessing deposits
 	 * @param {boolean} opts.waiting - Waiting status of the deposits to get. Leave blank to get all waiting and unwaiting deposits
-	 * @param {number} opts.limit - Amount of trades per page. Maximum: 50. Default: 50
+	 * @param {boolean} opts.onhold - Onhold status of the deposits to get. Leave blank to get all onhold and not. onhold deposits
+     * @param {number} opts.limit - Amount of trades per page. Maximum: 50. Default: 50
 	 * @param {number} opts.page - Page of trades data. Default: 1
 	 * @param {string} opts.orderBy - The field to order data by e.g. amount, id.
 	 * @param {string} opts.order - Ascending (asc) or descending (desc).
@@ -788,6 +794,7 @@ class HollaExNetwork {
 			rejected: null,
 			processing: null,
 			waiting: null,
+			onhold: null,
 			limit: null,
 			page: null,
 			orderBy: null,
@@ -871,6 +878,9 @@ class HollaExNetwork {
 		if (isBoolean(opts.waiting)) {
 			path += `&waiting=${opts.waiting}`;
 		}
+		if (isBoolean(opts.onhold)) {
+			path += `&onhold=${opts.onhold}`;
+		}
 
 		if (isString(opts.format)) {
 			path += `&format=${opts.format}`;
@@ -896,6 +906,7 @@ class HollaExNetwork {
 	 * @param {boolean} opts.rejected - Rejected status of the withdrawals to get. Leave blank to get all rejected and unrejected withdrawals
 	 * @param {boolean} opts.processing - Processing status of the withdrawals to get. Leave blank to get all processing and unprocessing withdrawals
 	 * @param {boolean} opts.waiting - Waiting status of the withdrawals to get. Leave blank to get all waiting and unwaiting withdrawals
+	 * @param {boolean} opts.onhold - Onhold status of the withdrawals to get. Leave blank to get all onhold and not onhold withdrawals
 	 * @param {number} opts.limit - Amount of trades per page. Maximum: 50. Default: 50
 	 * @param {number} opts.page - Page of trades data. Default: 1
 	 * @param {string} opts.orderBy - The field to order data by e.g. amount, id.
@@ -916,6 +927,7 @@ class HollaExNetwork {
 			rejected: null,
 			processing: null,
 			waiting: null,
+			onhold: null,
 			limit: null,
 			page: null,
 			orderBy: null,
@@ -994,6 +1006,9 @@ class HollaExNetwork {
 		if (isBoolean(opts.waiting)) {
 			path += `&waiting=${opts.waiting}`;
 		}
+		if (isBoolean(opts.onhold)) {
+			path += `&onhold=${opts.onhold}`;
+		}
 
 		if (isString(opts.format)) {
 			path += `&format=${opts.format}`;
@@ -1020,7 +1035,8 @@ class HollaExNetwork {
 	 * @param {boolean} opts.rejected - Rejected status of the withdrawals to get. Leave blank to get all rejected and unrejected withdrawals
 	 * @param {boolean} opts.processing - Processing status of the withdrawals to get. Leave blank to get all processing and unprocessing withdrawals
 	 * @param {boolean} opts.waiting - Waiting status of the withdrawals to get. Leave blank to get all waiting and unwaiting withdrawals
-	 * @param {number} opts.limit - Amount of trades per page. Maximum: 50. Default: 50
+	 * @param {boolean} opts.onhold - Onhold status of the withdrawals to get. Leave blank to get all onhold and non onhold withdrawals
+     * @param {number} opts.limit - Amount of trades per page. Maximum: 50. Default: 50
 	 * @param {number} opts.page - Page of trades data. Default: 1
 	 * @param {string} opts.orderBy - The field to order data by e.g. amount, id.
 	 * @param {string} opts.order - Ascending (asc) or descending (desc).
@@ -1041,6 +1057,7 @@ class HollaExNetwork {
 			rejected: null,
 			processing: null,
 			waiting: null,
+			onhold: null,
 			limit: null,
 			page: null,
 			orderBy: null,
@@ -1123,6 +1140,9 @@ class HollaExNetwork {
 
 		if (isBoolean(opts.waiting)) {
 			path += `&waiting=${opts.waiting}`;
+		}
+		if (isBoolean(opts.onhold)) {
+			path += `&onhold=${opts.onhold}`;
 		}
 
 		if (isString(opts.format)) {
@@ -2483,6 +2503,7 @@ class HollaExNetwork {
 		dismissed: false,
 		rejected: false,
 		waiting: false,
+		onhold: false,
 		email: true,
 		fee: null,
 		additionalHeaders: null
@@ -2540,6 +2561,12 @@ class HollaExNetwork {
 		} else {
 			data.waiting = false;
 		}
+		
+		if (isBoolean(opts.onhold)) {
+			data.onhold = opts.onhold;
+		} else {
+			data.onhold = false;
+		}
 
 		if (isBoolean(opts.email)) {
 			data.email = opts.email;
@@ -2572,6 +2599,7 @@ class HollaExNetwork {
 	 * @param {boolean} opts.rejected - Set to true to reject pending mint.
 	 * @param {boolean} opts.processing - Set to true to set state to processing.
 	 * @param {boolean} opts.waiting - Set to true to set state to waiting.
+	 * @param {boolean} opts.onhold - Set to true to set state to onhold.
 	 * @param {string} opts.updatedTransactionId - Value to update transaction ID of pending mint to.
 	 * @param {string} opts.updatedAddress - Value to update address of pending mint to.
 	 * @param {boolean} opts.email - Send email notification to user. Default: true.
@@ -2587,6 +2615,7 @@ class HollaExNetwork {
 			rejected: null,
 			processing: null,
 			waiting: null,
+			onhold: null,
 			updatedTransactionId: null,
 			updatedAddress: null,
 			email: true,
@@ -2605,6 +2634,7 @@ class HollaExNetwork {
 		const dismissed = isBoolean(opts.dismissed) ? opts.dismissed : false;
 		const processing = isBoolean(opts.processing) ? opts.processing : false;
 		const waiting = isBoolean(opts.waiting) ? opts.waiting : false;
+		const onhold = isBoolean(opts.onhold) ? opts.onhold : false;
 
 		if (
 			status && (rejected || dismissed || processing || waiting)
@@ -2624,7 +2654,8 @@ class HollaExNetwork {
 			rejected,
 			dismissed,
 			processing,
-			waiting
+			waiting,
+			onhold
 		};
 
 		if (opts.updatedTransactionId) {
@@ -2680,6 +2711,7 @@ class HollaExNetwork {
 		dismissed: false,
 		rejected: false,
 		waiting: false,
+		onhold: false,
 		email: true,
 		fee: null,
 		additionalHeaders: null
@@ -2738,6 +2770,12 @@ class HollaExNetwork {
 			data.waiting = false;
 		}
 
+		if (isBoolean(opts.onhold)) {
+			data.onhold = opts.onhold;
+		} else {
+			data.onhold = false;
+		}
+
 		if (isBoolean(opts.email)) {
 			data.email = opts.email;
 		} else {
@@ -2784,6 +2822,7 @@ class HollaExNetwork {
 			rejected: null,
 			processing: null,
 			waiting: null,
+			onhold: null,
 			updatedTransactionId: null,
 			updatedAddress: null,
 			email: true,
@@ -2802,6 +2841,7 @@ class HollaExNetwork {
 		const dismissed = isBoolean(opts.dismissed) ? opts.dismissed : false;
 		const processing = isBoolean(opts.processing) ? opts.processing : false;
 		const waiting = isBoolean(opts.waiting) ? opts.waiting : false;
+		const onhold = isBoolean(opts.onhold) ? opts.onhold : false;
 
 		if (
 			status && (rejected || dismissed || processing || waiting)
@@ -2821,7 +2861,8 @@ class HollaExNetwork {
 			rejected,
 			dismissed,
 			processing,
-			waiting
+			waiting,
+			onhold
 		};
 
 		if (opts.updatedTransactionId) {
