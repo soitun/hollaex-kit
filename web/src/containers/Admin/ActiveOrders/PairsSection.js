@@ -1,5 +1,18 @@
 import React, { Component } from 'react';
-import { Tabs, Row, Col, Table, Tooltip, Button, Spin, Modal } from 'antd';
+import {
+	Tabs,
+	Row,
+	Col,
+	Table,
+	Tooltip,
+	Button,
+	Spin,
+	Modal,
+	Dropdown,
+	Menu,
+	Input,
+	InputNumber,
+} from 'antd';
 import { CSVLink } from 'react-csv';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -8,7 +21,12 @@ import Moment from 'react-moment';
 import debounce from 'lodash.debounce';
 
 import { formatCurrency } from '../../../utils/index';
-import { requestActiveOrders, requestCancelOrders } from './action';
+import {
+	requestActiveOrders,
+	requestCancelOrders,
+	requestMatchOrder,
+} from './action';
+import { MoreOutlined } from '@ant-design/icons';
 import { setSelectedOrdersTab } from 'actions/appActions';
 
 const TabPane = Tabs.TabPane;
@@ -38,7 +56,7 @@ const renderExchangeUser = (user) => (
 	</div>
 );
 
-const getColumns = (userId, onCancel, onOpen) => {
+const getColumns = (userId, onCancel, onOpen, renderActions) => {
 	let columns = [];
 	if (!userId) {
 		columns = [
@@ -77,6 +95,7 @@ const getColumns = (userId, onCancel, onOpen) => {
 			render: (v, record) => (
 				<Button
 					type="link"
+					style={{ color: 'white' }}
 					onClick={(ev) => {
 						ev.stopPropagation();
 						onOpen(record);
@@ -87,34 +106,19 @@ const getColumns = (userId, onCancel, onOpen) => {
 			),
 		},
 	];
-	if (userId) {
-		columns = [
-			...columns,
-			{
-				title: 'Cancel order',
-				dataIndex: '',
-				key: '',
-				render: (e) => (
-					<Tooltip placement="bottom" title={`Cancel order`}>
-						<Button
-							type="primary"
-							onClick={(ev) => {
-								ev.stopPropagation();
-								onCancel(e, userId);
-							}}
-							className="green-btn"
-						>
-							Cancel
-						</Button>
-					</Tooltip>
-				),
-			},
-		];
-	}
+	// actions column
+	columns = [
+		...columns,
+		{
+			title: 'Actions',
+			key: 'actions',
+			render: (record) => renderActions(record),
+		},
+	];
 	return columns;
 };
 
-const getThisExchangeOrders = (onCancel, onOpen) => {
+const getThisExchangeOrders = (onCancel, onOpen, renderActions) => {
 	let columns = [];
 
 	columns = [
@@ -149,6 +153,7 @@ const getThisExchangeOrders = (onCancel, onOpen) => {
 			render: (v, record) => (
 				<Button
 					type="link"
+					style={{ color: 'white' }}
 					onClick={(ev) => {
 						ev.stopPropagation();
 						onOpen(record);
@@ -159,23 +164,9 @@ const getThisExchangeOrders = (onCancel, onOpen) => {
 			),
 		},
 		{
-			title: 'Cancel order',
-			dataIndex: '',
-			key: '',
-			render: (e) => (
-				<Tooltip placement="bottom" title={`Cancel order`}>
-					<Button
-						type="primary"
-						onClick={(ev) => {
-							ev.stopPropagation();
-							onCancel(e, e?.User?.id);
-						}}
-						className="green-btn"
-					>
-						Cancel
-					</Button>
-				</Tooltip>
-			),
+			title: 'Actions',
+			key: 'actions',
+			render: (record) => renderActions(record),
 		},
 	];
 
@@ -218,6 +209,11 @@ class PairsSection extends Component {
 			activeTab: 'buy',
 			orderModalVisible: false,
 			selectedOrder: null,
+			matchModalVisible: false,
+			matchOrderRecord: null,
+			matchSize: null,
+			matchUserId: null,
+			matchLoading: false,
 		};
 	}
 
@@ -325,6 +321,114 @@ class PairsSection extends Component {
 		return order?.User?.id || order?.created_by || this.props.userId;
 	};
 
+	renderActionMenu = (record) => (
+		<Menu>
+			<Menu.Item
+				key="cancel"
+				onClick={({ domEvent }) => {
+					domEvent.stopPropagation();
+					this.confirmCancel(record);
+				}}
+			>
+				Cancel
+			</Menu.Item>
+			<Menu.Item
+				key="match"
+				onClick={({ domEvent }) => {
+					domEvent.stopPropagation();
+					this.openMatchModal(record);
+				}}
+			>
+				Match order
+			</Menu.Item>
+		</Menu>
+	);
+
+	renderActions = (record) => (
+		<Dropdown overlay={this.renderActionMenu(record)} trigger={['click']}>
+			<Button
+				type="link"
+				style={{ color: 'white' }}
+				onClick={(ev) => ev.stopPropagation()}
+			>
+				<MoreOutlined />
+			</Button>
+		</Dropdown>
+	);
+
+	confirmCancel = (order) => {
+		Modal.confirm({
+			title: 'Cancel this order?',
+			okText: 'Cancel order',
+			okType: 'danger',
+			onOk: () => this.onCancelOrder(order, this.deriveUserId(order)),
+		});
+	};
+
+	openMatchModal = (order) => {
+		this.setState({
+			matchModalVisible: true,
+			matchOrderRecord: order,
+			matchUserId: this.deriveUserId(order),
+			matchSize: null,
+		});
+	};
+
+	closeMatchModal = () => {
+		this.setState({
+			matchModalVisible: false,
+			matchOrderRecord: null,
+			matchSize: null,
+			matchUserId: null,
+			matchLoading: false,
+		});
+	};
+
+	submitMatch = async () => {
+		const { matchOrderRecord, matchSize, matchUserId } = this.state;
+		if (!matchOrderRecord || !matchUserId || !matchSize) return;
+		this.setState({ matchLoading: true });
+		try {
+			await requestMatchOrder({
+				user_id: Number(matchUserId),
+				order_id: matchOrderRecord.id,
+				symbol: matchOrderRecord.symbol,
+				size: Number(matchSize),
+			});
+			this.closeMatchModal();
+			this.refreshOrders();
+		} catch (e) {
+			this.setState({ matchLoading: false });
+		}
+	};
+
+	refreshOrders = () => {
+		this.setState(
+			{
+				buyOrders: {
+					data: [],
+					loading: true,
+					total: 0,
+					page: 1,
+					isRemaining: true,
+				},
+				sellOrders: {
+					data: [],
+					loading: true,
+					total: 0,
+					page: 1,
+					isRemaining: true,
+				},
+				buyCurrentTablePage: 1,
+				sellCurrentTablePage: 1,
+			},
+			() => {
+				this.handleTrades('buy');
+				this.handleTrades('sell');
+			}
+		);
+	};
+
 	// no modal actions; read-only details
 
 	pageChange = (count, pageSize) => {
@@ -404,8 +508,17 @@ class PairsSection extends Component {
 		} = this.state;
 
 		const COLUMNS = this.props.getThisExchangeOrder
-			? getThisExchangeOrders(this.onCancelOrder, this.openOrderModal)
-			: getColumns(this.props.userId, this.onCancelOrder, this.openOrderModal);
+			? getThisExchangeOrders(
+					this.onCancelOrder,
+					this.openOrderModal,
+					this.renderActions
+			  )
+			: getColumns(
+					this.props.userId,
+					this.onCancelOrder,
+					this.openOrderModal,
+					this.renderActions
+			  );
 		return (
 			<div className="f-1 admin-user-container">
 				<Tabs onChange={this.tabChange} activeKey={this.state.activeTab}>
@@ -538,6 +651,33 @@ class PairsSection extends Component {
 							</div>
 						</div>
 					)}
+				</Modal>
+				<Modal
+					title={<span style={{ color: 'white' }}>Match order</span>}
+					visible={this.state.matchModalVisible}
+					onCancel={this.closeMatchModal}
+					onOk={this.submitMatch}
+					confirmLoading={this.state.matchLoading}
+					okText="Match"
+				>
+					<div className="d-flex flex-column">
+						<div className="mb-2">
+							<div className="mb-1">User ID</div>
+							<Input
+								value={this.state.matchUserId}
+								onChange={(e) => this.setState({ matchUserId: e.target.value })}
+							/>
+						</div>
+						<div>
+							<div className="mb-1">Size</div>
+							<InputNumber
+								value={this.state.matchSize}
+								onChange={(v) => this.setState({ matchSize: v })}
+								min={0}
+								style={{ width: '100%' }}
+							/>
+						</div>
+					</div>
 				</Modal>
 			</div>
 		);
