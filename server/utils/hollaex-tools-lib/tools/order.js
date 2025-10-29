@@ -885,9 +885,6 @@ const getAllUserOrdersByNetworkId = (networkId, symbol, side, status, open, limi
 
 // Match a user's order (by Kit user id) on the network
 const matchUserOrderByKitId = async (userKitId, orderId, symbol, size = null, opts = { additionalHeaders: null }) => {
-	if (symbol && !subscribedToPair(symbol)) {
-		return reject(new Error(INVALID_SYMBOL(symbol)));
-	}
 	// check mapKitIdToNetworkId
 	const idDictionary = await mapKitIdToNetworkId([userKitId]);
 
