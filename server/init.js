@@ -154,6 +154,8 @@ const checkStatus = () => {
 				}
 
 				status.constants.fee_markups = status.kit.coin_customizations;
+				status.constants.auto_deposit = status.kit.auto_deposit;
+				status.constants.auto_withdrawal = status.kit.auto_withdrawal;
 				return all([
 					checkActivation(
 						status.name,
