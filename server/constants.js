@@ -316,6 +316,8 @@ exports.WEBSOCKET_CHANNEL = (topic, symbolOrUserId) => {
 exports.WS_PUBSUB_DEPOSIT_CHANNEL = 'channel:ws:deposit';
 exports.WS_PUBSUB_WITHDRAWAL_CHANNEL = 'channel:ws:withdrawal';
 exports.WS_HUB_CHANNEL = 'channel:websocket:hub';
+// Redis keys
+exports.PRICE_HASH_KEY = 'WS:PRICE_USDT';
 
 // Chat
 exports.CHAT_MAX_MESSAGES = 50;

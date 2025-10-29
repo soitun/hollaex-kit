@@ -1435,6 +1435,59 @@ class HollaExNetwork {
 	}
 
 	/**
+	 * Match an order for the exchange on the network
+	 * @param {number} userId - Id of the order's user
+	 * @param {number} orderId - Order id to match
+	 * @param {object} feeStructure - Fee structure to apply when matching order
+	 * @param {number} size - Amount of the order to match
+	 * @param {object} opts - Optional parameters.
+	 * @param {object} opts.additionalHeaders - Object storing addtional headers to send with request.
+	 * @return {object} Matched order values returned from the network
+	 */
+	matchOrder(
+		userId,
+		orderId,
+		feeStructure,
+		size,
+		opts = {
+			additionalHeaders: null
+		}
+	) {
+		checkKit(this.exchange_id);
+
+		if (!userId) {
+			return reject(parameterError('userId', 'cannot be null'));
+		} else if (!orderId) {
+			return reject(parameterError('orderId', 'cannot be null'));
+		} else if (!isPlainObject(feeStructure)) {
+			return reject(parameterError('feeStructure', 'must be an object'));
+		}
+
+		const verb = 'POST';
+		const path = `${this.baseUrl}/network/${this.exchange_id
+		}/order/match`;
+		const data = {
+			order_id: orderId,
+			user_id: userId,
+			fee_structure: feeStructure,
+		};
+		if (size) {
+			data.size = size;
+		}
+
+		const headers = generateHeaders(
+			isPlainObject(opts.additionalHeaders) ? { ...this.headers, ...opts.additionalHeaders } : this.headers,
+			this.apiSecret,
+			verb,
+			path,
+			this.apiExpiresAfter,
+			data
+		);
+
+		return createRequest(verb, `${this.apiUrl}${path}`, headers, { data });
+	}
+
+	/**
 	 * Create transfer between margin and balance
 	 * @param {number} userId - User id on the network
 	 */

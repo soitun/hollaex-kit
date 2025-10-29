@@ -10,7 +10,7 @@ const { sendEmail, testSendSMTPEmail, sendRawEmail } = require('../../mail');
 const { MAILTYPE } = require('../../mail/strings');
 const { errorMessageConverter } = require('../../utils/conversion');
 const { isDate } = require('moment');
-const { isEmail } = require('validator');
+const { isEmail, isUUID } = require('validator');
 const { publisher } = require('../../db/pubsub');
 const { parse } = require('json2csv');
 const crypto = require('crypto');
@@ -126,6 +126,50 @@ const putAdminKit = (req, res) => {
 		})
 		.catch((err) => {
 			loggerAdmin.error(req.uuid, 'controllers/admin/putAdminKit', err);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const adminMatchOrder = (req, res) => {
+	loggerAdmin.verbose(
+		req.uuid,
+		'controllers/admin/adminMatchOrder auth',
+		req.auth
+	);
+	loggerAdmin.verbose(
+		req.uuid,
+		'controllers/admin/adminMatchOrder body',
+		req.swagger.params.order.value
+	);
+
+	const { user_id, order_id, symbol, size } = req.swagger.params.order.value || {};
+
+	if (!user_id || typeof user_id !== 'number') {
+		return res.status(400).json({ message: 'Invalid user id' });
+	}
+	if (!order_id || typeof order_id !== 'string' || !isUUID(order_id)) {
+		return res.status(400).json({ message: 'Invalid order id' });
+	}
+	if (!symbol || typeof symbol !== 'string') {
+		return res.status(400).json({ message: 'Invalid symbol' });
+	}
+
+	toolsLib.order.matchUserOrderByKitId(user_id, order_id, symbol, size, {
+		additionalHeaders: {
+			'x-forwarded-for': req.headers['x-forwarded-for']
+		}
+	})
+		.then((data) => {
+			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], { user_id, order_id, symbol, size });
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(
+				req.uuid,
+				'controllers/admin/adminMatchOrder error',
+				err.message
+			);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
 			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		});
@@ -2844,7 +2888,7 @@ const disableUserWithdrawal = (req, res) => {
 		expiry_date
 	);
 
-    toolsLib.user.disableUserWithdrawal(user_id, { expiry_date, override: true })
+	toolsLib.user.disableUserWithdrawal(user_id, { expiry_date, override: true })
 		.then((data) => {
 			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], req?.swagger?.params?.data?.value);
 			loggerAdmin.info(
@@ -3845,4 +3889,5 @@ module.exports = {
 	downloadUserWalletCsv,
 	downloadUserSessionsCsv,
 	downloadBalancesCsv,
+	adminMatchOrder,
 };

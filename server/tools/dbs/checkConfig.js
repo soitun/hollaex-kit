@@ -72,7 +72,7 @@ Status.findOne()
 			selectable_native_currencies: existingKitConfigurations?.selectable_native_currencies || [existingKitConfigurations.native_currency || process.env.NATIVE_CURRENCY || 'usdt'],
 			auto_trade_config: existingKitConfigurations.auto_trade_config || {},
 			apps: existingKitConfigurations.apps || {},
-			timezone: existingKitConfigurations?.timezone || existingSecrets.emails ? (existingSecrets.emails.timzeone || process.env.EMAILS_TIMEZONE || '') : (process.env.EMAILS_TIMEZONE || ''),
+			timezone: existingKitConfigurations?.timezone || existingSecrets.emails ? (existingSecrets.emails.timzeone || process.env.EMAILS_TIMEZONE || 'Etc/UTC') : (process.env.EMAILS_TIMEZONE || 'Etc/UTC'),
 			google_oauth: existingKitConfigurations.google_oauth || {},
 			auto_deposit: existingKitConfigurations.auto_deposit || { active: true }
 		};
@@ -85,7 +85,7 @@ Status.findOne()
 				withdrawal_token_expiry: existingSecrets.security ? (existingSecrets.security.withdrawal_token_expiry || 300000) : 300000
 			},
 			emails: {
-				timezone: existingSecrets.emails ? (existingSecrets.emails.timzeone || process.env.EMAILS_TIMEZONE || '') : (process.env.EMAILS_TIMEZONE || ''),
+				timezone: existingSecrets.emails ? (existingSecrets.emails.timzeone || process.env.EMAILS_TIMEZONE || 'Etc/UTC') : (process.env.EMAILS_TIMEZONE || 'Etc/UTC'),
 				send_email_to_support: existingSecrets.emails ? (existingSecrets.emails.send_email_to_support || (process.env.SEND_EMAIL_TO_SUPPORT && process.env.SEND_EMAIL_TO_SUPPORT === 'true') || false) : ((process.env.SEND_EMAIL_TO_SUPPORT && process.env.SEND_EMAIL_TO_SUPPORT === 'true') || false),
 				sender: existingSecrets.emails ? (existingSecrets.emails.sender || '') : '',
 				audit: existingSecrets.emails ? (existingSecrets.emails.audit || '') : ''

@@ -53,6 +53,7 @@ const roles = {
 		'/admin/orders:get',
 		'/admin/order:post',
 		'/admin/order:delete',
+		'/admin/order/match:post',
 		'/admin/trades:get',
 		'/admin/user/activate:post',
 		'/admin/balance:get',
