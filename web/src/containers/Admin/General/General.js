@@ -1791,6 +1791,33 @@ class GeneralContent extends Component {
 							</Modal>
 						</div>
 						<div className="divider"></div>
+						<div className="general-wrapper mb-5">
+							<div className="sub-title" id="auto-deposit">
+								Auto Deposit
+							</div>
+							<div className="description">
+								<div>
+									Enable or disable automatic deposit processing on the
+									blockchain. Turning off this feature will cause all incoming
+									blockchain deposits to wallets to remain in a pending state
+									and require manual approval.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(constants, 'kit.auto_deposit.active', true)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													auto_deposit: {
+														active: checked,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+							</div>
+						</div>
 						<div className="general-wrapper mb-5 google-oauth-wrapper">
 							<div className="sub-title" id="google-oauth">
 								Google OAuth
