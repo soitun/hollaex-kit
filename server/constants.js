@@ -33,7 +33,8 @@ let configuration = {
 		user_payments: {},
 		dust: {},
 		google_oauth: {},
-		auto_deposit: {}
+		auto_deposit: {},
+		auto_withdrawal: {}
 	},
 	email: {}
 };

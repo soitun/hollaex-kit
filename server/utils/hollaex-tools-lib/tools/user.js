@@ -763,6 +763,7 @@ const getAllUsersAdmin = (opts = {
 	gender: null,
 	nationality: null,
 	verification_level: null,
+	max_verification_level: null,
 	email_verified: null,
 	otp_enabled: null,
 	phone_number: null,
@@ -862,6 +863,11 @@ const getAllUsersAdmin = (opts = {
 
 	if (isNumber(opts.verification_level)) {
 		query.where[Op.and].push({ verification_level: opts.verification_level });
+	}
+
+	// Apply an upper bound on visible users' verification level when provided
+	if (isNumber(opts.max_verification_level)) {
+		query.where[Op.and].push({ verification_level: { [Op.lte]: opts.max_verification_level } });
 	}
 
 	if (isBoolean(opts.pending) && opts.pending) {

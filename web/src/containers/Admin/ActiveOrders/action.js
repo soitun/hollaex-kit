@@ -39,10 +39,7 @@ export const requestCancelOrders = (orderId, userId) => {
 export const submitOrderByAdmin = (order) => axios.post('/admin/order', order);
 
 export const requestMatchOrder = (payload) =>
-	requestAuthenticated(
-		'/admin/order/match',
-		payload,
-		undefined,
-		undefined,
-		'POST'
-	);
+	requestAuthenticated('/admin/order/match', {
+		method: 'POST',
+		body: JSON.stringify(payload),
+	});
