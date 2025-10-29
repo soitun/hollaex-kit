@@ -19,7 +19,9 @@ const {
 	HOLLAEX_NETWORK_BASE_URL,
 	HOLLAEX_NETWORK_PATH_ACTIVATE,
 	setEndpoints,
-	setPermissionDescription
+	setPermissionDescription,
+	KIT_CONFIG_KEYS,
+	KIT_SECRETS_KEYS
 } = require('./constants');
 const { isNumber, difference } = require('lodash');
 const yaml = require('js-yaml');
@@ -87,7 +89,8 @@ const checkStatus = () => {
 			user_payments: {},
 			dust: {},
 			google_oauth: {},
-			auto_deposit: {}
+			auto_deposit: {},
+			auto_withdrawal: {}
 		},
 		email: {}
 	};
@@ -225,6 +228,54 @@ const checkStatus = () => {
 			const endpointDescriptions = extractEndpointDescriptions(swaggerObj);
 			setEndpoints(endpoints);
 			setPermissionDescription(endpointDescriptions);
+
+			// Sync: ensure admin role has all admin endpoints from swagger
+			try {
+				const adminEndpointsList = [];
+				if (swaggerObj && swaggerObj.paths) {
+					for (const [p, methods] of Object.entries(swaggerObj.paths)) {
+						if (p.startsWith('/admin')) {
+							for (const [m, details] of Object.entries(methods)) {
+								if (!m.startsWith('x-')) {
+									adminEndpointsList.push(`${p}:${m.toLowerCase()}`);
+								}
+							}
+						}
+					}
+				}
+
+				const adminRole = roles.find((r) => r.role_name === 'admin');
+				if (adminRole) {
+					const existingPermissions = Array.isArray(adminRole.permissions) ? adminRole.permissions : [];
+					const missingPermissions = adminEndpointsList.filter((ep) => !existingPermissions.includes(ep));
+
+					// Ensure required admin configs exist based on constants configuration.kit and secrets keys
+					const configKeys = Array.isArray(KIT_CONFIG_KEYS) ? KIT_CONFIG_KEYS : [];
+					const secretKeys = Array.isArray(KIT_SECRETS_KEYS) ? KIT_SECRETS_KEYS : [];
+					const requiredAdminConfigs = Array.from(new Set([...configKeys, ...secretKeys]));
+					const existingConfigs = Array.isArray(adminRole.configs) ? adminRole.configs : [];
+					const missingConfigs = requiredAdminConfigs.filter((c) => !existingConfigs.includes(c));
+
+					let changed = false;
+					if (missingPermissions.length > 0) {
+						adminRole.set('permissions', [...existingPermissions, ...missingPermissions]);
+						loggerInit.info('init/checkStatus/permissions', `added ${missingPermissions.length} new admin permissions`);
+						changed = true;
+					}
+
+					if (missingConfigs.length > 0) {
+						adminRole.set('configs', [...existingConfigs, ...missingConfigs]);
+						loggerInit.info('init/checkStatus/configs', `added ${missingConfigs.length} new admin configs`);
+						changed = true;
+					}
+
+					if (changed) {
+						await adminRole.save();
+					}
+				}
+			} catch (e) {
+				loggerInit.error('init/checkStatus/permissions sync error', e.message);
+			}
 
 			configuration.transaction_limits = transactionLimits;
 			configuration.roles = roles;

@@ -74,7 +74,8 @@ const kit = {
 	user_payments: {},
 	dust: {},
 	google_oauth: {},
-	auto_deposit: {}
+	auto_deposit: {},
+	auto_withdrawal: {}
 };
 
 const secrets = {
