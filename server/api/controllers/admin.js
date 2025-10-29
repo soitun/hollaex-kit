@@ -221,6 +221,22 @@ const getUsersAdmin = (req, res) => {
 	}
 
 
+	// Derive max visible verification level from the requester's role restrictions (if configured)
+	let maxVisibleVerificationLevel = null;
+	try {
+		const roles = toolsLib.getRoles();
+		const requesterRoleName = req?.auth?.sub?.role;
+		const requesterRole = roles?.find((r) => r.role_name === requesterRoleName);
+		const restrictions = requesterRole?.restrictions || {};
+		const usersRestriction = restrictions?.users || {};
+		const configuredMaxLevel = usersRestriction?.max_view_verification_level ?? restrictions?.max_view_verification_level;
+		if (typeof configuredMaxLevel === 'number') {
+			maxVisibleVerificationLevel = configuredMaxLevel;
+		}
+	} catch (e) {
+		// ignore restriction errors and proceed without max filter
+	}
+
 	toolsLib.user.getAllUsersAdmin({
 		id: id.value,
 		user_id: user_id.value,
@@ -242,6 +258,7 @@ const getUsersAdmin = (req, res) => {
 		gender: gender.value,
 		nationality: nationality.value,
 		verification_level: verification_level.value,
+		max_verification_level: maxVisibleVerificationLevel,
 		email_verified: email_verified.value,
 		otp_enabled: otp_enabled.value,
 		phone_number: phone_number.value,
