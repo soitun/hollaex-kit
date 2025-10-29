@@ -1066,6 +1066,12 @@ const mintAssetByKitId = async (
 		status: null,
 		email: null,
 		fee: null,
+		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	// check mapKitIdToNetworkId
@@ -1090,6 +1096,11 @@ const mintAssetByNetworkId = (
 		email: null,
 		fee: null,
 		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	return getNodeLib().mintAsset(networkId, currency, amount, opts);
@@ -1103,6 +1114,7 @@ const updatePendingMint = (
 		rejected: null,
 		processing: null,
 		waiting: null,
+		onhold: null,
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
@@ -1122,6 +1134,12 @@ const burnAssetByKitId = async (
 		status: null,
 		email: null,
 		fee: null,
+		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	// check mapKitIdToNetworkId
@@ -1146,6 +1164,11 @@ const burnAssetByNetworkId = (
 		email: null,
 		fee: null,
 		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	return getNodeLib().burnAsset(networkId, currency, amount, opts);
@@ -1159,6 +1182,7 @@ const updatePendingBurn = (
 		rejected: null,
 		processing: null,
 		waiting: null,
+		onhold: null,
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
@@ -1339,6 +1363,46 @@ const createUserWalletByKitId = async (kitId, currency, address, opts = {
 	return getNodeLib().createUserWallet(idDictionary[kitId], currency, address, opts);
 };
 
+const getExchangeTransactions = (type, params = {}) => {
+	const { format, ...rest } = params || {};
+	const normalizedFormat = (format && (format === 'csv' || format === 'all')) ? 'all' : null;
+
+	let fetchFn = null;
+	if (type === 'deposit' || type === 'deposits') {
+		fetchFn = getNodeLib().getDeposits;
+	} else if (type === 'withdrawal' || type === 'withdrawals') {
+		fetchFn = getNodeLib().getWithdrawals;
+	} else {
+		return reject(new Error('INVALID_TRANSACTION_TYPE'));
+	}
+
+	return fetchFn({
+		...rest,
+		format: normalizedFormat
+	})
+		.then(async (transactions) => {
+			if (transactions.data && transactions.data.length > 0) {
+				const networkIds = transactions.data.map((tx) => tx.user_id);
+				const idDictionary = await mapNetworkIdToKitId(networkIds);
+				for (let tx of transactions.data) {
+					const user_kit_id = idDictionary[tx.user_id];
+					tx.network_id = tx.user_id;
+					tx.user_id = user_kit_id;
+					if (tx.User) tx.User.id = user_kit_id;
+				}
+			}
+			if (format && format === 'csv') {
+				if (!transactions.data || transactions.data.length === 0) {
+					throw new Error(NO_DATA_FOR_CSV);
+				}
+				const csv = parse(transactions.data, Object.keys(transactions.data[0]));
+				return csv;
+			} else {
+				return transactions;
+			}
+		});
+};
+
 module.exports = {
 	sendRequestWithdrawalEmail,
 	validateWithdrawal,
@@ -1355,6 +1419,7 @@ module.exports = {
 	cancelUserWithdrawalByNetworkId,
 	getExchangeDeposits,
 	getExchangeWithdrawals,
+	getExchangeTransactions,
 	getUserBalanceByNetworkId,
 	transferAssetByNetworkIds,
 	mintAssetByKitId,

@@ -120,7 +120,8 @@ const resetAllConfig = () => {
 			user_payments: {},
 			dust: {},
 			google_oauth: {},
-			auto_deposit: {}
+			auto_deposit: {},
+			auto_withdrawal: {}
 		},
 		email: {}
 	};
@@ -233,7 +234,8 @@ exports.KIT_CONFIG_KEYS = [
 	'apps',
 	'timezone',
 	'google_oauth',
-	'auto_deposit'
+	'auto_deposit',
+	'auto_withdrawal'
 ];
 
 exports.KIT_SECRETS_KEYS = [
