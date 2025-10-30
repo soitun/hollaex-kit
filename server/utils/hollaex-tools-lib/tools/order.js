@@ -1283,12 +1283,13 @@ const settleFees = async (opts = {
 };
 
 const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
-	loggerOrders.debug(
-		'generateOrderFeeData',
-		'symbol',
-		symbol,
-		'userTier',
-		userTier
+loggerOrders.verbose(
+	'hollaex-tools-lib/tools/order/generateOrderFeeData:init',
+		{
+			symbol,
+			userTier,
+			discount: Number((opts && opts.discount) || 0)
+		}
 	);
 
 	const tier = getKitTier(userTier);
@@ -1300,20 +1301,13 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 	let makerFee = tier.fees.maker[symbol];
 	let takerFee = tier.fees.taker[symbol];
 
-	loggerOrders.debug(
-		'generateOrderFeeData',
-		'current makerFee',
-		makerFee,
-		'current takerFee',
-		takerFee
-	);
 
 	if (opts.discount) {
-		loggerOrders.debug(
-			'generateOrderFeeData',
-			'discount percentage',
-			opts.discount
-		);
+        loggerOrders.verbose(
+            'hollaex-tools-lib/tools/order/generateOrderFeeData:discount',
+            'discount percentage',
+            opts.discount
+        );
 
 		const discountToBigNum = math.divide(
 			math.bignumber(opts.discount),
@@ -1342,15 +1336,15 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 
 		const exchangeMinFee = getMinFees();
 
-		loggerOrders.verbose(
-			'generateOrderFeeData',
-			'discounted makerFee',
-			discountedMakerFee,
-			'discounted takerFee',
-			discountedTakerFee,
-			'exchange minimum fees',
-			exchangeMinFee
-		);
+        loggerOrders.verbose(
+            'hollaex-tools-lib/tools/order/generateOrderFeeData:discounted',
+            'discounted makerFee',
+            discountedMakerFee,
+            'discounted takerFee',
+            discountedTakerFee,
+            'exchange minimum fees',
+            exchangeMinFee
+        );
 
 		if (discountedMakerFee > exchangeMinFee.maker) {
 			makerFee = discountedMakerFee;
@@ -1367,16 +1361,16 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 
 	const feeData = {
 		fee_structure: {
-			maker: makerFee,
-			taker: takerFee
+			maker: (makerFee === undefined || makerFee === null || Number.isNaN(makerFee)) ? 0 : makerFee,
+			taker: (takerFee === undefined || takerFee === null || Number.isNaN(takerFee)) ? 0 : takerFee
 		}
 	};
 
-	loggerOrders.verbose(
-		'generateOrderFeeData',
-		'generated fee data',
-		feeData
-	);
+    loggerOrders.verbose(
+        'hollaex-tools-lib/tools/order/generateOrderFeeData:result',
+        'generated fee data',
+        feeData
+    );
 
 	return feeData;
 };
