@@ -1818,6 +1818,37 @@ class GeneralContent extends Component {
 								</div>
 							</div>
 						</div>
+						<div className="general-wrapper mb-5">
+							<div className="sub-title" id="auto-withdrawal">
+								Auto Withdrawal
+							</div>
+							<div className="description">
+								<div>
+									Enable or disable automatic withdrawal processing. Turning off
+									this feature will require manual approval for all withdrawal
+									requests.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(
+											constants,
+											'kit.auto_withdrawal.active',
+											true
+										)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													auto_withdrawal: {
+														active: checked,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+							</div>
+						</div>
+						<div className="divider"></div>
 						<div className="general-wrapper mb-5 google-oauth-wrapper">
 							<div className="sub-title" id="google-oauth">
 								Google OAuth
