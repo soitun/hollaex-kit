@@ -1307,6 +1307,20 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 	let makerFee = tier.fees.maker[symbol];
 	let takerFee = tier.fees.taker[symbol];
 
+	// Fallback to reversed symbol fees if direct symbol fees are not defined
+	if ((makerFee === undefined || makerFee === null || Number.isNaN(makerFee) || takerFee === undefined || takerFee === null || Number.isNaN(takerFee))
+		&& typeof symbol === 'string' && symbol.includes('-')) {
+		const [base, quote] = symbol.split('-');
+		const reversedSymbol = `${quote}-${base}`;
+		const reversedMakerFee = tier.fees.maker[reversedSymbol];
+		const reversedTakerFee = tier.fees.taker[reversedSymbol];
+		if (reversedMakerFee !== undefined && reversedMakerFee !== null && !Number.isNaN(reversedMakerFee)) {
+			makerFee = reversedMakerFee;
+		}
+		if (reversedTakerFee !== undefined && reversedTakerFee !== null && !Number.isNaN(reversedTakerFee)) {
+			takerFee = reversedTakerFee;
+		}
+	}
 
 	if (opts.discount) {
 		loggerOrders.debug(
@@ -1367,8 +1381,8 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 
 	const feeData = {
 		fee_structure: {
-			maker: (makerFee === undefined || makerFee === null || Number.isNaN(makerFee)) ? 0 : makerFee,
-			taker: (takerFee === undefined || takerFee === null || Number.isNaN(takerFee)) ? 0 : takerFee
+			maker: (makerFee === undefined || makerFee === null || Number.isNaN(makerFee)) ? 0.1 : makerFee,
+			taker: (takerFee === undefined || takerFee === null || Number.isNaN(takerFee)) ? 0.1 : takerFee
 		}
 	};
 
