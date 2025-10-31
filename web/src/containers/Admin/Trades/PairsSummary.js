@@ -153,6 +153,7 @@ class PairsSummary extends Component {
 			saveLoading: false,
 			isHovered: false,
 			hoveredKey: 0,
+			isModalCloseAble: true,
 		};
 	}
 
@@ -238,6 +239,9 @@ class PairsSummary extends Component {
 	};
 
 	handleClose = () => {
+		if (!this.state?.isModalCloseAble) {
+			return;
+		}
 		this.setState({
 			isOpen: false,
 			width: 520,
@@ -346,6 +350,10 @@ class PairsSummary extends Component {
 
 	handleApplyClose = () => {
 		this.setState({ isPresetConfirm: false });
+	};
+
+	handleMoadalClose = (isModalCloseAble) => {
+		this.setState({ isModalCloseAble });
 	};
 
 	handleConfirm = async (
@@ -696,6 +704,7 @@ class PairsSummary extends Component {
 						</div>
 						<div className="summary table-wrapper admin-tiers-wrapper">
 							<Table
+								className="pairs-summary-table"
 								columns={COLUMNS(
 									allPairs,
 									allCoins,
@@ -753,6 +762,7 @@ class PairsSummary extends Component {
 					onClose={this.handleClose}
 					router={this.props.router}
 					getMyExchange={this.props.getMyExchange}
+					handleMoadalClose={this.handleMoadalClose}
 				/>
 			);
 		}
@@ -777,6 +787,7 @@ class PairsSummary extends Component {
 					visible={isOpen || isEdit || isConfirm}
 					onCancel={this.handleClose}
 					footer={null}
+					closable={this.state.isModalCloseAble}
 				>
 					{this.renderModalContent()}
 				</Modal>
