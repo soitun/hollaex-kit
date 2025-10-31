@@ -223,6 +223,8 @@ class Assets extends Component {
 			assetType: '',
 			currentScreen: 'step1',
 			isLoading: false,
+			assetsCoinsData: [],
+			isModalClosable: true,
 		};
 	}
 
@@ -331,6 +333,14 @@ class Assets extends Component {
 			this.handleCreateNew();
 			setIsDisplayCreateAsset(false);
 		}
+		if (JSON.stringify(prevProps?.allCoins) !== JSON.stringify(allCoins)) {
+			const coins = allCoins?.filter((val) =>
+				exchange?.coins?.includes(val?.symbol)
+			);
+			this.setState({
+				assetsCoinsData: coins || [],
+			});
+		}
 	}
 
 	componentWillUnmount() {
@@ -377,6 +387,8 @@ class Assets extends Component {
 	};
 
 	handleClose = () => {
+		const { isModalClosable } = this.state;
+		if (!isModalClosable) return;
 		this.setState({
 			isOpenAdd: this.state.currentScreen === 'step2' ? true : false,
 			isEdit: false,
@@ -428,6 +440,10 @@ class Assets extends Component {
 		} catch (error) {
 			throw error;
 		}
+	};
+
+	handleModalClose = (bool) => {
+		this.setState({ isModalClosable: bool });
 	};
 
 	handleRefreshCoin = async (coinData) => {
@@ -556,13 +572,17 @@ class Assets extends Component {
 	};
 
 	handleDelete = async (symbol) => {
-		const { coins, exchange } = this.state;
-		this.setState({ isLoading: true });
-		this.setState({ submitting: true });
+		const { exchange } = this.state;
+		const { allCoins } = this.props;
+
+		this.setState({ isLoading: true, submitting: true });
 		const pairedCoins = exchange.pairs.filter((data) => {
 			let pairData = data.split('-');
 			return pairData[0] === symbol || pairData[1] === symbol;
 		});
+		const coins = allCoins?.filter((val) =>
+			exchange?.coins?.includes(val?.symbol)
+		);
 		try {
 			let formProps = {
 				id: exchange.id,
@@ -881,11 +901,12 @@ class Assets extends Component {
 			selectedAsset,
 			isConfirm,
 			exchangeUsers,
+			exchange,
 			userEmails,
 			formData,
 			saveLoading,
+			assetsCoinsData,
 		} = this.state;
-		const { allCoins } = this.props;
 		if (isConfirm) {
 			return (
 				<div className="admin-asset-wrapper">
@@ -921,7 +942,8 @@ class Assets extends Component {
 					isConfigureEdit={isConfigureEdit}
 					editConfigureScreen={editConfigureScreen}
 					// coins={coins}
-					coins={allCoins}
+					exchangeData={exchange}
+					assetsCoins={assetsCoinsData}
 					handleEditDataCallback={this.handleEditData}
 					handleWidth={this.handleWidth}
 					handleConfirmation={this.handleConfirmation}
@@ -937,6 +959,7 @@ class Assets extends Component {
 					assetType={this.state.assetType}
 					currentScreen={this.state.currentScreen}
 					updateCurrentScreen={this.updateCurrentScreen}
+					handleModalClose={this.handleModalClose}
 				/>
 			);
 		}
@@ -957,6 +980,7 @@ class Assets extends Component {
 			exchangeBalance,
 			exchange,
 			isLoading,
+			isModalClosable,
 		} = this.state;
 		const { allCoins, constants } = this.props;
 		return (
@@ -981,6 +1005,8 @@ class Assets extends Component {
 						</div>
 						<div className="table-wrapper">
 							<Table
+								className="assets-table"
+								rowClassName="assets-table-row"
 								columns={getColumns(
 									allCoins,
 									constants,
@@ -1008,6 +1034,7 @@ class Assets extends Component {
 					footer={null}
 					width={`${width}px`}
 					onCancel={this.handleClose}
+					closable={isModalClosable}
 				>
 					{this.renderModalContent()}
 				</Modal>

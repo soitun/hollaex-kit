@@ -48,6 +48,12 @@
 .preview-container {
 	padding: 1.5rem 1rem;
 }
+.admin-pairs-container .pairs-summary-table .ant-table-cell {
+	padding: 0.8% 2% !important;
+}
+.admin-pairs-container .pairs-summary-table tr {
+	height: 5rem !important;
+}
 .admin-pairs-container .preview-container .ant-breadcrumb {
 	margin: 1rem 0rem;
 }
