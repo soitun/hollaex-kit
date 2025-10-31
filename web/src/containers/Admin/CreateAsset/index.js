@@ -110,11 +110,16 @@ class CreateAsset extends Component {
 	}
 
 	componentDidUpdate(prevState) {
+		const { currentScreen } = this.props;
+		const { searchValue } = this.state;
 		if (this.state.withdrawalFees !== prevState.withdrawalFees) {
 			this.props.updateFormData(
 				this.props.assetType === 'deposit' ? 'deposit_fees' : 'withdrawal_fees',
 				this.state.withdrawalFees
 			);
+		}
+		if (currentScreen === 'step1' && searchValue?.trim()?.length) {
+			this.handleSearch();
 		}
 	}
 
@@ -145,7 +150,7 @@ class CreateAsset extends Component {
 	};
 
 	setCurrentPageAssets = (activeKey) => {
-		const coinKeys = this.props.exchangeCoins.map((data) => data.symbol);
+		const coinKeys = this.props?.assetsCoins?.map((data) => data?.symbol);
 		// const coinKeys = exchangeCoins.map((data) => data.symbol);
 		let coins = this.props.coins.filter(
 			// let coins = allCoins.filter(
@@ -408,16 +413,8 @@ class CreateAsset extends Component {
 		this.props.handleEditDataCallback(coinFormData);
 	};
 
-	handleSelectCoin = (coin) => {
-		this.setState({
-			selectedCoin: coin.symbol,
-			selectedCoinData: coin,
-		});
-		this.props.updateCurrentScreen('step1');
-	};
-
 	handleSearch = (e) => {
-		const searchValue = e.target.value ? e.target.value.toLowerCase() : '';
+		const searchValue = e?.target?.value ? e?.target?.value?.toLowerCase() : '';
 		let coinData = [];
 		const coinKeys = this.props.exchangeCoins.map((data) => data.symbol);
 		if (this.state.activeTab === '0') {
@@ -671,13 +668,14 @@ class CreateAsset extends Component {
 					<Step2
 						coins={coins}
 						exchangeCoins={this.props.exchangeCoins}
-						// exchangeCoins={exchangeCoins}
+						exchangeData={this.props?.exchangeData}
+						assetsCoins={this.props?.assetsCoins || []}
 						handleSearch={this.handleSearch}
-						handleSelectCoin={this.handleSelectCoin}
 						handleScreenChange={this.handleScreenChange}
 						activeTab={activeTab}
 						handleResetAsset={this.handleResetAsset}
 						onClose={this.props.onClose}
+						handleModalClose={this.props?.handleModalClose}
 					/>
 				);
 			case 'step3':
