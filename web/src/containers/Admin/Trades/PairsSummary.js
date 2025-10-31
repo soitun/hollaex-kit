@@ -704,6 +704,7 @@ class PairsSummary extends Component {
 						</div>
 						<div className="summary table-wrapper admin-tiers-wrapper">
 							<Table
+								className="pairs-summary-table"
 								columns={COLUMNS(
 									allPairs,
 									allCoins,
