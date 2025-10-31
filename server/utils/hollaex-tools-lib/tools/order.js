@@ -12,7 +12,7 @@ const { subscribedToPair, getKitTier, getMinFees, getAssetsPrices, getPublicTrad
 const { reject } = require('bluebird');
 const { loggerOrders } = require(`${SERVER_PATH}/config/logger`);
 const math = require('mathjs');
-const { has } = require('lodash');
+const { has, isPlainObject } = require('lodash');
 const { setPriceEssentials } = require('../../orderbook');
 const { getUserBalanceByKitId, transferAssetByKitIds } = require('./wallet');
 const { verifyBearerTokenPromise, verifyHmacTokenPromise } = require('./security');
@@ -24,8 +24,10 @@ const { sendEmail } = require('../../../mail');
 const { MAILTYPE } = require('../../../mail/strings');
 
 const createUserOrderByKitId = (userKitId, symbol, side, size, type, price = 0, opts = { stop: null, meta: null, additionalHeaders: null }) => {
+	// If symbol is not a supported pair on this exchange, mark it as OTC and allow it to pass through
 	if (symbol && !subscribedToPair(symbol)) {
-		return reject(new Error(INVALID_SYMBOL(symbol)));
+		opts = opts || { stop: null, meta: null, additionalHeaders: null };
+		opts.meta = isPlainObject(opts.meta) ? { ...opts.meta, broker: 'otc' } : { broker: 'otc' };
 	}
 
 	if (isNaN(Number(size))) {
@@ -613,8 +615,10 @@ const dustUserBalance = async (user_id, opts, { assets, spread, maker_id, quote 
 };
 
 const createUserOrderByEmail = (email, symbol, side, size, type, price = 0, opts = { stop: null, meta: null, additionalHeaders: null }) => {
+	// If symbol is not a supported pair on this exchange, mark it as OTC and allow it to pass through
 	if (symbol && !subscribedToPair(symbol)) {
-		return reject(new Error(INVALID_SYMBOL(symbol)));
+		opts = opts || { stop: null, meta: null, additionalHeaders: null };
+		opts.meta = isPlainObject(opts.meta) ? { ...opts.meta, broker: 'otc' } : { broker: 'otc' };
 	}
 	return getUserByEmail(email)
 		.then((user) => {
@@ -640,8 +644,10 @@ const createUserOrderByNetworkId = (networkId, symbol, side, size, type, price =
 	if (!networkId) {
 		return reject(new Error(USER_NOT_REGISTERED_ON_NETWORK));
 	}
+	// If symbol is not a supported pair on this exchange, mark it as OTC and allow it to pass through
 	if (symbol && !subscribedToPair(symbol)) {
-		return reject(new Error(INVALID_SYMBOL(symbol)));
+		opts = opts || { stop: null, meta: null, additionalHeaders: null };
+		opts.meta = isPlainObject(opts.meta) ? { ...opts.meta, broker: 'otc' } : { broker: 'otc' };
 	}
 	return getUserByNetworkId(networkId)
 		.then((user) => {

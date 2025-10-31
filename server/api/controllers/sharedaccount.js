@@ -3,6 +3,7 @@
 const toolsLib = require('hollaex-tools-lib');
 const { errorMessageConverter } = require('../../utils/conversion');
 const { loggerUser } = require('../../config/logger');
+const { NOT_AUTHORIZED } = require('../../messages');
 
 const createSharedaccount = async (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/sharedaccount/createSharedaccount auth', req.auth);
@@ -41,6 +42,9 @@ const getUserAccessibleSharedaccounts = async (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/sharedaccount/getUserAccessibleSharedaccounts auth', req.auth);
 
 	try {
+        if (req?.auth?.is_sharedaccount) {
+            throw new Error(NOT_AUTHORIZED);
+        }
 		const sharedId = req?.auth?.sub?.id;
 		const limit = req?.swagger?.params?.limit?.value;
 		const page = req?.swagger?.params?.page?.value;
@@ -58,6 +62,9 @@ const getSharedaccountAuthToken = async (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/sharedaccount/getSharedaccountAuthToken auth', req.auth);
 
 	try {
+        if (req?.auth?.is_sharedaccount) {
+            throw new Error(NOT_AUTHORIZED);
+        }
 		const sharedId = req?.auth?.sub?.id;
 		const ip = req.headers['x-real-ip'];
 		const { sharedaccount_id } = req.swagger.params.data.value;
