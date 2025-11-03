@@ -226,6 +226,14 @@ class Assets extends Component {
 			assetsCoinsData: [],
 			isModalClosable: true,
 		};
+
+		this.debouncedFetchData = debounce(async () => {
+			await this.getMyExchange();
+			await this.getCoins();
+			this.setState({
+				isLoading: false,
+			});
+		}, 5000);
 	}
 
 	componentDidMount() {
@@ -344,6 +352,9 @@ class Assets extends Component {
 	}
 
 	componentWillUnmount() {
+		if (this.debouncedFetchData) {
+			this.debouncedFetchData.cancel();
+		}
 		const {
 			setSelectedMarkupAsset = () => {},
 			setIsDisplayCreateAsset = () => {},
@@ -597,9 +608,10 @@ class Assets extends Component {
 				});
 			}
 			await updateExchange(formProps);
-			await this.getMyExchange();
-			await this.getCoins();
-			this.setState({ isLoading: false });
+
+			this.debouncedFetchData.cancel();
+			this.debouncedFetchData();
+
 			message.success('Asset removed successfully');
 			this.setState({
 				isConfigure: false,
@@ -611,7 +623,8 @@ class Assets extends Component {
 			if (error && error.data) {
 				message.error(error.data.message);
 			}
-			this.setState({ submitting: false });
+			this.debouncedFetchData.cancel();
+			this.setState({ submitting: false, isLoading: false });
 		}
 	};
 
@@ -719,11 +732,12 @@ class Assets extends Component {
 	};
 
 	applyConfirmation = () => {
-		const { formData } = this.state;
+		const { formData, selectedAsset, isConfigure } = this.state;
+		const dataToSave = isConfigure ? selectedAsset : formData;
 		if (this.state.exchange.is_running) {
-			this.setState({ isConfirm: true });
+			this.setState({ isConfirm: true, formData: dataToSave });
 		} else {
-			this.handleConfirmation(formData, true);
+			this.handleConfirmation(dataToSave, true);
 		}
 	};
 
@@ -775,6 +789,7 @@ class Assets extends Component {
 							user_id={user_id}
 							setConfigEdit={this.handleConfigureEdit}
 							handleFileChange={this.handleFileChange}
+							handleEdit={this.handleEditData}
 							handleDelete={this.handleDelete}
 							submitting={submitting}
 							handleWithdrawalEdit={this.handleWithdrawalEdit}

@@ -28,7 +28,7 @@ import {
 	updateSharedAccount,
 } from './actions';
 import { isEmail } from 'validator';
-import { setToken } from 'utils/token';
+import { setToken, getToken, decodeToken } from 'utils/token';
 
 const AccountSharingForm = ({ icons: ICONS, router }) => {
 	const [activeTab, setActiveTab] = useState(0);
@@ -476,7 +476,27 @@ const AccountSharingForm = ({ icons: ICONS, router }) => {
 		);
 	};
 
+	const isSharedAccount = () => {
+		try {
+			const token = getToken();
+			if (!token) {
+				return false;
+			}
+
+			const decodedToken = decodeToken(token);
+			const isShared = decodedToken?.is_sharedaccount === true;
+			return isShared;
+		} catch (error) {
+			console.error('Error decoding token:', error);
+			return false;
+		}
+	};
+
 	const getAccessData = async () => {
+		if (isSharedAccount()) {
+			return;
+		}
+
 		try {
 			const res = await getSharedWithAccounts();
 			setAccessedData(res);
@@ -509,7 +529,7 @@ const AccountSharingForm = ({ icons: ICONS, router }) => {
 	useEffect(() => {
 		activeTab === 0
 			? !isNaN(sharedData?.count) || getSharedData()
-			: !isNaN(accessedData?.count) || getAccessData();
+			: (!isNaN(accessedData?.count) || !isSharedAccount()) && getAccessData();
 
 		return () => {
 			handleAccountInfo.cancel();
