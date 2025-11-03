@@ -265,7 +265,6 @@ exports.EMAIL_IS_SAME = 'New email cannot be same as the existing one';
 exports.EMAIL_EXISTS = 'This email already exists';
 exports.CANNOT_CHANGE_DELETED_EMAIL = 'Cannot change deleted email';
 exports.FAILED_GET_QUOTE = 'Failed to get the quote';
-exports.BALANCE_HISTORY_NOT_ACTIVE = 'This feature is not active on the exchange';
 exports.WITHDRAWAL_DISABLED = 'Withdrawal disabled for this user';
 exports.FEATURE_NOT_ACTIVE = 'This feature is not active on the exchange';
 exports.ADDRESSBOOK_MISSING_FIELDS = 'Each address must contain both address, network, currency and label fields';
