@@ -1652,6 +1652,20 @@ const getUserChainTradeQuote = async (bearerToken, symbol, size = 1, ip, opts, r
 	}
 
 	if (result?.totalRate && user_id) {
+		// Ensure requester has sufficient balance before issuing a token
+		// Only enforce for end-user requests (identified via bearerToken)
+		let hasSufficientBalance = true;
+		if (bearerToken) {
+			const userBalance = await getUserBalanceByKitId(user_id, opts);
+			const isClientSpending = req && req.body && req.body.spending_amount != null;
+			const spendingCoin = isClientSpending ? from : to;
+			const requiredToPay = new BigNumber(isClientSpending ? size : result.totalRate);
+			const availableToPay = new BigNumber(userBalance?.[`${spendingCoin}_available`] || 0);
+			hasSufficientBalance = availableToPay.gte(requiredToPay);
+			if (!hasSufficientBalance && isClientSpending) {
+				throw new Error(QUICK_TRADE_INSUFFICIENT_BALANCE);
+			}
+		}
 		result.symbol = symbol;
 		result.size = size;
 		result.price = result?.totalRate / size;
@@ -1659,13 +1673,15 @@ const getUserChainTradeQuote = async (bearerToken, symbol, size = 1, ip, opts, r
 		result.base_asset = from;
 		result.chain = true;
 		result.user_id = user_id;
-		token = randomString({
-			length: 32,
-			numeric: true,
-			letters: true
-		});
+		if (hasSufficientBalance) {
+			token = randomString({
+				length: 32,
+				numeric: true,
+				letters: true
+			});
 
-		client.setexAsync(token, 30, JSON.stringify(result));
+			client.setexAsync(token, 30, JSON.stringify(result));
+		}
 	}
 
 	return { token, quote_amount: result?.totalRate };
