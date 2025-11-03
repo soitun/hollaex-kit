@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Input, Checkbox } from 'antd';
+import { Button, Input, Checkbox, message } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import debounce from 'lodash.debounce';
 
@@ -22,13 +22,17 @@ const PairSelection = ({
 	const [loadingStep, setLoadingStep] = useState(0);
 
 	const loadingMessages = [
-		{ title: `Looking for coin${checkedPairs?.length === 1 ? '' : 's'}` },
+		{ title: `Looking for Market${checkedPairs?.length === 1 ? '' : 's'}` },
 		{
-			title: `Inserting coin${
+			title: `Inserting Market${
 				checkedPairs?.length === 1 ? '' : 's'
 			} into exchange`,
 		},
-		{ title: 'Your Markets are being finalized and added' },
+		{
+			title: `Your Market${
+				checkedPairs?.length === 1 ? '' : 's'
+			} are being finalized and added`,
+		},
 	];
 
 	const getCoinData = (pair) => {
@@ -109,6 +113,7 @@ const PairSelection = ({
 				setIsProcessing(true);
 			}
 		} catch (error) {
+			message.error(error?.data?.message || error?.data);
 			setIsProcessing(false);
 			handleModalClose(true);
 		}

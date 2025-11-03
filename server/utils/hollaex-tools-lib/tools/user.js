@@ -63,7 +63,7 @@ const {
 	REFERRAL_UNSUPPORTED_EXCHANGE_PLAN,
 	CANNOT_CHANGE_DELETED_EMAIL,
 	SERVICE_NOT_SUPPORTED,
-	BALANCE_HISTORY_NOT_ACTIVE,
+	FEATURE_NOT_ACTIVE,
 	ADDRESSBOOK_MISSING_FIELDS,
 	PAYMENT_DETAIL_NOT_FOUND,
 	ADDRESSBOOK_ALREADY_EXISTS,
@@ -3060,7 +3060,7 @@ const getUserBalanceHistory = (opts = {
 	}
 
 
-	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(BALANCE_HISTORY_NOT_ACTIVE); }
+	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(FEATURE_NOT_ACTIVE); }
 
 	const timeframe = timeframeQuery(opts.startDate, opts.endDate);
 	const ordering = orderingQuery(opts.orderBy, opts.order);
@@ -3153,7 +3153,7 @@ const fetchUserProfitLossInfo = async (user_id, opts = { period: 7 }) => {
 	}
 
 
-	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(BALANCE_HISTORY_NOT_ACTIVE); }
+	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(FEATURE_NOT_ACTIVE); }
 
 	const data = await client.getAsync(`${user_id}-${opts.period}user-pl-info`);
 	if (data) return JSON.parse(data);
