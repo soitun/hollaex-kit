@@ -8,6 +8,8 @@ import React, {
 import { withRouter } from 'react-router';
 import { Input, Select, Tooltip, Button, message } from 'antd';
 import {
+	ArrowDownOutlined,
+	ArrowUpOutlined,
 	ExclamationCircleOutlined,
 	EyeInvisibleOutlined,
 	EyeOutlined,
@@ -35,14 +37,25 @@ const ACCOUNT_TYPES = [
 	{ value: 'virtual', label: STRINGS?.['SUB_ACCOUNT_SYSTEM.VIRTUAL_TEXT'] },
 ];
 
-const INITIAL_FORM_DATA = {
+const generateRandomColor = () => {
+	const letters = '0123456789ABCDEF';
+	let color = '#';
+	for (let i = 0; i < 6; i++) {
+		color += letters[Math.floor(Math.random() * 16)];
+	}
+	return color;
+};
+
+const getInitialFormData = () => ({
 	accountType: 'real',
 	name: '',
-	colorCode: '#904F9C',
+	colorCode: generateRandomColor(),
 	email: '',
 	password: '',
 	confirmPassword: '',
-};
+});
+
+const INITIAL_FORM_DATA = getInitialFormData();
 
 const INITIAL_TRANSFER_DATA = {
 	direction: 'in',
@@ -83,6 +96,15 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 	const [selectedDeactivateAccount, setSelectedDeactivateAccount] = useState(
 		null
 	);
+	const [isRemainingFundsDialog, setIsRemainingFundsDialog] = useState(false);
+	const [isTransferSuccessDialog, setIsTransferSuccessDialog] = useState(false);
+	const [transferSuccessData, setTransferSuccessData] = useState({
+		amount: '',
+		asset: '',
+		direction: '',
+		fromAccount: '',
+		toAccount: '',
+	});
 
 	const handleInputChange = useCallback((field, value) => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
@@ -90,7 +112,12 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 
 	const handleCloseDialog = useCallback(() => {
 		setIsCreateSubAccount(false);
-		setFormData(INITIAL_FORM_DATA);
+		setFormData(getInitialFormData());
+	}, []);
+
+	const handleOpenCreateSubAccount = useCallback(() => {
+		setFormData(getInitialFormData());
+		setIsCreateSubAccount(true);
 	}, []);
 
 	const handleColorChange = useCallback(
@@ -256,8 +283,25 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 
 		try {
 			await transferSubAccountFunds(payload);
-			message.success(STRINGS?.['SUB_ACCOUNT_SYSTEM.TRANSFER_SUCCESS']);
+
+			setTransferSuccessData({
+				amount: transferData?.amount,
+				asset: transferData?.selectedAsset,
+				direction: transferData?.direction,
+				fromAccount:
+					transferData?.direction === 'in'
+						? `${user?.email} (${STRINGS?.['SUB_ACCOUNT_SYSTEM.MAIN_ACCOUNT']})`
+						: transferData?.selectedAccount?.email ||
+						  transferData?.selectedAccount?.label,
+				toAccount:
+					transferData?.direction === 'in'
+						? transferData?.selectedAccount?.email ||
+						  transferData?.selectedAccount?.label
+						: `${user?.email} (${STRINGS?.['SUB_ACCOUNT_SYSTEM.MAIN_ACCOUNT']})`,
+			});
+
 			handleCloseTransferDialog();
+			setIsTransferSuccessDialog(true);
 			fetchSubAccounts();
 		} catch (error) {
 			message.error(
@@ -272,6 +316,7 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 		transferData,
 		handleCloseTransferDialog,
 		fetchSubAccounts,
+		user,
 	]);
 
 	const handleOpenSwitchAccountDialog = useCallback(() => {
@@ -332,7 +377,7 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 	const handleCloseSubAccountCreatedDialog = useCallback(() => {
 		setIsSubAccountConfirmation(false);
 		setCreatedAccountData(INITIAL_CREATED_ACCOUNT);
-		setFormData(INITIAL_FORM_DATA);
+		setFormData(getInitialFormData());
 	}, []);
 
 	const handleOpenDeactivateDialog = useCallback((account) => {
@@ -355,11 +400,19 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 			setIsDeactivatedSuccessDialog(true);
 			fetchSubAccounts();
 		} catch (error) {
-			message.error(
-				error?.data?.message ??
-					error?.message ??
-					STRINGS?.['SUB_ACCOUNT_SYSTEM.DEACTIVATE_FAILED']
-			);
+			const errorMessage = error?.data?.message ?? error?.message ?? '';
+
+			if (
+				errorMessage.includes('non-zero balance') ||
+				errorMessage.includes('cannot be removed')
+			) {
+				setIsDeactivateDialog(false);
+				setIsRemainingFundsDialog(true);
+			} else {
+				message.error(
+					errorMessage || STRINGS?.['SUB_ACCOUNT_SYSTEM.DEACTIVATE_FAILED']
+				);
+			}
 		}
 	}, [selectedDeactivateAccount, fetchSubAccounts]);
 
@@ -367,6 +420,41 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 		setIsDeactivatedSuccessDialog(false);
 		setSelectedDeactivateAccount(null);
 	}, []);
+
+	const handleCloseRemainingFundsDialog = useCallback(() => {
+		setIsRemainingFundsDialog(false);
+		setSelectedDeactivateAccount(null);
+	}, []);
+
+	const handleTransferOutFromRemainingFunds = useCallback(() => {
+		if (selectedDeactivateAccount) {
+			setIsRemainingFundsDialog(false);
+			handleOpenTransferDialog('out', selectedDeactivateAccount);
+		}
+	}, [selectedDeactivateAccount, handleOpenTransferDialog]);
+
+	const handleCloseTransferSuccessDialog = useCallback(() => {
+		setIsTransferSuccessDialog(false);
+		setTransferSuccessData({
+			amount: '',
+			asset: '',
+			direction: '',
+			fromAccount: '',
+			toAccount: '',
+		});
+	}, []);
+
+	const handleViewHistory = useCallback(
+		(direction) => {
+			setIsTransferSuccessDialog(false);
+			if (direction === 'in') {
+				router.push('/transactions?tab=withdrawals');
+			} else {
+				router.push('/transactions?tab=deposits');
+			}
+		},
+		[router]
+	);
 
 	const getAvailableAccounts = useMemo(() => {
 		const accounts = [
@@ -620,7 +708,12 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 						/>
 						<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.TRANSFER_FUNDS_TITLE">
 							<span className="transfer-funds-title">
-								{STRINGS?.['SUB_ACCOUNT_SYSTEM.TRANSFER_FUNDS_TITLE']}
+								{STRINGS?.['SUB_ACCOUNT_SYSTEM.TRANSFER_FUNDS_TITLE']}{' '}
+								{transferData?.direction === 'in' ? (
+									<>{STRINGS?.['SUB_ACCOUNT_SYSTEM.IN_LABEL']}</>
+								) : (
+									<>{STRINGS?.['SUB_ACCOUNT_SYSTEM.OUT_LABEL']}</>
+								)}
 							</span>
 						</EditWrapper>
 						<div className="mt-2">
@@ -637,30 +730,40 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 							<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.TRANSFER_TEXT">
 								{STRINGS?.formatString(
 									STRINGS?.['SUB_ACCOUNT_SYSTEM.TRANSFER_TEXT'],
-									STRINGS?.['MORE_OPTIONS_LABEL.OTHER_FUNCTIONS.OUT']
+									transferData?.direction === 'out'
+										? STRINGS?.['MORE_OPTIONS_LABEL.OTHER_FUNCTIONS.OUT']
+										: STRINGS?.['SUB_ACCOUNT_SYSTEM.IN_LABEL']
 								)}
 							</EditWrapper>
 						</div>
-						<Select
-							className="w-100 mt-2"
-							getPopupContainer={(trigger) => trigger?.parentNode}
+						<Input
+							className="w-100 mt-2 transfer-account-input"
 							value={
-								transferData?.direction === 'in'
-									? STRINGS?.['SUB_ACCOUNT_SYSTEM.MAIN_ACCOUNT']
-									: transferData?.selectedAccount?.id
+								transferData?.selectedAccount
+									? transferData?.selectedAccount?.email ||
+									  transferData?.selectedAccount?.label
+									: ''
 							}
-							disabled
-						>
-							<Option value="main">
-								{STRINGS?.['SUB_ACCOUNT_SYSTEM.MAIN_ACCOUNT']}
-							</Option>
-							{transferData?.selectedAccount && (
-								<Option value={transferData?.selectedAccount?.id}>
-									{transferData?.selectedAccount?.email ||
-										transferData?.selectedAccount?.label}
-								</Option>
-							)}
-						</Select>
+							readOnly
+							prefix={
+								transferData?.selectedAccount?.color ? (
+									<div
+										className="color-code-badge"
+										style={{
+											backgroundColor: transferData?.selectedAccount?.color,
+										}}
+									/>
+								) : null
+							}
+						/>
+					</div>
+
+					<div className="transfer-arrow-container">
+						{transferData?.direction === 'out' ? (
+							<ArrowDownOutlined className="transfer-arrow-icon" />
+						) : (
+							<ArrowUpOutlined className="transfer-arrow-icon" />
+						)}
 					</div>
 
 					<div className="mt-3">
@@ -669,31 +772,18 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 								<span>
 									{STRINGS?.formatString(
 										STRINGS?.['SUB_ACCOUNT_SYSTEM.TRANSFER_TEXT'],
-										STRINGS?.['SUB_ACCOUNT_SYSTEM.IN_LABEL']
+										transferData?.direction === 'out'
+											? STRINGS?.['SUB_ACCOUNT_SYSTEM.IN_LABEL']
+											: STRINGS?.['MORE_OPTIONS_LABEL.OTHER_FUNCTIONS.OUT']
 									)}
 								</span>
 							</EditWrapper>
 						</div>
-						<Select
-							className="w-100 mt-2"
-							getPopupContainer={(trigger) => trigger?.parentNode}
-							value={
-								transferData?.direction === 'in'
-									? transferData?.selectedAccount?.id
-									: STRINGS?.['SUB_ACCOUNT_SYSTEM.MAIN_ACCOUNT']
-							}
-							disabled
-						>
-							<Option value="main">
-								{STRINGS?.['SUB_ACCOUNT_SYSTEM.MAIN_ACCOUNT']}
-							</Option>
-							{transferData?.selectedAccount && (
-								<Option value={transferData?.selectedAccount?.id}>
-									{transferData?.selectedAccount?.email ||
-										transferData?.selectedAccount?.label}
-								</Option>
-							)}
-						</Select>
+						<Input
+							className="w-100 mt-2 transfer-account-input"
+							value={STRINGS?.['SUB_ACCOUNT_SYSTEM.MAIN_ACCOUNT']}
+							readOnly
+						/>
 					</div>
 
 					<div className="mt-3">
@@ -734,18 +824,36 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 							showSearch
 							dropdownClassName="custom-select-style select-option-wrapper transfer-select-dropdown"
 						>
-							{availableCoins?.map((coin) => (
-								<Option
-									key={coin?.value}
-									value={coin?.value}
-									className="d-flex align-items-center gap-1"
-								>
-									<div className="coin-icon">
-										<Coin iconId={coin?.icon_id} type="CS4" />
-									</div>
-									<span>{coin?.label}</span>
-								</Option>
-							))}
+							{availableCoins?.map((coin) => {
+								const direction = transferData?.direction;
+								const balance =
+									direction === 'out'
+										? Array.isArray(subAccountUser)
+											? subAccountUser?.[0]?.balance
+											: subAccountUser?.balance
+										: user?.balance;
+								const assetBalance = balance?.[`${coin?.value}_available`] || 0;
+
+								return (
+									<Option
+										key={coin?.value}
+										value={coin?.value}
+										className="transfer-asset-option"
+									>
+										<div className="d-flex align-items-center justify-content-between w-100">
+											<div className="d-flex align-items-center gap-1">
+												<div className="coin-icon">
+													<Coin iconId={coin?.icon_id} type="CS4" />
+												</div>
+												<span>{coin?.label}</span>
+											</div>
+											<span className="transfer-asset-balance secondary-text">
+												{assetBalance}
+											</span>
+										</div>
+									</Option>
+								);
+							})}
 						</Select>
 					</div>
 
@@ -1067,14 +1175,26 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 							getPopupContainer={handlePopupContainer}
 							virtual={false}
 							listHeight={120}
+							optionLabelProp="label"
 						>
 							{getAvailableAccounts?.map((account) => (
 								<Option
 									key={account?.id}
 									value={account?.id}
 									disabled={account?.id === user?.id}
+									label={
+										<div className="d-flex align-items-center gap-2">
+											{account?.color && (
+												<div
+													className="color-code-badge"
+													style={{ backgroundColor: account?.color }}
+												/>
+											)}
+											<span>{account?.email}</span>
+										</div>
+									}
 								>
-									<div className="d-flex align-items-center gap-2">
+									<div className="d-flex align-items-center">
 										{account?.color && (
 											<div
 												className="color-code-badge"
@@ -1399,6 +1519,125 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 				</div>
 			</Dialog>
 
+			<Dialog
+				isOpen={isRemainingFundsDialog}
+				onCloseDialog={handleCloseRemainingFundsDialog}
+				className="remaining-funds-popup"
+				label="remaining-funds-dialog"
+			>
+				<div className="remaining-funds-wrapper">
+					<div className="mb-4">
+						<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.REMAINING_FUNDS_TITLE">
+							<span className="remaining-funds-title">
+								{STRINGS?.['SUB_ACCOUNT_SYSTEM.REMAINING_FUNDS_TITLE']}
+							</span>
+						</EditWrapper>
+					</div>
+
+					{selectedDeactivateAccount && (
+						<div className="remaining-funds-account-info mb-3">
+							<div className="d-flex align-items-center gap-2">
+								{selectedDeactivateAccount?.color && (
+									<div
+										className="color-code-badge"
+										style={{
+											backgroundColor: selectedDeactivateAccount?.color,
+										}}
+									/>
+								)}
+								<span className="account-email-text">
+									{selectedDeactivateAccount?.email}
+								</span>
+							</div>
+						</div>
+					)}
+
+					<div className="remaining-funds-desc mb-4">
+						<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.REMAINING_FUNDS_DESC">
+							<span className="secondary-text">
+								{STRINGS?.['SUB_ACCOUNT_SYSTEM.REMAINING_FUNDS_DESC']}
+							</span>
+						</EditWrapper>
+					</div>
+
+					<div className="remaining-funds-button-wrapper">
+						<Button
+							onClick={handleCloseRemainingFundsDialog}
+							className="remaining-funds-back-btn no-border"
+						>
+							<EditWrapper stringId="BACK_TEXT">
+								{STRINGS?.['BACK_TEXT']}
+							</EditWrapper>
+						</Button>
+						<Button
+							onClick={handleTransferOutFromRemainingFunds}
+							className="remaining-funds-transfer-btn"
+						>
+							<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.TRANSFER_OUT_BUTTON">
+								{STRINGS?.[
+									'SUB_ACCOUNT_SYSTEM.TRANSFER_OUT_BUTTON'
+								]?.toUpperCase()}
+							</EditWrapper>
+						</Button>
+					</div>
+				</div>
+			</Dialog>
+
+			<Dialog
+				isOpen={isTransferSuccessDialog}
+				onCloseDialog={handleCloseTransferSuccessDialog}
+				className="transfer-success-popup"
+				label="transfer-success-dialog"
+			>
+				<div className="transfer-success-wrapper">
+					<div className="d-flex flex-column align-items-center">
+						<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.TRANSFER_SUCCESS_TITLE">
+							<span className="transfer-success-title">
+								{STRINGS?.['SUB_ACCOUNT_SYSTEM.TRANSFER_SUCCESS_TITLE']}
+							</span>
+						</EditWrapper>
+						<div className="transfer-success-desc text-center mt-2 mb-4">
+							<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.TRANSFER_SUCCESS_DESC">
+								{STRINGS?.formatString(
+									STRINGS?.['SUB_ACCOUNT_SYSTEM.TRANSFER_SUCCESS_DESC'],
+									transferSuccessData?.amount,
+									<span className="d-inline-flex align-items-end">
+										<span className="coin-icon mr-1">
+											<Coin
+												iconId={coins?.[transferSuccessData?.asset]?.icon_id}
+												type="CS6"
+											/>
+										</span>
+										{transferSuccessData?.asset?.toUpperCase()}
+									</span>,
+									transferSuccessData?.fromAccount,
+									transferSuccessData?.toAccount
+								)}
+							</EditWrapper>
+						</div>
+					</div>
+
+					<div className="transfer-success-button-wrapper">
+						<Button
+							onClick={handleCloseTransferSuccessDialog}
+							className="transfer-success-okay-btn"
+						>
+							<EditWrapper stringId="REFERRAL_LINK.OKAY">
+								{STRINGS?.['REFERRAL_LINK.OKAY']}
+							</EditWrapper>
+						</Button>
+						<Button
+							onClick={() => handleViewHistory(transferSuccessData?.direction)}
+							className="transfer-success-history-btn"
+						>
+							<EditWrapper stringId="DUST.SUCCESSFUL.VIEW_HISTORY">
+								{STRINGS?.['DUST.SUCCESSFUL.VIEW_HISTORY']?.toUpperCase()}
+							</EditWrapper>
+						</Button>
+					</div>
+				</div>
+			</Dialog>
+
 			<IconTitle
 				stringId="SUB_ACCOUNT_SYSTEM.SUB_ACCOUNT_TITLE"
 				text={STRINGS?.['SUB_ACCOUNT_SYSTEM.SUB_ACCOUNT_TITLE']}
@@ -1416,7 +1655,7 @@ const SubAccountSystem = ({ icons: ICONS, coins, user, router }) => {
 				<EditWrapper stringId="SUB_ACCOUNT_SYSTEM.CREATE_SUB_ACCOUNT">
 					<span
 						className="blue-link pointer"
-						onClick={() => setIsCreateSubAccount(true)}
+						onClick={handleOpenCreateSubAccount}
 					>
 						{STRINGS?.['SUB_ACCOUNT_SYSTEM.CREATE_SUB_ACCOUNT']}
 					</span>

@@ -5,6 +5,7 @@ import { Button, Table, Modal, Breadcrumb, message, Spin } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import { bindActionCreators } from 'redux';
 import _get from 'lodash/get';
+import debounce from 'lodash.debounce';
 
 import CreatePair from '../CreatePair';
 import Preview from '../CreatePair/Preview';
@@ -154,7 +155,16 @@ class PairsSummary extends Component {
 			isHovered: false,
 			hoveredKey: 0,
 			isModalCloseAble: true,
+			isLoading: false,
 		};
+
+		this.debouncedFetchData = debounce(async () => {
+			await this.props.getMyExchange();
+			await this.getPairs();
+			this.setState({
+				isLoading: false,
+			});
+		}, 5000);
 	}
 
 	componentDidMount() {
@@ -218,6 +228,9 @@ class PairsSummary extends Component {
 	}
 
 	componentWillUnmount() {
+		if (this.debouncedFetchData) {
+			this.debouncedFetchData.cancel();
+		}
 		this.props.setIsDisplayAddMarket(false);
 	}
 
@@ -306,7 +319,7 @@ class PairsSummary extends Component {
 
 	handleDelete = async (formData) => {
 		const { pairs = [], exchange = {} } = this.props;
-		this.setState({ buttonSubmitting: true });
+		this.setState({ buttonSubmitting: true, isLoading: true });
 		try {
 			let formProps = {
 				id: exchange.id,
@@ -315,8 +328,9 @@ class PairsSummary extends Component {
 				),
 			};
 			await updateExchange(formProps);
-			await this.props.getMyExchange();
-			await this.getPairs();
+
+			this.debouncedFetchData.cancel();
+			this.debouncedFetchData();
 			message.success('Pair removed successfully');
 			this.setState({
 				isPreview: false,
@@ -328,7 +342,8 @@ class PairsSummary extends Component {
 			if (error && error.data) {
 				message.error(error.data.message);
 			}
-			this.setState({ buttonSubmitting: false });
+			this.debouncedFetchData.cancel();
+			this.setState({ buttonSubmitting: false, isLoading: false });
 		}
 	};
 
@@ -716,6 +731,7 @@ class PairsSummary extends Component {
 								dataSource={this.state.pairs}
 								bordered
 								pagination={false}
+								loading={this.state.isLoading}
 							/>
 						</div>
 					</Fragment>

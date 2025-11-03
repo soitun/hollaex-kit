@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { Button, Modal, Tabs, message, Table } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { STATIC_ICONS } from 'config/icons';
 import Coins from '../Coins';
@@ -89,6 +89,13 @@ const Final = ({
 		false
 	);
 	const [activeTab, setActiveTab] = useState('0');
+	const [logoUrl, setLogoUrl] = useState(
+		coinFormData?.logo &&
+			typeof coinFormData?.logo === 'string' &&
+			!coinFormData.logoFile
+			? coinFormData?.logo
+			: ''
+	);
 
 	useEffect(() => {
 		if (exchange?.plan === 'fiat' || exchange?.plan === 'boost') {
@@ -103,6 +110,32 @@ const Final = ({
 		}
 		//eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedMarkupAsset]);
+
+	useEffect(() => {
+		if (
+			coinFormData?.logo &&
+			typeof coinFormData?.logo === 'string' &&
+			!coinFormData.logoFile
+		) {
+			setLogoUrl(coinFormData?.logo);
+		} else if (coinFormData?.logoFile) {
+			setLogoUrl('');
+		}
+	}, [coinFormData.logo, coinFormData.logoFile]);
+
+	const handleLogoUrlChange = (url) => {
+		setLogoUrl(url);
+		if (isConfigure) {
+			const updatedData = {
+				...coinFormData,
+				logo: url || '',
+				logoFile: null,
+			};
+			if (handleEdit) {
+				handleEdit(updatedData);
+			}
+		}
+	};
 
 	const renderNetworkFee = ([key, data], index) => {
 		const network = getNetworkLabelByKey(key);
@@ -304,6 +337,7 @@ const Final = ({
 			dataIndex: 'edit',
 			key: 'edit',
 			render: (user_id, data) => {
+				const isDisabled = !!coinCustomizations[data?.symbol];
 				return (
 					<div className="d-flex">
 						<Button
@@ -313,6 +347,7 @@ const Final = ({
 								setDisplayCostumizationModal(true);
 							}}
 							style={{ backgroundColor: '#CB7300', color: 'white' }}
+							disabled={!isDisabled}
 						>
 							Edit
 						</Button>
@@ -343,6 +378,9 @@ const Final = ({
 		requesCoinConfiguration();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	const isPendingAsset = !coinCustomizations[coinFormData?.symbol];
+
 	return (
 		<Tabs
 			defaultActiveKey="0"
@@ -531,8 +569,24 @@ const Final = ({
 											</label>
 										</div>
 									</div>
+									<div className="my-3">
+										<div className="mb-2">
+											<b>Or enter icon URL:</b>
+										</div>
+										<Input
+											type="url"
+											placeholder="https://example.com/icon.png"
+											value={logoUrl}
+											onChange={(e) => {
+												const url = e.target?.value;
+												setLogoUrl(url);
+												handleLogoUrlChange(url);
+											}}
+										/>
+									</div>
 									<div className="description-small">
-										Icon will be used in various trading related pages
+										Icon will be used in various trading related pages. You can
+										either upload a file or provide a URL.
 									</div>
 								</Fragment>
 							) : null}
@@ -846,6 +900,23 @@ const Final = ({
 						</div>
 
 						{withdrawal_fees && renderCoinFees(withdrawal_fees)}
+						{isPendingAsset && (
+							<div className="warning-pending-asset-desc-wrapper">
+								<ExclamationCircleOutlined className="warning-icon" />
+								<div className="warning-pending-asset-desc">
+									Adjusting the markup fees of a pending asset is not permitted.
+									Only verified assets can add a markup fee.
+									<a
+										className="link-text underline-text ml-1"
+										target="_blank"
+										rel="noopener noreferrer"
+										href="https://docs.hollaex.com/how-tos/assets-and-trading-pairs/add-new-coins-and-pairs#add-a-new-coin-already-supported-by-hollaex:~:text=asset%20will%20be-,marked%20as%20pending,-in%20the%20Assets"
+									>
+										View More
+									</a>
+								</div>
+							</div>
+						)}
 					</div>
 
 					<h4>Chain markup fee:</h4>
@@ -1085,7 +1156,7 @@ const Final = ({
 										handleCostumizationModal();
 										requesCoinConfiguration();
 									} catch (error) {
-										message.error(error.data.message);
+										message.error(error?.data?.message);
 									}
 								}}
 								style={{
