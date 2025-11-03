@@ -5,7 +5,7 @@ const { SERVER_PATH } = require('../constants');
 const { getModel } = require('./database/model');
 const { fetchBrokerQuote, generateRandomToken, isFairPriceForBroker } = require('./broker');
 const { getNodeLib } = require(`${SERVER_PATH}/init`);
-const { INVALID_SYMBOL, INVALID_NUMBER, NO_DATA_FOR_CSV, USER_NOT_FOUND, USER_NOT_REGISTERED_ON_NETWORK, TOKEN_EXPIRED, BROKER_NOT_FOUND, BROKER_PAUSED, BROKER_SIZE_EXCEED, QUICK_TRADE_ORDER_CAN_NOT_BE_FILLED, QUICK_TRADE_ORDER_CURRENT_PRICE_ERROR, QUICK_TRADE_VALUE_IS_TOO_SMALL, FAIR_PRICE_BROKER_ERROR, AMOUNT_NEGATIVE_ERROR, QUICK_TRADE_CONFIG_NOT_FOUND, QUICK_TRADE_TYPE_NOT_SUPPORTED, PRICE_NOT_FOUND, INVALID_PRICE, INVALID_SIZE, BALANCE_NOT_AVAILABLE, FEATURE_NOT_ACTIVE } = require(`${SERVER_PATH}/messages`);
+const { INVALID_SYMBOL, INVALID_NUMBER, NO_DATA_FOR_CSV, USER_NOT_FOUND, USER_NOT_REGISTERED_ON_NETWORK, TOKEN_EXPIRED, BROKER_NOT_FOUND, BROKER_PAUSED, BROKER_SIZE_EXCEED, QUICK_TRADE_ORDER_CAN_NOT_BE_FILLED, QUICK_TRADE_ORDER_CURRENT_PRICE_ERROR, QUICK_TRADE_VALUE_IS_TOO_SMALL, FAIR_PRICE_BROKER_ERROR, AMOUNT_NEGATIVE_ERROR, QUICK_TRADE_CONFIG_NOT_FOUND, QUICK_TRADE_TYPE_NOT_SUPPORTED, PRICE_NOT_FOUND, INVALID_PRICE, INVALID_SIZE, BALANCE_NOT_AVAILABLE, FEATURE_NOT_ACTIVE, QUICK_TRADE_INSUFFICIENT_BALANCE } = require(`${SERVER_PATH}/messages`);
 const { parse } = require('json2csv');
 const { BASE_SCOPES } = require(`${SERVER_PATH}/constants`);
 const { subscribedToPair, getKitTier, getMinFees, getAssetsPrices, getPublicTrades, getQuickTrades, getKitPairsConfig, getTradePaths, getKitConfig, getKitCoin, removeRepeatingDecimals } = require('./common');
@@ -131,11 +131,23 @@ const getUserMarginPositionByKitId = (userKitId, opts = { additionalHeaders: nul
 
 
 const executeUserOrder = async (user_id, opts, token, req) => {
+	loggerOrders.verbose(
+		'hollaex-tools-lib/order/executeUserOrder init',
+		{ user_id, has_token: Boolean(token) }
+	);
 	const storedToken = await client.getAsync(token);
 	if (!storedToken) {
+		loggerOrders.error(
+			'hollaex-tools-lib/order/executeUserOrder/token not_found',
+			{ user_id, token }
+		);
 		throw new Error(TOKEN_EXPIRED);
 	}
 	const { symbol, price, side, size, type, chain } = JSON.parse(storedToken);
+	loggerOrders.verbose(
+		'hollaex-tools-lib/order/executeUserOrder/token parsed',
+		{ symbol, side, type, size, price, chain }
+	);
 	if (chain) { return executeUserChainTrade(user_id, token, opts, req); }
 
 	if (size < 0) {
@@ -154,7 +166,15 @@ const executeUserOrder = async (user_id, opts, token, req) => {
 		if (new BigNumber(size).dp() > decimalPoint) {
 			roundedAmount = new BigNumber(size).decimalPlaces(decimalPoint, BigNumber.ROUND_DOWN).toNumber();
 		}
+		loggerOrders.verbose(
+			'hollaex-tools-lib/order/executeUserOrder/market init',
+			{ symbol, side, size, roundedAmount, decimalPoint }
+		);
 		res = await createUserOrderByKitId(user_id, symbol, side, roundedAmount, type, 0, opts);
+		loggerOrders.verbose(
+			'hollaex-tools-lib/order/executeUserOrder/market success',
+			{ order_id: res?.id, symbol: res?.symbol, side: res?.side, size: res?.size }
+		);
 	}
 	else if (type === 'broker') {
 		const brokerPair = await getModel('broker').findOne({ where: { symbol } });
@@ -183,6 +203,19 @@ const executeUserOrder = async (user_id, opts, token, req) => {
 
 		const makerFee = tierBroker.fees.maker[symbol];
 		const takerFee = tierUser.fees.taker[symbol];
+		loggerOrders.verbose(
+			'hollaex-tools-lib/order/executeUserOrder/broker init',
+			{
+				symbol,
+				side,
+				price,
+				size,
+				broker_id: broker?.id,
+				user_id: user?.id,
+				maker_fee: makerFee,
+				taker_fee: takerFee
+			}
+		);
 
 		res = await getNodeLib().createBrokerTrade(
 			symbol,
@@ -193,19 +226,38 @@ const executeUserOrder = async (user_id, opts, token, req) => {
 			user.network_id,
 			{ maker: makerFee, taker: takerFee }
 		);
+		loggerOrders.verbose(
+			'hollaex-tools-lib/order/executeUserOrder/broker success',
+			{ trade_id: res?.id, symbol: res?.symbol, side: res?.side, price: res?.price, size: res?.size }
+		);
 	}
 	else if (type === 'network') {
 		const user = await getUserByKitId(user_id);
 		const tierUser = getKitTier(user.verification_level);
 		const fee = tierUser.fees.taker[symbol];
-
+		loggerOrders.verbose(
+			'hollaex-tools-lib/order/executeUserOrder/network init',
+			{ symbol, side, price, size, fee }
+		);
 		res = await getNodeLib().executeQuote(token, user.network_id, fee, opts);
+		loggerOrders.verbose(
+			'hollaex-tools-lib/order/executeUserOrder/network success',
+			{ trade_id: res?.id, symbol: res?.symbol, side: res?.side, price: res?.price, size: res?.size }
+		);
 	}
 	else {
 		throw new Error(QUICK_TRADE_TYPE_NOT_SUPPORTED);
 	}
 	await client.delAsync(token);
+	loggerOrders.verbose(
+		'hollaex-tools-lib/order/executeUserOrder/token deleted',
+		{ token_deleted: Boolean(token) }
+	);
 	res.type = type;
+	loggerOrders.verbose(
+		'hollaex-tools-lib/order/executeUserOrder success',
+		{ type: res?.type, id: res?.id, symbol: res?.symbol, side: res?.side, size: res?.size }
+	);
 	return res;
 };
 
@@ -1290,7 +1342,7 @@ const settleFees = async (opts = {
 
 const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 	loggerOrders.debug(
-		'hollaex-tools-lib/tools/order/generateOrderFeeData:init',
+		'hollaex-tools-lib/order/generateOrderFeeData init',
 		{
 			symbol,
 			userTier,
@@ -1324,7 +1376,7 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 
 	if (opts.discount) {
 		loggerOrders.debug(
-			'hollaex-tools-lib/tools/order/generateOrderFeeData:discount',
+			'hollaex-tools-lib/order/generateOrderFeeData discount',
 			'discount percentage',
 			opts.discount
 		);
@@ -1357,7 +1409,7 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 		const exchangeMinFee = getMinFees();
 
 		loggerOrders.debug(
-			'hollaex-tools-lib/tools/order/generateOrderFeeData:discounted',
+			'hollaex-tools-lib/order/generateOrderFeeData discounted',
 			'discounted makerFee',
 			discountedMakerFee,
 			'discounted takerFee',
@@ -1387,7 +1439,7 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 	};
 
 	loggerOrders.debug(
-		'hollaex-tools-lib/tools/order/generateOrderFeeData:result',
+		'hollaex-tools-lib/order/generateOrderFeeData result',
 		'generated fee data',
 		feeData
 	);
@@ -1685,18 +1737,6 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 
 	let result;
 	try {
-		loggerOrders.verbose(
-			'hollaex-tools-lib/executeUserChainTrade:broker:settlement:init',
-			{
-				user_id: user?.id,
-				source_user_id: sourceUser?.id,
-				symbol: tradeInfo?.symbol,
-				base_asset: tradeInfo?.base_asset,
-				quote_asset: tradeInfo?.quote_asset,
-				size: tradeInfo?.size,
-				computed_broker_price: brokerPrice
-			}
-		);
 		result = await getNodeLib().createBrokerTrade(
 			tradeInfo.symbol,
 			'sell',
@@ -1705,10 +1745,6 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 			sourceUser.network_id,
 			user.network_id,
 			{ maker: 0, taker: 0 }
-		);
-		loggerOrders.verbose(
-			'hollaex-tools-lib/executeUserChainTrade:broker:settlement:success',
-			{ trade_id: result?.id, side: result?.side, price: result?.price, size: result?.size }
 		);
 	} catch (error) {
 		const admin = await getUserByKitId(1);
@@ -1721,56 +1757,19 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 			},
 			admin.settings
 		);
+		throw new Error(error.message);
 	}
 
 
 	try {
-		// Convert whatever the source account received in the broker trade back to the intermediary currency
-		// Determine reverse asset and amount based on broker side
-		const brokerSide = result?.side || 'sell';
-		let reverseFromAsset;
-		let reverseAmount;
-
-		if (brokerSide === 'sell') {
-			// Source received quote asset from broker trade
-			reverseFromAsset = tradeInfo.quote_asset;
-			reverseAmount = parseNumber(removeRepeatingDecimals(tradeInfo.size * brokerPrice), 10);
-		} else {
-			// Source received base asset from broker trade
-			reverseFromAsset = tradeInfo.base_asset;
-			reverseAmount = parseNumber(removeRepeatingDecimals(tradeInfo.size), 10);
+		// get the currency amount back for the middle man account
+		const { token } = await getUserChainTradeQuote(null, `${tradeInfo.base_asset}-${currency}`, tradeInfo.size, null, opts, req, sourceUser.id, sourceUser.network_id, true);
+		if (!token) {
+			throw new Error('Rate not found!');
 		}
 
-		loggerOrders.debug(
-			'hollaex-tools-lib/executeUserChainTrade:reverse:init',
-			{ broker_side: brokerSide, reverse_from_asset: reverseFromAsset, reverse_amount: reverseAmount, intermediary_currency: currency }
-		);
-
-		// If already in desired currency skip, otherwise convert back to currency
-		if (reverseFromAsset !== currency && reverseAmount > 0) {
-			const reverseSymbol = `${reverseFromAsset}-${currency}`;
-			loggerOrders.debug(
-				'hollaex-tools-lib/executeUserChainTrade:reverse:quote',
-				{ reverse_symbol: reverseSymbol, reverse_amount: reverseAmount }
-			);
-			const reverseQuote = await getUserChainTradeQuote(null, reverseSymbol, reverseAmount, null, opts, req, sourceUser.id, sourceUser.network_id, true);
-			if (!reverseQuote?.token) {
-				throw new Error('Rate not found!');
-			}
-
-			const reverseTradeInfo = JSON.parse(await client.getAsync(reverseQuote.token));
-			await executeTrades(reverseTradeInfo, sourceUser, opts);
-			loggerOrders.debug(
-				'hollaex-tools-lib/executeUserChainTrade:reverse:success',
-				{ reverse_symbol: reverseSymbol, executed_amount: reverseAmount }
-			);
-		}
-		else {
-			loggerOrders.debug(
-				'hollaex-tools-lib/executeUserChainTrade:reverse:skip',
-				{ reverse_from_asset: reverseFromAsset, intermediary_currency: currency, reverse_amount: reverseAmount }
-			);
-		}
+		const sourceTradeInfo = JSON.parse(await client.getAsync(token));
+		await executeTrades(sourceTradeInfo, sourceUser, opts);
 
 	} catch (error) {
 		const admin = await getUserByKitId(1);
@@ -1779,11 +1778,10 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 			admin.email,
 			{
 				type: 'Error in chain trades!',
-				data: `Error encountered restoring intermediary currency for source account id: ${sourceUser.id}. Error message: ${error.message}`
+				data: `Error encountered for source account id: ${sourceUser.id}. Error message: ${error.message}`
 			},
 			admin.settings
 		);
-		throw new Error(error.message);
 	}
 
 	return result;
@@ -1795,6 +1793,10 @@ const executeTrades = async (tradeInfo, sourceUser, opts) => {
 	for (const trade of tradeInfo?.trades) {
 		try {
 			let { symbol, price, side, size, type } = trade;
+            loggerOrders.verbose(
+                'hollaex-tools-lib/order/executeUserChainTrade/executeTrades trade init',
+                { symbol, type, side, size, price, source_user_id: sourceUser?.id }
+            );
 			if (size < 0) {
 				throw new Error(INVALID_SIZE);
 			}
@@ -1805,7 +1807,7 @@ const executeTrades = async (tradeInfo, sourceUser, opts) => {
 
 			let res;
 			let currentFee = 0;
-			if (type === 'pro') {
+            if (type === 'pro') {
 				const fee = size * currentFee;
 				size = size - fee;
 
@@ -1814,15 +1816,15 @@ const executeTrades = async (tradeInfo, sourceUser, opts) => {
 				let roundedAmount = size;
 				roundedAmount = new BigNumber(size).decimalPlaces(decimalPoint, BigNumber.ROUND_DOWN).toNumber();
 
-				res = await createUserOrderByKitId(sourceUser.id, symbol, side, roundedAmount, 'market', 0, {
+                res = await createUserOrderByKitId(sourceUser.id, symbol, side, roundedAmount, 'market', 0, {
 					additionalHeaders: {
 						'x-forwarded-for': null
 					}
 				});
 
 				currentFee = res?.fee_structure?.taker || 0;
-			}
-			else if (type === 'broker') {
+            }
+            else if (type === 'broker') {
 
 				const brokerPair = await getModel('broker').findOne({ where: { symbol } });
 
@@ -1837,7 +1839,7 @@ const executeTrades = async (tradeInfo, sourceUser, opts) => {
 				const fee = size * currentFee;
 				size = size - fee;
 
-				res = await getNodeLib().createBrokerTrade(
+                res = await getNodeLib().createBrokerTrade(
 					symbol,
 					side,
 					price,
@@ -1865,12 +1867,20 @@ const executeTrades = async (tradeInfo, sourceUser, opts) => {
 					opts
 				);
 
-				res = await getNodeLib().executeQuote(priceValues?.token, sourceUser.network_id, fee);
+                res = await getNodeLib().executeQuote(priceValues?.token, sourceUser.network_id, fee);
 			}
 
 			successfulTrades.push(res);
+            loggerOrders.verbose(
+                'hollaex-tools-lib/order/executeUserChainTrade/executeTrades trade success',
+                { symbol, type, side, filled_size: res?.size || size, trade_id: res?.id }
+            );
 		} catch (error) {
-			throw new Error('There has been a failure processing your request please try again');
+            loggerOrders.error(
+                'hollaex-tools-lib/order/executeUserChainTrade/executeTrades trade error',
+                { error: error?.message, trade }
+            );
+            throw new Error('There has been a failure processing your request please try again');
 		}
 	}
 
