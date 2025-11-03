@@ -1307,6 +1307,20 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 	let makerFee = tier.fees.maker[symbol];
 	let takerFee = tier.fees.taker[symbol];
 
+	// Fallback to reversed symbol fees if direct symbol fees are not defined
+	if ((makerFee === undefined || makerFee === null || Number.isNaN(makerFee) || takerFee === undefined || takerFee === null || Number.isNaN(takerFee))
+		&& typeof symbol === 'string' && symbol.includes('-')) {
+		const [base, quote] = symbol.split('-');
+		const reversedSymbol = `${quote}-${base}`;
+		const reversedMakerFee = tier.fees.maker[reversedSymbol];
+		const reversedTakerFee = tier.fees.taker[reversedSymbol];
+		if (reversedMakerFee !== undefined && reversedMakerFee !== null && !Number.isNaN(reversedMakerFee)) {
+			makerFee = reversedMakerFee;
+		}
+		if (reversedTakerFee !== undefined && reversedTakerFee !== null && !Number.isNaN(reversedTakerFee)) {
+			takerFee = reversedTakerFee;
+		}
+	}
 
 	if (opts.discount) {
 		loggerOrders.debug(
@@ -1367,8 +1381,8 @@ const generateOrderFeeData = (userTier, symbol, opts = { discount: 0 }) => {
 
 	const feeData = {
 		fee_structure: {
-			maker: (makerFee === undefined || makerFee === null || Number.isNaN(makerFee)) ? 0 : makerFee,
-			taker: (takerFee === undefined || takerFee === null || Number.isNaN(takerFee)) ? 0 : takerFee
+			maker: (makerFee === undefined || makerFee === null || Number.isNaN(makerFee)) ? 0.1 : makerFee,
+			taker: (takerFee === undefined || takerFee === null || Number.isNaN(takerFee)) ? 0.1 : takerFee
 		}
 	};
 
@@ -1671,6 +1685,18 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 
 	let result;
 	try {
+		loggerOrders.verbose(
+			'hollaex-tools-lib/executeUserChainTrade:broker:settlement:init',
+			{
+				user_id: user?.id,
+				source_user_id: sourceUser?.id,
+				symbol: tradeInfo?.symbol,
+				base_asset: tradeInfo?.base_asset,
+				quote_asset: tradeInfo?.quote_asset,
+				size: tradeInfo?.size,
+				computed_broker_price: brokerPrice
+			}
+		);
 		result = await getNodeLib().createBrokerTrade(
 			tradeInfo.symbol,
 			'sell',
@@ -1679,6 +1705,10 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 			sourceUser.network_id,
 			user.network_id,
 			{ maker: 0, taker: 0 }
+		);
+		loggerOrders.verbose(
+			'hollaex-tools-lib/executeUserChainTrade:broker:settlement:success',
+			{ trade_id: result?.id, side: result?.side, price: result?.price, size: result?.size }
 		);
 	} catch (error) {
 		const admin = await getUserByKitId(1);
@@ -1691,19 +1721,56 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 			},
 			admin.settings
 		);
-		throw new Error(error.message);
 	}
 
 
 	try {
-		// get the currency amount back for the middle man account
-		const { token } = await getUserChainTradeQuote(null, `${tradeInfo.base_asset}-${currency}`, tradeInfo.size, null, opts, req, sourceUser.id, sourceUser.network_id, true);
-		if (!token) {
-			throw new Error('Rate not found!');
+		// Convert whatever the source account received in the broker trade back to the intermediary currency
+		// Determine reverse asset and amount based on broker side
+		const brokerSide = result?.side || 'sell';
+		let reverseFromAsset;
+		let reverseAmount;
+
+		if (brokerSide === 'sell') {
+			// Source received quote asset from broker trade
+			reverseFromAsset = tradeInfo.quote_asset;
+			reverseAmount = parseNumber(removeRepeatingDecimals(tradeInfo.size * brokerPrice), 10);
+		} else {
+			// Source received base asset from broker trade
+			reverseFromAsset = tradeInfo.base_asset;
+			reverseAmount = parseNumber(removeRepeatingDecimals(tradeInfo.size), 10);
 		}
 
-		const sourceTradeInfo = JSON.parse(await client.getAsync(token));
-		await executeTrades(sourceTradeInfo, sourceUser, opts);
+		loggerOrders.debug(
+			'hollaex-tools-lib/executeUserChainTrade:reverse:init',
+			{ broker_side: brokerSide, reverse_from_asset: reverseFromAsset, reverse_amount: reverseAmount, intermediary_currency: currency }
+		);
+
+		// If already in desired currency skip, otherwise convert back to currency
+		if (reverseFromAsset !== currency && reverseAmount > 0) {
+			const reverseSymbol = `${reverseFromAsset}-${currency}`;
+			loggerOrders.debug(
+				'hollaex-tools-lib/executeUserChainTrade:reverse:quote',
+				{ reverse_symbol: reverseSymbol, reverse_amount: reverseAmount }
+			);
+			const reverseQuote = await getUserChainTradeQuote(null, reverseSymbol, reverseAmount, null, opts, req, sourceUser.id, sourceUser.network_id, true);
+			if (!reverseQuote?.token) {
+				throw new Error('Rate not found!');
+			}
+
+			const reverseTradeInfo = JSON.parse(await client.getAsync(reverseQuote.token));
+			await executeTrades(reverseTradeInfo, sourceUser, opts);
+			loggerOrders.debug(
+				'hollaex-tools-lib/executeUserChainTrade:reverse:success',
+				{ reverse_symbol: reverseSymbol, executed_amount: reverseAmount }
+			);
+		}
+		else {
+			loggerOrders.debug(
+				'hollaex-tools-lib/executeUserChainTrade:reverse:skip',
+				{ reverse_from_asset: reverseFromAsset, intermediary_currency: currency, reverse_amount: reverseAmount }
+			);
+		}
 
 	} catch (error) {
 		const admin = await getUserByKitId(1);
@@ -1712,10 +1779,11 @@ const executeUserChainTrade = async (user_id, userToken, opts, req) => {
 			admin.email,
 			{
 				type: 'Error in chain trades!',
-				data: `Error encountered for source account id: ${sourceUser.id}. Error message: ${error.message}`
+				data: `Error encountered restoring intermediary currency for source account id: ${sourceUser.id}. Error message: ${error.message}`
 			},
 			admin.settings
 		);
+		throw new Error(error.message);
 	}
 
 	return result;
