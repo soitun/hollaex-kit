@@ -416,7 +416,7 @@ class CreateAsset extends Component {
 	handleSearch = (e) => {
 		const searchValue = e?.target?.value ? e?.target?.value?.toLowerCase() : '';
 		let coinData = [];
-		const coinKeys = this.props.exchangeCoins.map((data) => data.symbol);
+		const coinKeys = this.props?.assetsCoins?.map((data) => data?.symbol);
 		if (this.state.activeTab === '0') {
 			let hollaexCoins = this.props.coins.filter(
 				(val) =>
@@ -667,7 +667,7 @@ class CreateAsset extends Component {
 				return (
 					<Step2
 						coins={coins}
-						exchangeCoins={this.props.exchangeCoins}
+						exchangeCoins={this.props?.assetsCoins}
 						exchangeData={this.props?.exchangeData}
 						assetsCoins={this.props?.assetsCoins || []}
 						handleSearch={this.handleSearch}
@@ -925,7 +925,7 @@ class CreateAsset extends Component {
 						coins={coins}
 						coinFormData={coinFormData}
 						selectedCoinData={selectedCoinData}
-						exchangeCoins={this.props.exchangeCoins}
+						exchangeCoins={this.props?.assetsCoins}
 						onClose={this.props.onClose}
 						handleNext={this.handleNext}
 						// handleChange={this.handleAssetType}
