@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
-import { Button, Table, Modal, Breadcrumb, message, Spin } from 'antd';
+import { Button, Table, Modal, Breadcrumb, message, Spin, Input } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import { bindActionCreators } from 'redux';
 import _get from 'lodash/get';
@@ -12,7 +12,6 @@ import Preview from '../CreatePair/Preview';
 import Coins from '../Coins';
 import IconToolTip from '../IconToolTip';
 import { getTabParams } from '../AdminFinancials/Assets';
-import Filter from '../FilterComponent';
 import ApplyChangesConfirmation from '../ApplyChangesConfirmation';
 import { setAllPairs, setCoins } from 'actions/assetActions';
 import { storePair, updateAssetPairs } from './actions';
@@ -49,15 +48,6 @@ export const renderStatus = ({ id, verified, created_by }, user_id) => {
 		</div>
 	);
 };
-
-const filterOptions = [
-	{
-		label: 'All',
-		value: 'all',
-		secondaryType: 'text',
-		secondaryPlaceHolder: 'Input name or symbol',
-	},
-];
 
 const COLUMNS = (
 	pairs,
@@ -293,7 +283,11 @@ class PairsSummary extends Component {
 	};
 
 	handleFilterValues = (filterValues) => {
-		this.setState({ filterValues });
+		this.setState({ filterValues }, () => {
+			if (filterValues === '') {
+				this.onClickFilter(false);
+			}
+		});
 	};
 
 	onClickFilter = (isClearField = true) => {
@@ -704,11 +698,22 @@ class PairsSummary extends Component {
 							<div>A list of all active markets</div>
 						</div>
 						<div className="filter-header">
-							<Filter
-								selectOptions={filterOptions}
-								onChange={this.handleFilterValues}
-								onClickFilter={this.onClickFilter}
-							/>
+							<div className="d-flex align-items-end">
+								<Input
+									onChange={(e) => this.handleFilterValues(e.target.value)}
+									className="w-75 pairs-filter-input"
+									size="small"
+									allowClear
+									placeholder="Input name or symbol"
+								/>
+								<Button
+									onClick={this.onClickFilter}
+									className="green-btn no-border pairs-filter-button"
+									size="small"
+								>
+									Filter
+								</Button>
+							</div>
 							<Button
 								type="primary"
 								className="green-btn"

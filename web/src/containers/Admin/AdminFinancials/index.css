@@ -232,6 +232,13 @@
 	padding: 0rem 1rem;
 	margin-bottom: 1rem;
 }
+.admin-asset-wrapper .filter-header .asset-filter-input {
+	height: 2.2rem !important;
+}
+.admin-asset-wrapper .filter-header .asset-filter-button {
+	height: 2.2rem !important;
+	width: 10rem;
+}
 .admin-asset-wrapper .coin-symbol-wrapper {
 	display: flex;
 	align-items: center;

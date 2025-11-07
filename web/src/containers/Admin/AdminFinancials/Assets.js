@@ -1,5 +1,5 @@
 import React, { Component, Fragment } from 'react';
-import { Button, Table, Modal, Breadcrumb, message } from 'antd';
+import { Button, Table, Modal, Breadcrumb, message, Input } from 'antd';
 import { connect } from 'react-redux';
 import { Link } from 'react-router';
 import _cloneDeep from 'lodash/cloneDeep';
@@ -12,7 +12,6 @@ import CreateAsset, { default_coin_data } from '../CreateAsset';
 import FinalPreview from '../CreateAsset/Final';
 import IconToolTip from '../IconToolTip';
 import Coins from '../Coins';
-import Filter from '../FilterComponent';
 import ApplyChangesConfirmation from '../ApplyChangesConfirmation';
 import {
 	getAllCoins,
@@ -28,15 +27,6 @@ import { STATIC_ICONS } from 'config/icons';
 import { setIsDisplayCreateAsset } from 'actions/appActions';
 
 const { Item } = Breadcrumb;
-
-const filterOptions = [
-	{
-		label: 'All',
-		value: 'all',
-		secondaryType: 'text',
-		secondaryPlaceHolder: 'Input name or symbol',
-	},
-];
 
 export const getTabParams = () => {
 	let paramsString = window.location.search.replace('?', '');
@@ -249,6 +239,7 @@ class Assets extends Component {
 			this.setState({
 				coins: coins || [],
 				exchange,
+				assetsCoinsData: coins || [],
 			});
 		}
 		if (Object.keys(tabParams).length) {
@@ -322,6 +313,7 @@ class Assets extends Component {
 			this.setState({
 				coins: coins || [],
 				exchange: exchange,
+				assetsCoinsData: coins || [],
 			});
 		}
 
@@ -652,7 +644,11 @@ class Assets extends Component {
 	};
 
 	handleFilterValues = (filterValues) => {
-		this.setState({ filterValues });
+		this.setState({ filterValues }, () => {
+			if (filterValues === '') {
+				this.onClickFilter(false);
+			}
+		});
 	};
 
 	handledebounceLoading = () => {
@@ -1005,11 +1001,22 @@ class Assets extends Component {
 				) : (
 					<Fragment>
 						<div className="filter-header">
-							<Filter
-								selectOptions={filterOptions}
-								onChange={this.handleFilterValues}
-								onClickFilter={this.onClickFilter}
-							/>
+							<div className="d-flex align-items-center">
+								<Input
+									onChange={(e) => this.handleFilterValues(e.target.value)}
+									className="w-75 asset-filter-input"
+									size="small"
+									allowClear
+									placeholder="Input name or symbol"
+								/>
+								<Button
+									onClick={this.onClickFilter}
+									className="green-btn no-border asset-filter-button"
+									size="small"
+								>
+									Filter
+								</Button>
+							</div>
 							<Button
 								type="primary"
 								className="green-btn"
