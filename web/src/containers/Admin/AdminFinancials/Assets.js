@@ -11,7 +11,7 @@ import debounce from 'lodash.debounce';
 import CreateAsset, { default_coin_data } from '../CreateAsset';
 import FinalPreview from '../CreateAsset/Final';
 import IconToolTip from '../IconToolTip';
-import Coins from '../Coins';
+import { Coin } from 'components';
 import ApplyChangesConfirmation from '../ApplyChangesConfirmation';
 import {
 	getAllCoins,
@@ -47,7 +47,8 @@ const getColumns = (
 	balance = {},
 	handleEdit,
 	handlePreview,
-	exchange
+	exchange,
+	appCoins = {}
 ) => [
 	{
 		title: 'Assets',
@@ -67,15 +68,11 @@ const getColumns = (
 					className="coin-symbol-wrapper"
 					onClick={() => handlePreview(selectedAsset)}
 				>
-					<div className="currency_ball">
-						<Coins
-							type={data.symbol.toLowerCase()}
-							small={true}
-							color={selectedAsset.meta ? selectedAsset.meta.color : ''}
-							fullname={selectedAsset.fullname}
-							onClick={() => handlePreview(selectedAsset)}
+					<div className="d-flex align-items-center">
+						<Coin
+							iconId={appCoins?.[data.symbol]?.icon_id || selectedAsset.icon_id}
 						/>
-						<div className="fullName">{selectedAsset.fullname}</div>
+						<div className="ml-2 fullName">{selectedAsset.fullname}</div>
 					</div>
 					{data.id && data.verified ? (
 						<IconToolTip type="success" tip="" animation={false} />
@@ -1029,13 +1026,15 @@ class Assets extends Component {
 							<Table
 								className="assets-table"
 								rowClassName="assets-table-row"
+								size="small"
 								columns={getColumns(
 									allCoins,
 									constants,
 									exchangeBalance,
 									this.handleEdit,
 									this.handlePreview,
-									exchange
+									exchange,
+									this.props.appCoins
 								)}
 								rowKey={(data, index) => index}
 								dataSource={coins}
@@ -1082,6 +1081,7 @@ const mapStateToProps = (state) => ({
 	constants: state.app.constants,
 	exchange: state.asset && state.asset.exchange,
 	isDisplayCreateAsset: state.app.isDisplayCreateAsset,
+	appCoins: state.app.coins,
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Assets);
