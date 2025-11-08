@@ -282,7 +282,7 @@ class CreatePair extends Component {
 	};
 
 	handleSearch = (e) => {
-		const pairsRemaining = this.constructPresetData();
+		const pairsRemaining = this.constructPresetData(this.state.activeTab);
 		const searchValue = e?.target?.value ? e.target.value?.toLowerCase() : '';
 		const filteredData = pairsRemaining.filter((pair) => {
 			return (
