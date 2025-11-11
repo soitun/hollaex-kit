@@ -8,7 +8,7 @@ const fs = require('fs');
  * This avoids logging in for every test
  */
 async function globalSetup() {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
 
