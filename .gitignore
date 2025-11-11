@@ -69,3 +69,6 @@ templates/kubernetes/config/*
 backups
 .vscode/settings.json
 web/public/.vscode/settings.json
+
+test-playwright/tests/utils/test-data.js
+*/*/*/test-data.js

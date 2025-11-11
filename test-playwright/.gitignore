@@ -1,0 +1,23 @@
+# Authentication state (contains sensitive session data)
+.auth/
+
+# Test results
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+

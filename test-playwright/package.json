@@ -1,0 +1,24 @@
+{
+  "name": "hollaex-playwright-page-navigation-tests",
+  "version": "1.0.0",
+  "description": "Playwright page navigation tests for HollaEx Kit",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "test:page-navigation": "playwright test tests/page-navigation/",
+    "test:btc-usdt": "playwright test tests/page-navigation/ --grep \"BTC-USDT\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "totp-generator": "^0.0.13"
+  }
+}
+
