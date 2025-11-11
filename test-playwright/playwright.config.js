@@ -48,7 +48,7 @@ module.exports = defineConfig({
     /* Global timeout for navigation */
     navigationTimeout: 30000,
     /* Run in headed mode as requested */
-    headless: false,
+    headless: true,
   },
 
   /* Configure projects for major browsers */
