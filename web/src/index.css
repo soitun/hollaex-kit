@@ -21622,6 +21622,17 @@ table th {
       top: 50% !important; }
   .quick_trade-container .active-input {
     color: var(--labels_important-active-labels-text-graphics) !important; }
+  .quick_trade-container .quick-trade-advanced-input {
+    background-color: var(--base_secondary-navigation-bar) !important;
+    box-shadow: inset 1px 1px 3px #00000029 !important;
+    border-radius: 5px;
+    border: none !important;
+    border-bottom: 1px solid #ffffff !important;
+    text-align: right;
+    color: var(--labels_secondary-inactive-label-text-graphics);
+    font-size: 2.1rem;
+    margin-left: 1rem;
+    height: 40px; }
   .quick_trade-container .input-group__input,
   .quick_trade-container .active-input {
     text-align: right;
@@ -21743,6 +21754,10 @@ table th {
       .quick_trade-wrapper .trade-section .inner-content .swap-wrapper-wrapper {
         align-self: self-start;
         margin-left: 10%; }
+      .quick_trade-wrapper .trade-section .inner-content .quick_trade-last-price {
+        font-size: 1rem; }
+      .quick_trade-wrapper .trade-section .inner-content .conversion-asset-text {
+        font-size: 1.2rem; }
 
 @keyframes linear_loading {
   0% {
@@ -21784,6 +21799,58 @@ table th {
     align-items: center;
     gap: 3%;
     margin-top: 10%; }
+
+.limit-order-success-popup-wrapper .ReactModal__Content {
+  width: 40rem; }
+  .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title {
+    padding-bottom: 4%;
+    display: flex;
+    align-items: center;
+    gap: 2%; }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .limit-order-success-icon {
+      width: 2.5rem;
+      height: 2.5rem; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .limit-order-success-icon svg {
+        width: 2.5rem;
+        height: 2.5rem; }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .title-text {
+      font-size: 1.8rem; }
+  .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content {
+    padding: 2% 3%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem; }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details {
+      width: 100%; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-label {
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        display: block; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-text {
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem; }
+        .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-text .limit-order-asset-icon {
+          position: relative;
+          top: 3px; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .conversion-price-text {
+        color: var(--labels_secondary-inactive-label-text-graphics);
+        font-size: 1rem; }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-note {
+      width: 100%;
+      padding-top: 1rem;
+      border-top: 1px solid var(--calculated_secondary-border); }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-balance-reminder {
+      width: 100%;
+      color: var(--labels_secondary-inactive-label-text-graphics);
+      font-size: 1rem; }
+  .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3%;
+    margin-top: 5%; }
 
 .layout-mobile .ReactModal__Overlay .ReactModal__Content {
   background-color: var(--base_background) !important; }
