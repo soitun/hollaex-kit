@@ -278,7 +278,17 @@
 		"CONVERT_ORDER_DETAILS": "Convert {0} {1} to {2} {3}",
 		"LIMIT_ORDER_NOTE": "Note: Orders do not execute immediately. You can check and cancel your order at anytime.",
 		"LIMIT_ORDER_BALANCE_REMINDER": "Please make sure your wallet has an available balance of {0} {1}.",
-		"LIMIT_ORDER_PROCESSING_NOTE": "Note: Orders may require few minutes to process"
+		"LIMIT_ORDER_PROCESSING_NOTE": "Note: Orders may require few minutes to process",
+		"WAITING_ORDERS": "Waiting Orders ({0})",
+		"CONVERT_ORDER": "Convert {0} {1}",
+		"RECEIVING_AMOUNT": "Receiving Amount: {0} {1}",
+		"PARTIAL_COMPLETE": "{0} {1} COMPLETE",
+		"PARTIAL_COMPLETE_REMAINING": "({0} remaining)",
+		"ORDER_PRICE": "Price: {0} {1} per {2}",
+		"DATE_ORDER_PLACED": "Date Order Placed:",
+		"YES_CANCEL_ORDER": "YES, CANCEL ORDER",
+		"FUNDS_CLEARING": "Funds Clearing",
+		"ORDER_FULLY_FILLED_TOOLTIP": "Your order is fully filled. Funds are clearing and will appear shortly within your wallet."
 	},
 	"PREVIOUS_PAGE": "previous page",
 	"NEXT_PAGE": "next page",
