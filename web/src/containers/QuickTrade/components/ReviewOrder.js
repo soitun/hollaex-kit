@@ -185,7 +185,7 @@ const ReviewOrder = ({
 										selectedTarget?.toUpperCase(),
 										formatToCurrency(
 											invertedPrice,
-											0,
+											sourceDecimalPoint,
 											invertedPrice < 1 && countDecimals(invertedPrice) > 8
 										),
 										selectedSource?.toUpperCase()
@@ -197,20 +197,20 @@ const ReviewOrder = ({
 										{STRINGS['QUICK_TRADE_COMPONENT.CONVERSION_TEXT']}:{' '}
 										{formatToCurrency(
 											sourceAmount,
-											0,
+											sourceDecimalPoint,
 											sourceAmount < 1 && countDecimals(sourceAmount) > 8
 										)}
 										{selectedSource?.toUpperCase()} /{' '}
 										{formatToCurrency(
 											invertedPrice,
-											0,
+											sourceDecimalPoint,
 											invertedPrice < 1 && countDecimals(invertedPrice) > 8
 										)}
 										{selectedTarget?.toUpperCase()} ={' '}
 										<span className="bold">
 											{formatToCurrency(
 												targetAmount,
-												0,
+												targetDecimalPoint,
 												targetAmount < 1 && countDecimals(targetAmount) > 8
 											)}{' '}
 										</span>
