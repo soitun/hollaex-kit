@@ -75,7 +75,8 @@ Status.findOne()
 			timezone: existingKitConfigurations?.timezone || existingSecrets.emails ? (existingSecrets.emails.timzeone || process.env.EMAILS_TIMEZONE || 'Etc/UTC') : (process.env.EMAILS_TIMEZONE || 'Etc/UTC'),
 			google_oauth: existingKitConfigurations.google_oauth || {},
 			auto_deposit: existingKitConfigurations.auto_deposit || { active: true },
-			auto_withdrawal: existingKitConfigurations.auto_withdrawal || { active: true }
+			auto_withdrawal: existingKitConfigurations.auto_withdrawal || { active: true },
+			force_two_factor_authentication_withdrawal: existingKitConfigurations.force_two_factor_authentication_withdrawal || { active: false }
 		};
 
 		const secrets = {

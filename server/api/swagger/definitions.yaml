@@ -636,6 +636,8 @@ definitions:
             type: object
           auto_withdrawal:
             type: object
+          force_two_factor_authentication_withdrawal:
+            type: object
       secrets:
         type: object
         properties:
@@ -1015,6 +1017,8 @@ definitions:
         type: string
         maxLength: 256
       is_confirmed:
+        type: boolean
+      onhold:
         type: boolean
       user_id:
         type: number

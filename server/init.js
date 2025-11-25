@@ -90,7 +90,8 @@ const checkStatus = () => {
 			dust: {},
 			google_oauth: {},
 			auto_deposit: {},
-			auto_withdrawal: {}
+			auto_withdrawal: {},
+			force_two_factor_authentication_withdrawal: {}
 		},
 		email: {}
 	};

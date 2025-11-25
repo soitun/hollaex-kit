@@ -1792,6 +1792,39 @@ class GeneralContent extends Component {
 						</div>
 						<div className="divider"></div>
 						<div className="general-wrapper mb-5">
+							<div
+								className="sub-title"
+								id="force-two-factor-authentication-withdrawal"
+							>
+								Force 2FA on Withdrawal
+							</div>
+							<div className="description">
+								<div>
+									Require users to have two-factor authentication (OTP) enabled
+									before requesting any withdrawals.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(
+											constants,
+											'kit.force_two_factor_authentication_withdrawal.active',
+											false
+										)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													force_two_factor_authentication_withdrawal: {
+														active: checked,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+							</div>
+						</div>
+						<div className="divider"></div>
+						<div className="general-wrapper mb-5">
 							<div className="sub-title" id="auto-deposit">
 								Auto Deposit
 							</div>

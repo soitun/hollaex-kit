@@ -34,7 +34,8 @@ let configuration = {
 		dust: {},
 		google_oauth: {},
 		auto_deposit: {},
-		auto_withdrawal: {}
+		auto_withdrawal: {},
+		force_two_factor_authentication_withdrawal: {}
 	},
 	email: {}
 };
@@ -122,7 +123,8 @@ const resetAllConfig = () => {
 			dust: {},
 			google_oauth: {},
 			auto_deposit: {},
-			auto_withdrawal: {}
+			auto_withdrawal: {},
+			force_two_factor_authentication_withdrawal: {}
 		},
 		email: {}
 	};
@@ -236,7 +238,8 @@ exports.KIT_CONFIG_KEYS = [
 	'timezone',
 	'google_oauth',
 	'auto_deposit',
-	'auto_withdrawal'
+	'auto_withdrawal',
+	'force_two_factor_authentication_withdrawal'
 ];
 
 exports.KIT_SECRETS_KEYS = [
