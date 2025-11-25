@@ -4791,11 +4791,17 @@ const createSharedaccount = async (mainKitId, { email, label }) => {
 	if (!main) {
 		throw new Error(USER_NOT_FOUND);
 	}
+	if (main.is_subaccount) {
+		throw new Error(NOT_AUTHORIZED);
+	}
 
 	const normalizedEmail = String(email).toLowerCase().trim();
 	const shared = await getUserByEmail(normalizedEmail, false);
 	if (!shared) {
 		throw new Error(USER_NOT_FOUND);
+	}
+	if (shared.is_subaccount) {
+		throw new Error(NOT_AUTHORIZED);
 	}
 
 	if (shared.id === main.id) {
@@ -4913,12 +4919,14 @@ const getUserAccessibleSharedaccounts = async (sharedKitId, { limit, page } = {}
 const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, headers = {} }) => {
 	const sharedUser = await getUserByKitId(sharedKitId, false);
 	if (!sharedUser) throw new Error(USER_NOT_FOUND);
+	if (sharedUser.is_subaccount) throw new Error(NOT_AUTHORIZED);
 
 	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, shared_id: sharedUser.id, active: true } });
 	if (!link) throw new Error(NOT_AUTHORIZED);
 
 	const main = await getUserByKitId(link.main_id, false);
 	if (!main) throw new Error(USER_NOT_FOUND);
+	if (main.is_subaccount) throw new Error(NOT_AUTHORIZED);
 	if (!main.activated) throw new Error(NOT_AUTHORIZED);
 
 	const token = await require('./security').issueToken(
