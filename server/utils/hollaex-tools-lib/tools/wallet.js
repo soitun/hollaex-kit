@@ -20,7 +20,8 @@ const {
 	USER_NOT_REGISTERED_ON_NETWORK,
 	INVALID_NETWORK,
 	NETWORK_REQUIRED,
-	WITHDRAWAL_DISABLED
+	WITHDRAWAL_DISABLED,
+	WITHDRAWAL_OTP_REQUIRED
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
@@ -437,6 +438,12 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		throw new Error(WITHDRAWAL_DISABLED);
 	} else if(user.withdrawal_blocked && moment().isBefore(moment(user.withdrawal_blocked))) {
 		throw new Error(WITHDRAWAL_DISABLED);	
+	}
+
+	// Enforce 2FA for withdrawals when feature flag is enabled
+	const requireOtp = getKitConfig()?.force_two_factor_authentication_withdrawal?.active;
+	if (requireOtp && !user.otp_enabled) {
+		throw new Error(WITHDRAWAL_OTP_REQUIRED);
 	}
 
 	let { fee, fee_coin } = getWithdrawalFee(currency, network, amount, user.verification_level);
