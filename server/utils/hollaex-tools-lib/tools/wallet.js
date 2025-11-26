@@ -725,6 +725,7 @@ const getUserTransactionsByKitId = (
 	description,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -885,6 +886,7 @@ const getUserDepositsByKitId = (
 	description,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -930,6 +932,7 @@ const getUserWithdrawalsByKitId = (
 	description,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -973,6 +976,7 @@ const getExchangeDeposits = (
 	address,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -1027,6 +1031,7 @@ const getExchangeWithdrawals = (
 	address,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -1370,46 +1375,6 @@ const createUserWalletByKitId = async (kitId, currency, address, opts = {
 	return getNodeLib().createUserWallet(idDictionary[kitId], currency, address, opts);
 };
 
-const getExchangeTransactions = (type, params = {}) => {
-	const { format, ...rest } = params || {};
-	const normalizedFormat = (format && (format === 'csv' || format === 'all')) ? 'all' : null;
-
-	let fetchFn = null;
-	if (type === 'deposit' || type === 'deposits') {
-		fetchFn = getNodeLib().getDeposits;
-	} else if (type === 'withdrawal' || type === 'withdrawals') {
-		fetchFn = getNodeLib().getWithdrawals;
-	} else {
-		return reject(new Error('INVALID_TRANSACTION_TYPE'));
-	}
-
-	return fetchFn({
-		...rest,
-		format: normalizedFormat
-	})
-		.then(async (transactions) => {
-			if (transactions.data && transactions.data.length > 0) {
-				const networkIds = transactions.data.map((tx) => tx.user_id);
-				const idDictionary = await mapNetworkIdToKitId(networkIds);
-				for (let tx of transactions.data) {
-					const user_kit_id = idDictionary[tx.user_id];
-					tx.network_id = tx.user_id;
-					tx.user_id = user_kit_id;
-					if (tx.User) tx.User.id = user_kit_id;
-				}
-			}
-			if (format && format === 'csv') {
-				if (!transactions.data || transactions.data.length === 0) {
-					throw new Error(NO_DATA_FOR_CSV);
-				}
-				const csv = parse(transactions.data, Object.keys(transactions.data[0]));
-				return csv;
-			} else {
-				return transactions;
-			}
-		});
-};
-
 module.exports = {
 	sendRequestWithdrawalEmail,
 	validateWithdrawal,
@@ -1426,7 +1391,6 @@ module.exports = {
 	cancelUserWithdrawalByNetworkId,
 	getExchangeDeposits,
 	getExchangeWithdrawals,
-	getExchangeTransactions,
 	getUserBalanceByNetworkId,
 	transferAssetByNetworkIds,
 	mintAssetByKitId,
