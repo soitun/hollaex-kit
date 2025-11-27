@@ -561,6 +561,8 @@ $close-icon--height: 2rem;
 	.ReactModal__Content {
 		width: 40rem;
 		.limit-order-success-popup-container {
+			padding: 2%;
+
 			.limit-order-success-popup-title {
 				padding-bottom: 4%;
 				display: flex;
@@ -579,7 +581,6 @@ $close-icon--height: 2rem;
 				}
 			}
 			.limit-order-success-popup-content {
-				padding: 2% 3%;
 				display: flex;
 				flex-direction: column;
 				align-items: flex-start;
@@ -589,16 +590,14 @@ $close-icon--height: 2rem;
 					.order-details-label {
 						font-weight: bold;
 						font-size: 1.1rem;
-						margin-bottom: 0.5rem;
+						margin-bottom: 1rem;
 						display: block;
 					}
 					.order-details-text {
 						margin-bottom: 0.5rem;
 						font-size: 1.2rem;
-						.limit-order-asset-icon {
-							position: relative;
-							top: 3px;
-						}
+						display: flex;
+						align-items: flex-start;
 					}
 					.conversion-price-text {
 						color: $colors-black;
@@ -607,7 +606,7 @@ $close-icon--height: 2rem;
 				}
 				.limit-order-success-note {
 					width: 100%;
-					padding-top: 1rem;
+					padding-top: 1.6rem;
 					border-top: 1px solid $colors-border;
 				}
 				.limit-order-success-balance-reminder {

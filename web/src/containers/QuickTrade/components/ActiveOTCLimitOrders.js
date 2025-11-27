@@ -5,32 +5,24 @@ import {
 	CloseCircleOutlined,
 	CloseOutlined,
 	CheckCircleOutlined,
+	InfoCircleOutlined,
 } from '@ant-design/icons';
 
 import STRINGS from 'config/localizedStrings';
-import {
-	EditWrapper,
-	Coin,
-	Button,
-	Dialog,
-	Paginator,
-	Image,
-} from 'components';
+import { EditWrapper, Coin, Button, Dialog, Paginator } from 'components';
 import { formatToCurrency, countDecimals } from 'utils/currency';
-import { getDecimals } from 'utils/utils';
+import { getDecimals, getFormatTimestamp } from 'utils/utils';
 import { PAIR2_STATIC_SIZE } from 'components/QuickTrade';
-import { getFormattedDate } from 'utils/string';
-import DateFilter from './DateFilter';
 import withConfig from 'components/ConfigProvider/withConfig';
 
 const ActiveOTCLimitOrder = ({
 	orders,
 	coins,
 	onCancelOrder,
+	onCancelAllOrders,
 	icons: ICONS,
 	selectedSource,
 	selectedTarget,
-	onFetchOrders,
 	isLoadingOrders,
 	ordersContainerRef,
 	normalizePair,
@@ -38,11 +30,10 @@ const ActiveOTCLimitOrder = ({
 }) => {
 	const [showCancelOrderDialog, setShowCancelOrderDialog] = useState(false);
 	const [showViewMoreDialog, setShowViewMoreDialog] = useState(false);
+	const [showCancelAllDialog, setShowCancelAllDialog] = useState(false);
 	const [selectedOrder, setSelectedOrder] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [isPairFiltered, setIsPairFiltered] = useState(true);
-	const [dateFilterParams, setDateFilterParams] = useState({});
-	const [dateFilterKey, setDateFilterKey] = useState(0);
 	const previousPairRef = useRef(null);
 	const pageSize = 10;
 
@@ -109,11 +100,7 @@ const ActiveOTCLimitOrder = ({
 
 	const handleConfirmCancelOrder = () => {
 		if (selectedOrder?.id && onCancelOrder) {
-			const symbolToPass = isPairFiltered && currentPair ? currentPair : null;
-			onCancelOrder(selectedOrder?.id, {
-				...dateFilterParams,
-				symbol: symbolToPass,
-			});
+			onCancelOrder(selectedOrder?.id);
 			setShowCancelOrderDialog(false);
 			setSelectedOrder(null);
 		}
@@ -144,31 +131,11 @@ const ActiveOTCLimitOrder = ({
 	const handlePairFilterClick = () => {
 		setIsPairFiltered(true);
 		setCurrentPage(1);
-		setDateFilterParams({});
-		setDateFilterKey((prev) => prev + 1);
-		if (onFetchOrders && currentPair) {
-			onFetchOrders(currentPair, {});
-		}
 	};
 
 	const handleShowAllClick = () => {
 		setIsPairFiltered(false);
 		setCurrentPage(1);
-		setDateFilterParams({});
-		setDateFilterKey((prev) => prev + 1);
-		if (onFetchOrders) {
-			onFetchOrders(null, {});
-		}
-	};
-
-	const handleDateFilterChange = (filterParams) => {
-		setDateFilterParams(filterParams);
-		setCurrentPage(1);
-
-		if (onFetchOrders) {
-			const symbolToFetch = isPairFiltered && currentPair ? currentPair : null;
-			onFetchOrders(symbolToFetch, filterParams);
-		}
 	};
 
 	const parseOrderSymbol = (order) => {
@@ -194,7 +161,7 @@ const ActiveOTCLimitOrder = ({
 		};
 	};
 
-	const renderOrderDetails = (order) => {
+	const renderOrderDetails = (order, showDate = true) => {
 		const { source, target } = parseOrderSymbol(order);
 		if (!source || !target) return null;
 
@@ -280,24 +247,32 @@ const ActiveOTCLimitOrder = ({
 						</span>
 					</div>
 				</div>
-				<div className="d-flex flex-column justify-content-between align-items-start py-4">
-					<span className="important-text bold">
-						<EditWrapper stringId="QUICK_TRADE_COMPONENT.DATE_ORDER_PLACED">
-							{STRINGS['QUICK_TRADE_COMPONENT.DATE_ORDER_PLACED']}
-						</EditWrapper>
-					</span>
-					<span>{getFormattedDate(order?.created_at)}</span>
-				</div>
+				{showDate && (
+					<div className="d-flex flex-column justify-content-between align-items-start py-4">
+						<span className="important-text bold">
+							<EditWrapper stringId="QUICK_TRADE_COMPONENT.DATE_ORDER_PLACED">
+								{STRINGS['QUICK_TRADE_COMPONENT.DATE_ORDER_PLACED']}
+							</EditWrapper>
+						</span>
+						<div className="d-flex align-items-center mr-2 mt-2">
+							<span className="important-text mr-1">
+								{getFormatTimestamp(order?.created_at, 'MM/DD/YY')}
+							</span>
+							<span className="secondary-text">
+								({getFormatTimestamp(order?.created_at, 'h:mm:ss A')})
+							</span>
+						</div>
+					</div>
+				)}
 			</div>
 		);
 	};
 
-	const hasDateFilter =
-		dateFilterParams?.start_date || dateFilterParams?.end_date;
 	const hasActiveOrders = ordersArray?.length > 0;
-	const isFilterApplied = hasDateFilter;
+	const hasOrdersForSelectedPair =
+		isPairFiltered && currentPair ? otcOrders?.length > 0 : hasActiveOrders;
 
-	const shouldShowComponent = hasActiveOrders || isFilterApplied;
+	const shouldShowComponent = hasOrdersForSelectedPair;
 
 	if (!shouldShowComponent) {
 		return null;
@@ -306,6 +281,23 @@ const ActiveOTCLimitOrder = ({
 	const handleViewOrderHistory = () => {
 		if (router) {
 			router.push('/transactions?tab=orders&active=true');
+		}
+	};
+
+	const handleCancelAllOrderPopup = () => {
+		if (isPairFiltered && currentPair && otcOrders?.length > 0) {
+			setShowCancelAllDialog(true);
+		}
+	};
+
+	const handleCloseCancelAllDialog = () => {
+		setShowCancelAllDialog(false);
+	};
+
+	const handleConfirmCancelAll = () => {
+		if (onCancelAllOrders && currentPair && isPairFiltered) {
+			onCancelAllOrders(currentPair);
+			handleCloseCancelAllDialog();
 		}
 	};
 
@@ -337,7 +329,9 @@ const ActiveOTCLimitOrder = ({
 					{currentPair && (
 						<EditWrapper stringId="QUICK_TRADE_COMPONENT.SHOW_ALL">
 							<span
-								className="blue-link pointer underline-text ml-3"
+								className={`active-otc-limit-order-pair-button pointer ml-3 ${
+									!isPairFiltered ? 'active' : 'secondary-text'
+								}`}
 								onClick={handleShowAllClick}
 							>
 								{STRINGS['QUICK_TRADE_COMPONENT.SHOW_ALL']}
@@ -345,7 +339,7 @@ const ActiveOTCLimitOrder = ({
 						</EditWrapper>
 					)}
 				</div>
-				<div>
+				<div className="d-flex align-items-center gap-2">
 					<EditWrapper stringId="QUICK_TRADE_COMPONENT.VIEW_ORDER_HISTORY">
 						<span
 							className="blue-link pointer underline-text"
@@ -354,14 +348,22 @@ const ActiveOTCLimitOrder = ({
 							{STRINGS['QUICK_TRADE_COMPONENT.VIEW_ORDER_HISTORY']}
 						</span>
 					</EditWrapper>
+					{isPairFiltered && currentPair && otcOrders?.length > 0 && (
+						<>
+							<span className="secondary-text px-2">|</span>
+							<span>
+								<EditWrapper stringId="CANCEL_ALL">
+									<span
+										className="blue-link pointer underline-text"
+										onClick={handleCancelAllOrderPopup}
+									>
+										{STRINGS['CANCEL_ALL']?.toUpperCase()}
+									</span>
+								</EditWrapper>
+							</span>
+						</>
+					)}
 				</div>
-			</div>
-			<div className="mb-3 transaction-history-wrapper">
-				<DateFilter
-					key={dateFilterKey}
-					onFilterChange={handleDateFilterChange}
-					initialFilter="all"
-				/>
 			</div>
 			{isLoadingOrders ? (
 				<div className="d-flex justify-content-center align-items-center py-4">
@@ -570,19 +572,6 @@ const ActiveOTCLimitOrder = ({
 						/>
 					)}
 				</>
-			) : isFilterApplied ? (
-				<div className="no-data d-flex flex-column align-items-center justify-content-center py-4">
-					<Image
-						iconId="NO_ICON"
-						icon={ICONS['NO_ICON']}
-						wrapperClassName="no-active-orders-icon"
-					/>
-					<span className="mt-2">
-						<EditWrapper stringId="P2P.NO_ORDERS_DESC">
-							{STRINGS['P2P.NO_ORDERS_DESC']}
-						</EditWrapper>
-					</span>
-				</div>
 			) : null}
 
 			{selectedOrder && (
@@ -596,19 +585,19 @@ const ActiveOTCLimitOrder = ({
 				>
 					<div className="cancel-order-dialog-content">
 						<div className="d-flex align-items-center mb-3">
-							<CloseCircleOutlined className="order-details-title" />
-							<div className="bold order-details-title ml-2">
+							<CloseCircleOutlined className="order-details-title-icon" />
+							<div className="bold order-details-title ml-2 text-capitalize">
 								<EditWrapper stringId="P2P.CANCEL_ORDER">
 									{STRINGS['P2P.CANCEL_ORDER']}
 								</EditWrapper>
 							</div>
 						</div>
-						<div className="mb-3">
+						<div className="mb-3 bold">
 							<EditWrapper stringId="P2P.CANCEL_WARNING">
 								{STRINGS['P2P.CANCEL_WARNING']}
 							</EditWrapper>
 						</div>
-						{renderOrderDetails(selectedOrder)}
+						{renderOrderDetails(selectedOrder, true)}
 						<div className="d-flex justify-content-end">
 							<Button
 								label={STRINGS['BACK']}
@@ -633,18 +622,48 @@ const ActiveOTCLimitOrder = ({
 					className="view-more-order-dialog-wrapper"
 					onCloseDialog={handleCloseViewMoreDialog}
 					shouldCloseOnOverlayClick={false}
-					showCloseText={true}
+					showCloseText={false}
 				>
 					<div className="view-more-order-dialog-content">
-						<div className="d-flex justify-content-between align-items-center mb-3">
-							<div className="bold order-details-title">
+						<div className="view-more-order-dialog-header d-flex justify-content-between align-items-center mb-3">
+							<div className="bold order-details-title text-capitalize">
 								<EditWrapper stringId="QUICK_TRADE_COMPONENT.ORDER_DETAILS">
 									{STRINGS['QUICK_TRADE_COMPONENT.ORDER_DETAILS']}
 								</EditWrapper>
 							</div>
+							<div className="d-flex align-items-center">
+								{selectedOrder?.created_at && (
+									<div className="d-flex align-items-center mr-2">
+										<span className="important-text mr-1">
+											{getFormatTimestamp(selectedOrder.created_at, 'MM/DD/YY')}
+										</span>
+										<span className="secondary-text">
+											(
+											{getFormatTimestamp(
+												selectedOrder.created_at,
+												'h:mm:ss A'
+											)}
+											)
+										</span>
+									</div>
+								)}
+								<Tooltip
+									title={
+										<EditWrapper stringId="QUICK_TRADE_COMPONENT.DATE_ORDER_PLACED_TOOLTIP">
+											{
+												STRINGS[
+													'QUICK_TRADE_COMPONENT.DATE_ORDER_PLACED_TOOLTIP'
+												]
+											}
+										</EditWrapper>
+									}
+								>
+									<InfoCircleOutlined className="secondary-text" />
+								</Tooltip>
+							</div>
 						</div>
-						{renderOrderDetails(selectedOrder)}
-						<div className="d-flex justify-content-end gap-2">
+						{renderOrderDetails(selectedOrder, false)}
+						<div className="d-flex justify-content-end gap-2 mt-5">
 							<Button
 								label={STRINGS['BACK']}
 								onClick={handleCloseViewMoreDialog}
@@ -660,6 +679,52 @@ const ActiveOTCLimitOrder = ({
 					</div>
 				</Dialog>
 			)}
+
+			<Dialog
+				isOpen={showCancelAllDialog}
+				label="cancel-all-orders-modal"
+				className="cancel-order-dialog-wrapper"
+				onCloseDialog={handleCloseCancelAllDialog}
+				shouldCloseOnOverlayClick={false}
+				showCloseText={true}
+			>
+				<div className="cancel-order-dialog-content">
+					<div className="d-flex align-items-center mb-3">
+						<CloseCircleOutlined className="order-details-title" />
+						<div className="bold order-details-title ml-2 text-capitalize">
+							<EditWrapper stringId="CANCEL_ORDERS.HEADING">
+								{STRINGS['CANCEL_ORDERS.HEADING']}
+							</EditWrapper>
+						</div>
+					</div>
+					<div className="mb-3">
+						<EditWrapper stringId="QUICK_TRADE_COMPONENT.CANCEL_ALL_WARNING_TEXT">
+							{STRINGS['QUICK_TRADE_COMPONENT.CANCEL_ALL_WARNING_TEXT']}
+						</EditWrapper>
+					</div>
+					<div className="mb-3">
+						<EditWrapper stringId="QUICK_TRADE_COMPONENT.CANCEL_ORDERS_COUNT_TEXT">
+							<span className="bold">
+								{STRINGS['QUICK_TRADE_COMPONENT.CANCEL_ORDERS_COUNT_TEXT']}
+							</span>
+							: {otcOrders?.length || 0}
+						</EditWrapper>
+					</div>
+					<div className="d-flex justify-content-end mt-5">
+						<Button
+							label={STRINGS['BACK']}
+							onClick={handleCloseCancelAllDialog}
+							type="button"
+							className="mr-2"
+						/>
+						<Button
+							label={STRINGS['CANCEL_ALL']}
+							onClick={handleConfirmCancelAll}
+							type="button"
+						/>
+					</div>
+				</div>
+			</Dialog>
 		</div>
 	);
 };
