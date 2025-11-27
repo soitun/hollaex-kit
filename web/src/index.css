@@ -5437,6 +5437,18 @@ table th {
   width: 32rem;
   padding: 2.5rem !important; }
 
+.cancel-order-dialog-wrapper .cancel-order-dialog-content .view-more-order-dialog-header,
+.cancel-order-dialog-wrapper .cancel-all-orders-dialog-content .view-more-order-dialog-header,
+.cancel-order-dialog-wrapper .view-more-order-dialog-content .view-more-order-dialog-header,
+.cancel-all-orders-dialog-wrapper .cancel-order-dialog-content .view-more-order-dialog-header,
+.cancel-all-orders-dialog-wrapper .cancel-all-orders-dialog-content .view-more-order-dialog-header,
+.cancel-all-orders-dialog-wrapper .view-more-order-dialog-content .view-more-order-dialog-header,
+.view-more-order-dialog-wrapper .cancel-order-dialog-content .view-more-order-dialog-header,
+.view-more-order-dialog-wrapper .cancel-all-orders-dialog-content .view-more-order-dialog-header,
+.view-more-order-dialog-wrapper .view-more-order-dialog-content .view-more-order-dialog-header {
+  border-bottom: 1px solid var(--calculated_secondary-border);
+  padding-bottom: 1.5rem; }
+
 .cancel-order-dialog-wrapper .cancel-order-dialog-content .cancel-order-icon,
 .cancel-order-dialog-wrapper .cancel-all-orders-dialog-content .cancel-order-icon,
 .cancel-order-dialog-wrapper .view-more-order-dialog-content .cancel-order-icon,
@@ -5474,6 +5486,17 @@ table th {
 .view-more-order-dialog-wrapper .cancel-all-orders-dialog-content .order-details-title,
 .view-more-order-dialog-wrapper .view-more-order-dialog-content .order-details-title {
   font-size: 1.6rem; }
+
+.cancel-order-dialog-wrapper .cancel-order-dialog-content .order-details-title-icon,
+.cancel-order-dialog-wrapper .cancel-all-orders-dialog-content .order-details-title-icon,
+.cancel-order-dialog-wrapper .view-more-order-dialog-content .order-details-title-icon,
+.cancel-all-orders-dialog-wrapper .cancel-order-dialog-content .order-details-title-icon,
+.cancel-all-orders-dialog-wrapper .cancel-all-orders-dialog-content .order-details-title-icon,
+.cancel-all-orders-dialog-wrapper .view-more-order-dialog-content .order-details-title-icon,
+.view-more-order-dialog-wrapper .cancel-order-dialog-content .order-details-title-icon,
+.view-more-order-dialog-wrapper .cancel-all-orders-dialog-content .order-details-title-icon,
+.view-more-order-dialog-wrapper .view-more-order-dialog-content .order-details-title-icon {
+  font-size: 2rem; }
 
 .cancel-order-dialog-wrapper .cancel-order-dialog-content .order-details-section,
 .cancel-order-dialog-wrapper .cancel-all-orders-dialog-content .order-details-section,
@@ -21982,55 +22005,55 @@ table th {
 
 .limit-order-success-popup-wrapper .ReactModal__Content {
   width: 40rem; }
-  .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title {
-    padding-bottom: 4%;
-    display: flex;
-    align-items: center;
-    gap: 2%; }
-    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .limit-order-success-icon {
-      width: 2.5rem;
-      height: 2.5rem; }
-      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .limit-order-success-icon svg {
+  .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container {
+    padding: 2%; }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title {
+      padding-bottom: 4%;
+      display: flex;
+      align-items: center;
+      gap: 2%; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .limit-order-success-icon {
         width: 2.5rem;
         height: 2.5rem; }
-    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .title-text {
-      font-size: 1.8rem; }
-  .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content {
-    padding: 2% 3%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem; }
-    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details {
-      width: 100%; }
-      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-label {
-        font-weight: bold;
-        font-size: 1.1rem;
-        margin-bottom: 0.5rem;
-        display: block; }
-      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-text {
-        margin-bottom: 0.5rem;
-        font-size: 1.2rem; }
-        .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-text .limit-order-asset-icon {
-          position: relative;
-          top: 3px; }
-      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .conversion-price-text {
+        .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .limit-order-success-icon svg {
+          width: 2.5rem;
+          height: 2.5rem; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-title .title-text {
+        font-size: 1.8rem; }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details {
+        width: 100%; }
+        .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-label {
+          font-weight: bold;
+          font-size: 1.1rem;
+          margin-bottom: 1rem;
+          display: block; }
+        .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .order-details-text {
+          margin-bottom: 0.5rem;
+          font-size: 1.2rem;
+          display: flex;
+          align-items: flex-start; }
+        .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-order-details .conversion-price-text {
+          color: var(--labels_secondary-inactive-label-text-graphics);
+          font-size: 1rem; }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-note {
+        width: 100%;
+        padding-top: 1.6rem;
+        border-top: 1px solid var(--calculated_secondary-border); }
+      .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-balance-reminder {
+        width: 100%;
         color: var(--labels_secondary-inactive-label-text-graphics);
         font-size: 1rem; }
-    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-note {
-      width: 100%;
-      padding-top: 1rem;
-      border-top: 1px solid var(--calculated_secondary-border); }
-    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .limit-order-success-popup-content .limit-order-success-balance-reminder {
-      width: 100%;
-      color: var(--labels_secondary-inactive-label-text-graphics);
-      font-size: 1rem; }
-  .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .button-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3%;
-    margin-top: 5%; }
+    .limit-order-success-popup-wrapper .ReactModal__Content .limit-order-success-popup-container .button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3%;
+      margin-top: 5%; }
 
 .layout-mobile .ReactModal__Overlay .ReactModal__Content {
   background-color: var(--base_background) !important; }

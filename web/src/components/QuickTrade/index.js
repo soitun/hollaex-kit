@@ -52,7 +52,7 @@ import {
 	roundNumber,
 	formatNumber,
 } from 'utils/currency';
-import { cancelOrder } from 'actions/orderAction';
+import { cancelOrder, cancelAllOrders } from 'actions/orderAction';
 import { getOrders } from 'actions/walletActions';
 
 export const PAIR2_STATIC_SIZE = 0.000001;
@@ -87,6 +87,7 @@ const QuickTrade = ({
 	transactionPair,
 	setTransactionPair,
 	cancelOrder,
+	cancelAllOrders,
 }) => {
 	const getTargetOptions = (source) =>
 		sourceOptions.filter((key) => {
@@ -154,11 +155,9 @@ const QuickTrade = ({
 	const selectTargetRef = useRef(null);
 	const loadingTimeoutRef = useRef(null);
 	const targetAmountRecalcTimeoutRef = useRef(null);
-	const fetchOrdersTimeoutRef = useRef(null);
 	const fetchOrdersDebounceRef = useRef(null);
 	const isFetchingOrdersRef = useRef(false);
 	const ordersContainerRef = useRef(null);
-	const previousNormalizedPairRef = useRef(null);
 
 	const resetForm = () => {
 		setTargetAmount();
@@ -517,12 +516,12 @@ const QuickTrade = ({
 				setShowModal(false);
 				setShowLimitOrderSuccess(true);
 				resetForm();
-				if (fetchOrdersTimeoutRef.current) {
-					clearTimeout(fetchOrdersTimeoutRef.current);
+				if (fetchOrdersDebounceRef.current) {
+					clearTimeout(fetchOrdersDebounceRef.current);
 				}
-				fetchOrdersTimeoutRef.current = setTimeout(() => {
-					fetchOrders(getQuickTradePairSymbol(symbol));
-					fetchOrdersTimeoutRef.current = null;
+				fetchOrdersDebounceRef.current = setTimeout(() => {
+					fetchOrders();
+					fetchOrdersDebounceRef.current = null;
 				}, 500);
 			} else {
 				const { data } = await executeQuickTrade(token);
@@ -731,8 +730,6 @@ const QuickTrade = ({
 		return quickTradePairInfo?.symbol || pairSymbol;
 	};
 
-	const getQuickTradePairSymbol = normalizePair;
-
 	const getOrdersCountForSymbol = () => {
 		if (!selectedSource || !selectedTarget || !orderHistory?.length) return 0;
 		const currentSymbol = `${selectedSource?.toLowerCase()}-${selectedTarget?.toLowerCase()}`;
@@ -776,17 +773,7 @@ const QuickTrade = ({
 		);
 	};
 
-	const fetchOrdersWithTimeout = (symbolToFetch, filterParams = {}) => {
-		if (fetchOrdersTimeoutRef.current) {
-			clearTimeout(fetchOrdersTimeoutRef.current);
-		}
-		fetchOrdersTimeoutRef.current = setTimeout(() => {
-			fetchOrders(symbolToFetch, filterParams);
-			fetchOrdersTimeoutRef.current = null;
-		}, 300);
-	};
-
-	const fetchOrders = async (symbol = null, filterParams = {}) => {
+	const fetchOrders = async () => {
 		if (preview || cancelingOrderRef.current || isFetchingOrdersRef.current) {
 			return;
 		}
@@ -800,16 +787,6 @@ const QuickTrade = ({
 			setIsLoadingOrders(true);
 			try {
 				const params = { open: true };
-				if (symbol) {
-					const quickTradePairSymbol = getQuickTradePairSymbol(symbol);
-					params.symbol = quickTradePairSymbol?.toLowerCase();
-				}
-				if (filterParams.start_date) {
-					params.start_date = filterParams.start_date;
-				}
-				if (filterParams.end_date) {
-					params.end_date = filterParams.end_date;
-				}
 				const response = await getOrders(params);
 				const ordersData = response?.data?.data || response?.data || [];
 				const ordersArray = Array.isArray(ordersData) ? ordersData : [];
@@ -826,7 +803,7 @@ const QuickTrade = ({
 		}, 300);
 	};
 
-	const handleCancelOrder = (orderId, currentFilterParams = {}) => {
+	const handleCancelOrder = (orderId) => {
 		cancelingOrderRef.current = true;
 
 		setOrderHistory((prevOrders) =>
@@ -837,14 +814,18 @@ const QuickTrade = ({
 			cancelOrder(orderId, {});
 			setTimeout(() => {
 				cancelingOrderRef.current = false;
-				const symbolToFetch =
-					currentFilterParams?.symbol !== undefined
-						? currentFilterParams?.symbol
-						: getQuickTradePairSymbol(symbol);
-				const { symbol: _, ...filterParams } = currentFilterParams;
-				fetchOrders(symbolToFetch, filterParams);
+				fetchOrders();
 			}, 1000);
 		}, 100);
+	};
+
+	const handleCancelAllOrders = (symbol) => {
+		cancelingOrderRef.current = true;
+		cancelAllOrders(symbol);
+		setTimeout(() => {
+			cancelingOrderRef.current = false;
+			fetchOrders();
+		}, 1000);
 	};
 
 	useEffect(() => {
@@ -914,17 +895,8 @@ const QuickTrade = ({
 		}
 
 		if (currentSymbol) {
-			const normalizedPair = normalizePair(currentSymbol);
-			const previousNormalizedPair = previousNormalizedPairRef.current;
-
 			setSymbol(currentSymbol);
 			goToPair(currentSymbol);
-
-			if (normalizedPair && normalizedPair !== previousNormalizedPair) {
-				fetchOrdersWithTimeout(currentSymbol);
-			}
-
-			previousNormalizedPairRef.current = normalizedPair;
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedSource, selectedTarget, quicktradePairs]);
@@ -971,9 +943,6 @@ const QuickTrade = ({
 			if (targetAmountRecalcTimeoutRef?.current) {
 				clearTimeout(targetAmountRecalcTimeoutRef.current);
 			}
-			if (fetchOrdersTimeoutRef?.current) {
-				clearTimeout(fetchOrdersTimeoutRef.current);
-			}
 			if (fetchOrdersDebounceRef?.current) {
 				clearTimeout(fetchOrdersDebounceRef.current);
 			}
@@ -1010,19 +979,7 @@ const QuickTrade = ({
 	}, [pair, chartData, activeQuickTradePair]);
 
 	useEffect(() => {
-		const initialSymbol = `${initialSelectedSource}-${initialSelectedTarget}`;
-		const initialFlippedSymbol = flipPair(initialSymbol);
-		const initialQuickTradePair =
-			quicktradePairs[initialSymbol] || quicktradePairs[initialFlippedSymbol];
-
-		if (initialQuickTradePair) {
-			const symbolToUse = quicktradePairs[initialSymbol]
-				? initialSymbol
-				: initialFlippedSymbol;
-			fetchOrders(symbolToUse);
-		} else {
-			fetchOrders();
-		}
+		fetchOrders();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -1445,61 +1402,57 @@ const QuickTrade = ({
 									</EditWrapper>
 								</div>
 								<div className="limit-order-success-popup-content">
-									<div className="limit-order-success-order-details">
+									<div className="limit-order-success-order-details pb-2">
 										<EditWrapper stringId="QUICK_TRADE_COMPONENT.ORDER_DETAILS">
 											<span className="order-details-label">
 												{STRINGS['QUICK_TRADE_COMPONENT.ORDER_DETAILS']}
 											</span>
 										</EditWrapper>
 										{limitOrderData && (
-											<div className="order-details-text d-flex align-items-center flex-wrap">
-												<span className="d-flex align-items-center">
-													{coins[limitOrderData.selectedSource]?.icon_id && (
-														<span className="mr-2 limit-order-asset-icon">
-															<Coin
-																iconId={
-																	coins[limitOrderData?.selectedSource]?.icon_id
-																}
-																type="CS6"
-															/>
-														</span>
+											<div className="order-details-text">
+												{coins[limitOrderData.selectedSource]?.icon_id && (
+													<span className="mr-2 limit-order-asset-icon">
+														<Coin
+															iconId={
+																coins[limitOrderData?.selectedSource]?.icon_id
+															}
+															type="CS6"
+														/>
+													</span>
+												)}
+												<EditWrapper stringId="QUICK_TRADE_COMPONENT.CONVERT_ORDER_DETAILS">
+													{STRINGS.formatString(
+														STRINGS[
+															'QUICK_TRADE_COMPONENT.CONVERT_ORDER_DETAILS'
+														],
+														formatToCurrency(
+															limitOrderData?.sourceAmount,
+															coins[limitOrderData?.selectedSource]
+																?.increment_unit || PAIR2_STATIC_SIZE,
+															limitOrderData?.sourceAmount < 1 &&
+																countDecimals(limitOrderData?.sourceAmount) > 8
+														),
+														limitOrderData?.selectedSource?.toUpperCase(),
+														formatToCurrency(
+															limitOrderData?.targetAmount,
+															coins[limitOrderData?.selectedTarget]
+																?.increment_unit || PAIR2_STATIC_SIZE,
+															limitOrderData?.targetAmount < 1 &&
+																countDecimals(limitOrderData?.targetAmount) > 8
+														),
+														limitOrderData?.selectedTarget?.toUpperCase()
 													)}
-													<EditWrapper stringId="QUICK_TRADE_COMPONENT.CONVERT_ORDER_DETAILS">
-														{STRINGS.formatString(
-															STRINGS[
-																'QUICK_TRADE_COMPONENT.CONVERT_ORDER_DETAILS'
-															],
-															formatToCurrency(
-																limitOrderData?.sourceAmount,
-																coins[limitOrderData?.selectedSource]
-																	?.increment_unit || PAIR2_STATIC_SIZE,
-																limitOrderData?.sourceAmount < 1 &&
-																	countDecimals(limitOrderData?.sourceAmount) >
-																		8
-															),
-															limitOrderData?.selectedSource?.toUpperCase(),
-															formatToCurrency(
-																limitOrderData?.targetAmount,
-																coins[limitOrderData?.selectedTarget]
-																	?.increment_unit || PAIR2_STATIC_SIZE,
-																limitOrderData?.targetAmount < 1 &&
-																	countDecimals(limitOrderData?.targetAmount) >
-																		8
-															),
-															limitOrderData?.selectedTarget?.toUpperCase()
-														)}
-													</EditWrapper>
-													{coins[limitOrderData?.selectedTarget]?.icon_id && (
-														<span className="ml-2 limit-order-asset-icon">
-															<Coin
-																iconId={
-																	coins[limitOrderData?.selectedTarget]?.icon_id
-																}
-																type="CS6"
-															/>
-														</span>
-													)}
-												</span>
+												</EditWrapper>
+												{coins[limitOrderData?.selectedTarget]?.icon_id && (
+													<span className="ml-2 limit-order-asset-icon">
+														<Coin
+															iconId={
+																coins[limitOrderData?.selectedTarget]?.icon_id
+															}
+															type="CS6"
+														/>
+													</span>
+												)}
 											</div>
 										)}
 										{limitOrderData && limitOrderData?.conversionPriceDisplay && (
@@ -1862,9 +1815,9 @@ const QuickTrade = ({
 						orders={orderHistory}
 						coins={coins}
 						onCancelOrder={handleCancelOrder}
+						onCancelAllOrders={handleCancelAllOrders}
 						selectedSource={selectedSource}
 						selectedTarget={selectedTarget}
-						onFetchOrders={fetchOrders}
 						quicktradePairs={quicktradePairs}
 						isLoadingOrders={isLoadingOrders}
 						ordersContainerRef={ordersContainerRef}
@@ -1934,6 +1887,7 @@ const mapDispatchToProps = (dispatch) => ({
 	),
 	setTransactionPair: bindActionCreators(setTransactionPair, dispatch),
 	cancelOrder: bindActionCreators(cancelOrder, dispatch),
+	cancelAllOrders: bindActionCreators(cancelAllOrders, dispatch),
 });
 
 const mapStateToProps = (store) => {
