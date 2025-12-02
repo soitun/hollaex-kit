@@ -488,6 +488,29 @@ definitions:
       updated_at:
         type: string
         format: date-time
+  AdminMatchOrderRequest:
+    type: object
+    required:
+      - user_id
+      - order_id
+      - symbol
+    properties:
+      user_id:
+        type: number
+        format: int32
+        description: Kit user id who owns the order
+      order_id:
+        type: string
+        maxLength: 256
+        description: Order id to match
+      symbol:
+        type: string
+        maxLength: 256
+        description: Symbol of the order (e.g. btc-usdt)
+      size:
+        type: number
+        format: double
+        description: Optional partial size to match
   OrdersResponse:
     type: object
     properties:
@@ -608,6 +631,12 @@ definitions:
           user_payments:
             type: object
           google_oauth:
+            type: object
+          auto_deposit:
+            type: object
+          auto_withdrawal:
+            type: object
+          force_two_factor_authentication_withdrawal:
             type: object
       secrets:
         type: object
@@ -988,6 +1017,8 @@ definitions:
         type: string
         maxLength: 256
       is_confirmed:
+        type: boolean
+      onhold:
         type: boolean
       user_id:
         type: number
@@ -1500,6 +1531,8 @@ definitions:
         enum: ['withdrawal', 'deposit']
   BrokerPair:
     type: object
+    required:
+      - symbol
     properties:
       symbol:
         type: string

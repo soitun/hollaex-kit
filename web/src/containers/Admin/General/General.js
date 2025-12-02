@@ -416,6 +416,12 @@ class GeneralContent extends Component {
 				message.success('Updated successfully');
 				this.setState({ buttonSubmitting: false });
 				this.handleDisable(true);
+				if (!this.props?.user?.settings?.interface?.display_currency) {
+					localStorage.setItem(
+						'base_currnecy',
+						res?.kit?.native_currency || BASE_CURRENCY
+					);
+				}
 			})
 			.catch((err) => {
 				let error = err && err.data ? err.data.message : err.message;
@@ -1783,6 +1789,97 @@ class GeneralContent extends Component {
 							>
 								{this.renderModalContent()}
 							</Modal>
+						</div>
+						<div className="divider"></div>
+						<div className="general-wrapper mb-5">
+							<div
+								className="sub-title"
+								id="force-two-factor-authentication-withdrawal"
+							>
+								Force 2FA on Withdrawal
+							</div>
+							<div className="description">
+								<div>
+									Require users to have two-factor authentication (OTP) enabled
+									before requesting any withdrawals.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(
+											constants,
+											'kit.force_two_factor_authentication_withdrawal.active',
+											false
+										)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													force_two_factor_authentication_withdrawal: {
+														active: checked,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+							</div>
+						</div>
+						<div className="divider"></div>
+						<div className="general-wrapper mb-5">
+							<div className="sub-title" id="auto-deposit">
+								Auto Deposit
+							</div>
+							<div className="description">
+								<div>
+									Enable or disable automatic deposit processing on the
+									blockchain. Turning off this feature will cause all incoming
+									blockchain deposits to wallets to remain in a pending state
+									and require manual approval.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(constants, 'kit.auto_deposit.active', true)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													auto_deposit: {
+														active: checked,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+							</div>
+						</div>
+						<div className="general-wrapper mb-5">
+							<div className="sub-title" id="auto-withdrawal">
+								Auto Withdrawal
+							</div>
+							<div className="description">
+								<div>
+									Enable or disable automatic withdrawal processing. Turning off
+									this feature will require manual approval for all withdrawal
+									requests.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(
+											constants,
+											'kit.auto_withdrawal.active',
+											true
+										)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													auto_withdrawal: {
+														active: checked,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+							</div>
 						</div>
 						<div className="divider"></div>
 						<div className="general-wrapper mb-5 google-oauth-wrapper">

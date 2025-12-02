@@ -63,14 +63,15 @@ const {
 	REFERRAL_UNSUPPORTED_EXCHANGE_PLAN,
 	CANNOT_CHANGE_DELETED_EMAIL,
 	SERVICE_NOT_SUPPORTED,
-	BALANCE_HISTORY_NOT_ACTIVE,
+	FEATURE_NOT_ACTIVE,
 	ADDRESSBOOK_MISSING_FIELDS,
 	PAYMENT_DETAIL_NOT_FOUND,
 	ADDRESSBOOK_ALREADY_EXISTS,
 	UNAUTHORIZED_UPDATE_METHOD,
 	INVALID_AUTOTRADE_CONFIG,
 	GOOGLE_TOKEN_INVALID_ISSUER,
-	GOOGLE_TOKEN_EXPIRED
+	GOOGLE_TOKEN_EXPIRED,
+	NOT_AUTHORIZED
 } = require(`${SERVER_PATH}/messages`);
 const { publisher, client } = require('./database/redis');
 const {
@@ -449,7 +450,7 @@ const registerUserLogin = (
 	return getModel('login').create(login)
 		.then((loginData) => {
 			if (opts.token && opts.status) {
-				return createSession(opts.token, loginData.id, userId, opts.expiry);
+				return createSession(opts.token, loginData.id, userId, opts.expiry, opts.meta);
 			}
 			return loginData;
 		})
@@ -762,6 +763,7 @@ const getAllUsersAdmin = (opts = {
 	gender: null,
 	nationality: null,
 	verification_level: null,
+	max_verification_level: null,
 	email_verified: null,
 	otp_enabled: null,
 	phone_number: null,
@@ -861,6 +863,11 @@ const getAllUsersAdmin = (opts = {
 
 	if (isNumber(opts.verification_level)) {
 		query.where[Op.and].push({ verification_level: opts.verification_level });
+	}
+
+	// Apply an upper bound on visible users' verification level when provided
+	if (isNumber(opts.max_verification_level)) {
+		query.where[Op.and].push({ verification_level: { [Op.lte]: opts.max_verification_level } });
 	}
 
 	if (isBoolean(opts.pending) && opts.pending) {
@@ -1750,18 +1757,35 @@ const setUsernameById = (userId, username) => {
 		});
 };
 
-const disableUserWithdrawal = async (user_id, opts = { expiry_date: null }) => {
+const disableUserWithdrawal = async (user_id, opts = { expiry_date: null, override: false }) => {
 	const user = await getUserByKitId(user_id, false);
-	let { expiry_date } = opts;
+	let { expiry_date, override } = opts;
 
 	if (!user) {
 		throw new Error(USER_NOT_FOUND);
 	}
 
-	let withdrawal_blocked = null;
+	// Determine the currently set block date (if any) and whether it's still in the future
+	const now = moment();
+	const currentBlockedMoment = user.withdrawal_blocked ? moment(user.withdrawal_blocked) : null;
+	const hasActiveFutureBlock = !!(currentBlockedMoment && currentBlockedMoment.isAfter(now));
 
-	if (expiry_date) {
-		withdrawal_blocked = moment(expiry_date).toISOString();
+	// Determine proposed new block moment from provided expiry_date (or null for clearing)
+	const proposedBlockedMoment = expiry_date ? moment(expiry_date) : null;
+
+	// If there's an active future block and the new proposal shortens it (or clears it),
+	// then only allow if override === true.
+	if (hasActiveFutureBlock) {
+		const isShortening = !proposedBlockedMoment || proposedBlockedMoment.isBefore(currentBlockedMoment);
+		if (isShortening && !override) {
+			// Do not update; return the current user instance as-is
+			return user;
+		}
+	}
+
+	let withdrawal_blocked = null;
+	if (proposedBlockedMoment) {
+		withdrawal_blocked = proposedBlockedMoment.toISOString();
 	}
 
 	return user.update(
@@ -2183,44 +2207,7 @@ const getExchangeUserSessions = (opts = {
 			} else {
 				return result;
 			}
-		})
-};
-
-const revokeExchangeUserSession = async (sessionId, userId = null) => {
-	const session = await getModel('session').findOne({
-		include: [
-			{
-				model: getModel('login'),
-				as: 'login',
-				attributes: ['user_id'],
-				...(userId && { where: { user_id: userId } })
-			}
-		],
-		where: { id: sessionId }
-	});
-
-
-	if (!session) {
-		throw new Error(SESSION_NOT_FOUND);
-	}
-
-	if (!session.status) {
-		throw new Error(SESSION_ALREADY_REVOKED);
-	}
-
-	if (userId && session.login.user_id !== userId) {
-		throw new Error(WRONG_USER_SESSION);
-	}
-
-	client.delAsync(session.token);
-
-	const updatedSession = await session.update({ status: false }, {
-		fields: ['status']
-	});
-
-	delete updatedSession.dataValues.token;
-	updatedSession.dataValues.user_id = session.login.user_id;
-	return updatedSession.dataValues;
+		});
 };
 
 const getAllBalancesAdmin = async (opts = {
@@ -2294,6 +2281,43 @@ const revokeAllUserSessions = async (userId) => {
 		client.delAsync(session.token);
 	}
 	return true;
+};
+
+const revokeExchangeUserSession = async (sessionId, userId = null) => {
+	const session = await getModel('session').findOne({
+		include: [
+			{
+				model: getModel('login'),
+				as: 'login',
+				attributes: ['user_id'],
+				...(userId && { where: { user_id: userId } })
+			}
+		],
+		where: { id: sessionId }
+	});
+
+
+	if (!session) {
+		throw new Error(SESSION_NOT_FOUND);
+	}
+
+	if (!session.status) {
+		throw new Error(SESSION_ALREADY_REVOKED);
+	}
+
+	if (userId && session.login.user_id !== userId) {
+		throw new Error(WRONG_USER_SESSION);
+	}
+
+	client.delAsync(session.token);
+
+	const updatedSession = await session.update({ status: false }, {
+		fields: ['status']
+	});
+
+	delete updatedSession.dataValues.token;
+	updatedSession.dataValues.user_id = session.login.user_id;
+	return updatedSession.dataValues;
 };
 
 const deleteKitUser = async (userId, sendEmail = true) => {
@@ -3036,7 +3060,7 @@ const getUserBalanceHistory = (opts = {
 	}
 
 
-	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(BALANCE_HISTORY_NOT_ACTIVE); }
+	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(FEATURE_NOT_ACTIVE); }
 
 	const timeframe = timeframeQuery(opts.startDate, opts.endDate);
 	const ordering = orderingQuery(opts.orderBy, opts.order);
@@ -3129,7 +3153,7 @@ const fetchUserProfitLossInfo = async (user_id, opts = { period: 7 }) => {
 	}
 
 
-	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(BALANCE_HISTORY_NOT_ACTIVE); }
+	if (!getKitConfig()?.balance_history_config?.active) { throw new Error(FEATURE_NOT_ACTIVE); }
 
 	const data = await client.getAsync(`${user_id}-${opts.period}user-pl-info`);
 	if (data) return JSON.parse(data);
@@ -4144,6 +4168,12 @@ const createExchangeUserRole = async ({ name, description, rolePermissions, conf
 			throw new Error(INVALID_OTP_CODE);
 		}
 	}
+
+	// Prevent creating reserved role names
+	const normalizedRoleName = String(name).toLowerCase().replace(/\s+/g, '');
+	if (normalizedRoleName === 'user') {
+		throw new Error('Role name \'user\' is reserved and cannot be created');
+	}
 	
 	const validationGroups = {
 		route: [],
@@ -4232,7 +4262,7 @@ const createExchangeUserRole = async ({ name, description, rolePermissions, conf
 
 
 	return Role.create({
-		role_name: name.toLowerCase().replace(/\s+/g, ''),
+		role_name: normalizedRoleName,
 		description,
 		permissions: permissionsToStore,
 		configs: configsToStore,
@@ -4505,6 +4535,536 @@ const verifyGoogleToken = async (token) => {
 	}
 };
 
+/**
+ * Fetch paginated list of subaccounts for a master user
+ */
+const getUserSubaccounts = async (masterKitId, { limit, page } = {}) => {
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const { limit: _limit, offset } = paginationQuery(limit, page);
+
+	const SubaccountModel = getModel('subaccount');
+	const UserModel = getModel('user');
+
+	const result = await dbQuery.findAndCountAll('subaccount', {
+		where: { master_id: master.id, active: true },
+		include: [
+			{
+				model: UserModel,
+				as: 'sub',
+				attributes: ['id', 'email', 'username', 'verification_level', 'is_subaccount', 'network_id', 'created_at']
+			}
+		],
+		order: [['id', 'DESC']],
+		limit: _limit,
+		offset
+	}, SubaccountModel);
+
+	const count = result.count || (Array.isArray(result) ? result.length : 0);
+	const rows = result.rows || result || [];
+
+	const data = rows.map((row) => {
+		const user = row.sub || {};
+		return {
+			id: user.id,
+			label: row.label,
+			color: row.color,
+			email: user.email,
+			verification_level: user.verification_level,
+			is_subaccount: user.is_subaccount,
+			network_id: user.network_id,
+			created_at: user.created_at
+		};
+	});
+
+	return { count, data };
+};
+
+const createSubaccount = async (masterKitId, { email, password, virtual, label, color }) => {
+	if (!virtual && !isEmail(email)) {
+		return reject(new Error(PROVIDE_VALID_EMAIL));
+	}
+	if (!virtual && !isValidPassword(password)) {
+		return reject(new Error(INVALID_PASSWORD));
+	}
+
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) {
+		throw new Error(USER_NOT_FOUND);
+	}
+	if (master.is_subaccount) {
+		throw new Error(NOT_AUTHORIZED);
+	}
+
+	email = email.toLowerCase().trim();
+
+	if (virtual) {
+		email = Date.now() + master.email;
+	}
+
+	const existing = await dbQuery.findOne('user', { where: { email }, attributes: ['email'] });
+	if (existing) {
+		throw new Error(USER_EXISTS);
+	}
+
+	return getModel('sequelize').transaction(async (transaction) => {
+		// create sub user on kit
+		const subUser = await getModel('user').create({
+			email: virtual ? `${email}_virtual` : email,
+			password,
+			settings: INITIAL_SETTINGS(),
+			is_subaccount: true,
+			email_verified: false,
+			activated: true,
+			verification_level: 1
+		}, { transaction });
+
+		// create user on network
+		const networkUser = await getNodeLib().createUser(email);
+		await subUser.update({ network_id: networkUser.id }, { fields: ['network_id'], returning: true, transaction });
+
+		// link subaccount
+		await getModel('subaccount').create({ master_id: master.id, sub_id: subUser.id, active: true, label, color }, { transaction });
+
+		if (!virtual) {
+			// send signup verification email to subaccount
+			let verification_code = uuid();
+			storeVerificationCode(subUser, verification_code);
+			sendEmail(MAILTYPE.SIGNUP, email, verification_code, {});
+		}
+
+		return omitUserFields(subUser.dataValues);
+	});
+};
+
+const transferBetweenMasterAndSub = async ({ masterKitId, subKitId, currency, amount, direction = 'to_sub', description = 'Subaccount Transfer' }) => {
+	if (!isString(currency) || amount <= 0) {
+		throw new Error('Invalid transfer payload');
+	}
+
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const sub = await getUserByKitId(subKitId, false);
+	if (!sub) throw new Error(USER_NOT_FOUND);
+	if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	// Verify relationship
+	const link = await dbQuery.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const senderKitId = direction === 'to_sub' ? master.id : sub.id;
+	const receiverKitId = direction === 'to_sub' ? sub.id : master.id;
+
+	const { transferAssetByKitIds } = require('./wallet');
+	return transferAssetByKitIds(senderKitId, receiverKitId, currency, amount, description, true, {
+		category: 'subaccount'
+	});
+};
+
+/**
+ * Deactivate (soft-delete) a subaccount link after ensuring zero balances
+ */
+const deactivateSubaccount = async (masterKitId, subKitId) => {
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const sub = await getUserByKitId(subKitId, false);
+	if (!sub) throw new Error(USER_NOT_FOUND);
+	if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const link = await dbQuery.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id, active: true } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const { getUserBalanceByKitId } = require('./wallet');
+	const balance = await getUserBalanceByKitId(sub.id);
+	let hasAnyAvailable = false;
+	if (balance && typeof balance === 'object') {
+		for (const key of Object.keys(balance)) {
+			if (/_balance$/.test(key) && Number(balance[key]) > 0) {
+				hasAnyAvailable = true;
+				break;
+			}
+		}
+	}
+	if (hasAnyAvailable) {
+		throw new Error('Subaccount has non-zero balance and cannot be removed');
+	}
+
+	await link.update({ active: false }, { fields: ['active'], returning: true });
+
+	// Revoke all sessions and softly deactivate the subaccount user
+	try {
+		await revokeAllUserSessions(sub.id);
+	} catch (e) {
+		loggerUser.error('tools/user/deactivateSubaccount/revokeAllUserSessions', e.message);
+	}
+
+	try {
+		const userModel = getModel('user');
+		const subUser = await userModel.findOne({ where: { id: sub.id }, attributes: ['id', 'email', 'activated'] });
+		if (subUser) {
+			const currentEmail = subUser.email || '';
+			const newEmail = currentEmail.includes('_deleted') ? currentEmail : `${currentEmail}_deleted`;
+			await subUser.update(
+				{ email: newEmail, activated: false },
+				{ fields: ['email', 'activated'], returning: true }
+			);
+		}
+	} catch (e) {
+		loggerUser.error('tools/user/deactivateSubaccount/updateUserSoftDelete', e.message);
+	}
+
+	try {
+		// notify the master user with a specific subaccount removed template
+		sendEmail(
+			MAILTYPE.SUBACCOUNT_REMOVED,
+			master.email,
+			{ sub_email: sub.email },
+			master.settings
+		);
+	} catch (e) {
+		loggerUser.error('tools/user/deactivateSubaccount/sendEmail', e.message);
+	}
+
+	return true;
+};
+
+/**
+ * Issue a JWT for a subaccount owned by a master user and register login
+ */
+const issueSubaccountToken = async ({ masterKitId, subKitId, ip, headers = {} }) => {
+	const master = await getUserByKitId(masterKitId, false);
+	if (!master) throw new Error(USER_NOT_FOUND);
+	if (master.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const sub = await getUserByKitId(subKitId, false);
+	if (!sub) throw new Error(USER_NOT_FOUND);
+	if (!sub.is_subaccount) throw new Error(NOT_AUTHORIZED);
+	if (!sub.activated) throw new Error(NOT_AUTHORIZED);
+
+	const link = await dbQuery.findOne('subaccount', { where: { master_id: master.id, sub_id: sub.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const token = await require('./security').issueToken(
+		sub.id,
+		sub.network_id,
+		sub.email,
+		ip,
+		undefined,
+		sub.settings?.language,
+		undefined,
+		undefined,
+		undefined,
+		{ is_subaccount: true }
+	);
+
+	await registerUserLogin(
+		sub.id,
+		ip,
+		{
+			device: headers['user-agent'],
+			domain: headers['x-real-origin'],
+			origin: headers.origin,
+			referer: headers.referer,
+			token,
+			status: true
+		}
+	);
+
+	return token;
+};
+
+/**
+ * Create a sharedaccount relation between a main user (by kit id) and a shared user (by email)
+ */
+const createSharedaccount = async (mainKitId, { email, label }) => {
+	if (!email || !isEmail(email)) {
+		throw new Error(PROVIDE_VALID_EMAIL);
+	}
+
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) {
+		throw new Error(USER_NOT_FOUND);
+	}
+	if (main.is_subaccount) {
+		throw new Error(NOT_AUTHORIZED);
+	}
+
+	const normalizedEmail = String(email).toLowerCase().trim();
+	const shared = await getUserByEmail(normalizedEmail, false);
+	if (!shared) {
+		throw new Error(USER_NOT_FOUND);
+	}
+	if (shared.is_subaccount) {
+		throw new Error(NOT_AUTHORIZED);
+	}
+
+	if (shared.id === main.id) {
+		throw new Error(NOT_AUTHORIZED);
+	}
+
+	return getModel('sequelize').transaction(async (transaction) => {
+		const existing = await dbQuery.findOne('sharedaccount', {
+			where: { main_id: main.id, shared_id: shared.id },
+			transaction
+		});
+
+		if (existing) {
+			throw new Error('Sharedaccount already exists');
+		}
+
+		const link = await getModel('sharedaccount').create({
+			main_id: main.id,
+			shared_id: shared.id,
+			active: true,
+			label
+		}, { transaction });
+
+		return link;
+	});
+};
+
+/**
+  * Fetch paginated list of sharedaccounts for a main user
+  */
+const getUserSharedaccounts = async (mainKitId, { limit, page } = {}) => {
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	const { limit: _limit, offset } = paginationQuery(limit, page);
+
+	const SharedaccountModel = getModel('sharedaccount');
+	const UserModel = getModel('user');
+
+	const result = await dbQuery.findAndCountAll('sharedaccount', {
+		where: { main_id: main.id },
+		include: [
+			{
+				model: UserModel,
+				as: 'shared',
+				attributes: ['id', 'email', 'created_at']
+			}
+		],
+		order: [['id', 'DESC']],
+		limit: _limit,
+		offset
+	}, SharedaccountModel);
+
+	const count = result.count || (Array.isArray(result) ? result.length : 0);
+	const rows = result.rows || result || [];
+
+	const data = rows.map((row) => {
+		const user = row.shared || {};
+		return {
+			id: row.id,
+			email: user.email,
+			created_at: user.created_at,
+			label: row.label,
+			active: row.active
+		};
+	});
+
+	return { count, data };
+};
+
+/**
+  * Fetch paginated list of sharedaccount links where the user is the shared_id
+  */
+const getUserAccessibleSharedaccounts = async (sharedKitId, { limit, page } = {}) => {
+	const user = await getUserByKitId(sharedKitId, false);
+	if (!user) throw new Error(USER_NOT_FOUND);
+
+	const { limit: _limit, offset } = paginationQuery(limit, page);
+
+	const SharedaccountModel = getModel('sharedaccount');
+	const UserModel = getModel('user');
+
+	const result = await dbQuery.findAndCountAll('sharedaccount', {
+		where: { shared_id: user.id },
+		include: [
+			{
+				model: UserModel,
+				as: 'main',
+				attributes: ['id', 'email', 'created_at']
+			}
+		],
+		order: [['id', 'DESC']],
+		limit: _limit,
+		offset
+	}, SharedaccountModel);
+
+	const count = result.count || (Array.isArray(result) ? result.length : 0);
+	const rows = result.rows || result || [];
+
+	const data = rows.map((row) => {
+		const main = row.main || {};
+		return {
+			id: row.id,
+			email: main.email,
+			created_at: main.created_at,
+			label: row.label,
+			active: row.active
+		};
+	});
+	return { count, data };
+};
+/**
+  * Issue a token for the main user using a sharedaccount link and register login
+  */
+const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, headers = {} }) => {
+	const sharedUser = await getUserByKitId(sharedKitId, false);
+	if (!sharedUser) throw new Error(USER_NOT_FOUND);
+	if (sharedUser.is_subaccount) throw new Error(NOT_AUTHORIZED);
+
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, shared_id: sharedUser.id, active: true } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	const main = await getUserByKitId(link.main_id, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+	if (main.is_subaccount) throw new Error(NOT_AUTHORIZED);
+	if (!main.activated) throw new Error(NOT_AUTHORIZED);
+
+	const token = await require('./security').issueToken(
+		main.id,
+		main.network_id,
+		main.email,
+		ip,
+		undefined,
+		main.settings?.language,
+		undefined,
+		undefined,
+		undefined,
+		{ is_sharedaccount: true }
+	);
+
+	await registerUserLogin(
+		main.id,
+		ip,
+		{
+			device: headers['user-agent'],
+			domain: headers['x-real-origin'],
+			origin: headers.origin,
+			referer: headers.referer,
+			token,
+			status: true,
+			meta: {
+				is_sharedaccount: true,
+				sharedaccount_id: link.id,
+				shared_initiator_user_id: sharedUser.id
+			}
+		}
+	);
+
+	return token;
+};
+
+/**
+ * Pause a sharedaccount link by setting active=false and revoke sessions of the shared user
+ */
+const pauseSharedaccount = async (mainKitId, sharedaccountId) => {
+	console.log(mainKitId, sharedaccountId);
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	// find the link ensuring it belongs to main
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, main_id: main.id, active: true } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	// deactivate link
+	await link.update({ active: false }, { fields: ['active'], returning: true });
+
+	// revoke only the main user's sessions created via this sharedaccount link
+	try {
+		const SessionModel = getModel('session');
+		const sessions = await SessionModel.findAll({
+			where: { status: true },
+			include: [
+				{
+					model: getModel('login'),
+					as: 'login',
+					attributes: ['user_id'],
+					where: { user_id: main.id }
+				}
+			]
+		});
+
+		for (const session of sessions) {
+			const m = session.meta || {};
+			if (m.is_sharedaccount === true && Number(m.sharedaccount_id) === Number(link.id)) {
+				await revokeExchangeUserSession(session.id, main.id);
+			}
+		}
+	} catch (e) {
+		loggerUser.error('tools/user/pauseSharedaccount/revokeSharedaccountSessions', e.message);
+	}
+
+	return true;
+};
+
+/**
+ * Delete a sharedaccount link and revoke sessions with matching sharedaccount meta
+ */
+const deleteSharedaccount = async (mainKitId, sharedaccountId) => {
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, main_id: main.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	// revoke only the main user's sessions created via this sharedaccount link
+	try {
+		const SessionModel = getModel('session');
+		const sessions = await SessionModel.findAll({
+			where: { status: true },
+			include: [
+				{
+					model: getModel('login'),
+					as: 'login',
+					attributes: ['user_id'],
+					where: { user_id: main.id }
+				}
+			]
+		});
+
+		for (const session of sessions) {
+			const m = session.meta || {};
+			if (m.is_sharedaccount === true && Number(m.sharedaccount_id) === Number(link.id)) {
+				await revokeExchangeUserSession(session.id, main.id);
+			}
+		}
+	} catch (e) {
+		loggerUser.error('tools/user/deleteSharedaccount/revokeSharedaccountSessions', e.message);
+	}
+
+	// remove the link from db
+	await link.destroy();
+
+	return true;
+};
+
+/**
+ * Resume a paused sharedaccount link (set active=true). Only allowed if currently inactive
+ */
+const resumeSharedaccount = async (mainKitId, sharedaccountId) => {
+	const main = await getUserByKitId(mainKitId, false);
+	if (!main) throw new Error(USER_NOT_FOUND);
+
+	const link = await dbQuery.findOne('sharedaccount', { where: { id: sharedaccountId, main_id: main.id } });
+	if (!link) throw new Error(NOT_AUTHORIZED);
+
+	if (link.active === true) {
+		throw new Error('Sharedaccount already active');
+	}
+
+	await link.update({ active: true }, { fields: ['active'], returning: true });
+	return true;
+};
+
 module.exports = {
 	loginUser,
 	getUserTier,
@@ -4601,5 +5161,17 @@ module.exports = {
 	createExchangeUserRole,
 	updateExchangeUserRole,
 	deleteExchangeUserRole,
-	verifyGoogleToken
+	verifyGoogleToken,
+	getUserSubaccounts,
+	createSubaccount,
+	transferBetweenMasterAndSub,
+	deactivateSubaccount,
+	issueSubaccountToken,
+	createSharedaccount,
+	getUserSharedaccounts,
+	getUserAccessibleSharedaccounts,
+	issueSharedaccountToken,
+	pauseSharedaccount,
+	deleteSharedaccount,
+	resumeSharedaccount,
 };

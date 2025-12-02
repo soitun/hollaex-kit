@@ -231,6 +231,17 @@ const updateKitConfigSecrets = (data = {}, scopes, auditInfo, configs, userId) =
 					type: 'update', data: { kit: status.dataValues.kit, secrets: status.dataValues.secrets }
 				})
 			);
+			// Trigger a network refresh init when auto_deposit or auto_withdrawal are updated
+			try {
+				if (data?.kit && (Object.prototype.hasOwnProperty.call(data.kit, 'auto_deposit') || Object.prototype.hasOwnProperty.call(data.kit, 'auto_withdrawal'))) {
+					publisher.publish(
+						INIT_CHANNEL,
+						JSON.stringify({ type: 'refreshInit' })
+					);
+				}
+			} catch (e) {
+				// no-op: publishing failures should not block the response
+			}
 			return {
 				kit: { ...status.dataValues.kit, info },
 				secrets: maskSecrets(status.dataValues.secrets)
