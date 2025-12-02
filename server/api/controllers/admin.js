@@ -2638,7 +2638,7 @@ const revokeUserSessionByAdmin = (req, res) => {
 
 	const { session_id } = req.swagger.params.data.value;
 
-	toolsLib.user.revokeUserSession(session_id)
+	toolsLib.user.revokeExchangeUserSession(session_id)
 		.then((data) => {
 			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], { user_id: data.user_id, ...req?.swagger?.params?.data?.value });
 			return res.json(data);

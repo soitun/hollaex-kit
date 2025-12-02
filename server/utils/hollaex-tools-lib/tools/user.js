@@ -2283,7 +2283,7 @@ const revokeAllUserSessions = async (userId) => {
 	return true;
 };
 
-const revokeUserSession = async (sessionId, userId = null) => {
+const revokeExchangeUserSession = async (sessionId, userId = null) => {
 	const session = await getModel('session').findOne({
 		include: [
 			{
@@ -4996,7 +4996,7 @@ const pauseSharedaccount = async (mainKitId, sharedaccountId) => {
 		for (const session of sessions) {
 			const m = session.meta || {};
 			if (m.is_sharedaccount === true && Number(m.sharedaccount_id) === Number(link.id)) {
-				await revokeUserSession(session.id, main.id);
+				await revokeExchangeUserSession(session.id, main.id);
 			}
 		}
 	} catch (e) {
@@ -5034,7 +5034,7 @@ const deleteSharedaccount = async (mainKitId, sharedaccountId) => {
 		for (const session of sessions) {
 			const m = session.meta || {};
 			if (m.is_sharedaccount === true && Number(m.sharedaccount_id) === Number(link.id)) {
-				await revokeUserSession(session.id, main.id);
+				await revokeExchangeUserSession(session.id, main.id);
 			}
 		}
 	} catch (e) {
@@ -5114,7 +5114,7 @@ module.exports = {
 	updateUserInfo,
 	updateLoginAttempt,
 	getExchangeUserSessions,
-	revokeUserSession,
+	revokeExchangeUserSession,
 	updateLoginStatus,
 	findUserLatestLogin,
 	createUserLogin,
