@@ -1556,7 +1556,7 @@ const revokeUserSession = (req, res) => {
 
 	const user_id = req.auth.sub.id;
 
-	toolsLib.user.revokeExchangeUserSession(session_id, user_id)
+	toolsLib.user.revokeUserSession(session_id, user_id)
 		.then((data) => {
 			return res.json(data);
 		})
@@ -1577,7 +1577,7 @@ const userLogout = (req, res) => {
 
 	toolsLib.security.findSession(tokenString)
 		.then((session) => {
-			return toolsLib.user.revokeExchangeUserSession(session.id, user_id);
+			return toolsLib.user.revokeUserSession(session.id, user_id);
 		})
 		.then(() => {
 			return res.json({ message: 'Success' });
