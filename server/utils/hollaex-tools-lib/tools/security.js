@@ -912,7 +912,7 @@ const verifyHmacTokenPromise = (apiKey, apiSignature, apiExpires, method, origin
 };
 
 
-const createSession = async (token, loginId, userId) => {
+const createSession = async (token, loginId, userId, expiry = null, meta = {}) => {
 
 	const user = await dbQuery.findOne('user', { where: { id: userId } });
 	const userRole = user.role || 'user';
@@ -928,7 +928,8 @@ const createSession = async (token, loginId, userId) => {
 		login_id: loginId,
 		status: true,
 		last_seen: new Date(),
-		expiry_date: new Date(decoded.exp * 1000)
+		expiry_date: new Date(decoded.exp * 1000),
+		meta
 	});
 };
 
@@ -1057,14 +1058,18 @@ const issueToken = (
 	lang = 'en',
 	permissions = [],
 	configs = [],
-	role = 'user'
+	role = 'user',
+	extra = {}
 ) => {
 	// Default scope is ['user']
 	let scopes = [].concat(BASE_SCOPES);
 
+	// Normalize role to 'user' if null/undefined/empty
+	const normalizedRole = role || 'user';
+
 	if (checkAdminIp(getKitSecrets().admin_whitelist, ip)) {
-		if (role) {
-			scopes.push(role);
+		if (normalizedRole && !scopes.includes(normalizedRole)) {
+			scopes.push(normalizedRole);
 		}
 	}
 
@@ -1075,11 +1080,12 @@ const issueToken = (
 				email,
 				networkId,
 				lang,
-				role
+				role: normalizedRole
 			},
 			scopes,
 			ip,
-			iss: ISSUER
+			iss: ISSUER,
+			...extra
 		},
 		SECRET,
 		{

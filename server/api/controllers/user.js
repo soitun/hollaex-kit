@@ -31,7 +31,8 @@ const {
 	OTP_CODE_NOT_FOUND,
 	INVALID_CAPTCHA,
 	GOOGLE_ACCOUNT_MISMATCH,
-	SERVICE_NOT_AVAILABLE
+	SERVICE_NOT_AVAILABLE,
+	SUBACCOUNT_CANNOT_GENERATE_ADDRESS
 } = require('../../messages');
 const { DEFAULT_ORDER_RISK_PERCENTAGE, EVENTS_CHANNEL, API_HOST, DOMAIN, TOKEN_TIME_NORMAL, TOKEN_TIME_LONG, HOLLAEX_NETWORK_BASE_URL, NUMBER_OF_ALLOWED_ATTEMPTS, GET_KIT_SECRETS } = require('../../constants');
 const { all } = require('bluebird');
@@ -160,7 +161,7 @@ const signUpUserWithGoogle = async (req, res) => {
 			referral,
 			google_id: googleUserData.google_id || googleUserData.sub,
 			name: googleUserData.name,
-			email_verified: false, // Google emails are already verified
+			email_verified: false,
 			activated: true
 		};
 
@@ -185,6 +186,7 @@ const signUpUserWithGoogle = async (req, res) => {
 const getVerifyUser = (req, res) => {
 	let email = req.swagger.params.email.value;
 	const resendEmail = req.swagger.params.resend.value;
+	const version = req.swagger.params.version && req.swagger.params.version.value;
 	const domain = req.headers['x-real-origin'];
 	let promiseQuery;
 
@@ -198,11 +200,20 @@ const getVerifyUser = (req, res) => {
 				throw new Error(USER_VERIFIED);
 			}
 			if (resendEmail) {
-				const verificationCode = uuid();
+				let verificationCode;
+				if (version === 'v3') {
+					const letters = Array.from({ length: 2 }, () =>
+						String.fromCharCode(65 + crypto.randomInt(0, 26))
+					).join('');
+					const numbers = Math.floor(10000 + Math.random() * 90000);
+					verificationCode = `${letters}-${numbers}`;
+				} else {
+					verificationCode = uuid();
+				}
 				toolsLib.user.storeVerificationCode(user, verificationCode);
 
 				sendEmail(
-					MAILTYPE.SIGNUP,
+					version === 'v3' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
 					email,
 					verificationCode,
 					{},
@@ -1132,12 +1143,21 @@ const createCryptoAddress = (req, res) => {
 		return res.status(404).json({ message: `Invalid crypto: "${crypto.value}"` });
 	}
 
-	toolsLib.user.createUserCryptoAddressByKitId(id, crypto.value, {
-		network: network.value,
-		additionalHeaders: {
-			'x-forwarded-for': req.headers['x-forwarded-for']
-		}
-	})
+	toolsLib.user.getUserByKitId(id)
+		.then((user) => {
+			if (!user) {
+				throw new Error(USER_NOT_FOUND);
+			}
+			if (user.is_subaccount) {
+				throw new Error(SUBACCOUNT_CANNOT_GENERATE_ADDRESS);
+			}
+			return toolsLib.user.createUserCryptoAddressByKitId(id, crypto.value, {
+				network: network.value,
+				additionalHeaders: {
+					'x-forwarded-for': req.headers['x-forwarded-for']
+				}
+			});
+		})
 		.then((data) => {
 			return res.status(201).json(data);
 		})

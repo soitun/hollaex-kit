@@ -2040,6 +2040,34 @@ paths:
       x-security-types:
         - bearer
         - hmac
+  /admin/order/match:
+    x-swagger-router-controller: admin
+    post:
+      description: Match an existing user order (admin only)
+      operationId: adminMatchOrder
+      tags:
+        - Admin
+      parameters:
+        - in: body
+          name: order
+          required: true
+          description: Match order request
+          schema:
+            $ref: "#/definitions/AdminMatchOrderRequest"
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
       x-token-permissions:
         - can_trade
   /admin/trades:
@@ -4640,6 +4668,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     put:
       operationId: updateBrokerPair
       description: Edit a broker deal
@@ -4664,6 +4693,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     get:
       operationId: getBrokerPairs
       description: Get all broker deals
@@ -4689,6 +4719,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     delete:
       operationId: deleteBrokerPair
       description: Delete a broker deal
@@ -4713,6 +4744,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/markets:
     x-swagger-router-controller: broker
     get:
@@ -4742,6 +4774,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/test:
     x-swagger-router-controller: broker
     post:
@@ -4777,6 +4810,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/connect:
     x-swagger-router-controller: broker
     get:

@@ -28,6 +28,7 @@ import {
 	setIsDisplayCreateOrder,
 	setIsDisplayCreateReferral,
 	setIsDisplayCreateTrade,
+	setIsEditEmail,
 	setIsEmailVerifiedUser,
 	setIsGraphicsEditMode,
 	setIsStringsEditMode,
@@ -74,6 +75,7 @@ const OperatorControlSearch = ({
 	setIsDisplayCreateReferral = () => {},
 	setIsDisplayAddPlugin = () => {},
 	setIsActiveFilterUser = () => {},
+	setIsEditEmail = () => {},
 }) => {
 	const MAX_RECENT = 6;
 	let flashCount = 0;
@@ -771,7 +773,7 @@ const OperatorControlSearch = ({
 			title: 'Search user',
 			path: '/admin/user',
 			description: 'Search for users by name, email, or other filters.',
-			isActiveTab: user?.permissions?.includes('/admin/users') || false,
+			isActiveTab: getFilteredAdminPaths('/admin/users') || false,
 			searchContent: [
 				'search users',
 				'user search',
@@ -788,7 +790,7 @@ const OperatorControlSearch = ({
 			path: '/admin/user',
 			onHandleOpenPopup: () => setIsActiveAddNewUsers(true),
 			description: 'Add a new user account manually.',
-			isActiveTab: user?.permissions?.includes('/admin/user') || false,
+			isActiveTab: getFilteredAdminPaths('/admin/user') || false,
 			searchContent: [
 				'add user',
 				'new user',
@@ -802,7 +804,7 @@ const OperatorControlSearch = ({
 			path: '/admin/user',
 			description:
 				'Filter users by verification, KYC, balance, or activity status.',
-			isActiveTab: user?.permissions?.includes('/admin/users') || false,
+			isActiveTab: getFilteredAdminPaths('/admin/users') || false,
 			searchContent: [
 				'filter users',
 				'user filter',
@@ -816,7 +818,7 @@ const OperatorControlSearch = ({
 			title: 'New users',
 			path: '/admin/user',
 			description: 'View a list of newly registered users.',
-			isActiveTab: user?.permissions?.includes('/admin/users') || false,
+			isActiveTab: getFilteredAdminPaths('/admin/users') || false,
 			searchContent: [
 				'new users',
 				'recently registered',
@@ -829,7 +831,7 @@ const OperatorControlSearch = ({
 		{
 			title: `user profile (user ID: ${user?.id})`,
 			path: `/admin/user?id=${user?.id}&tab=about`,
-			isActiveTab: getFilteredAdminPaths('/admin/user'),
+			isActiveTab: getFilteredAdminPaths('/admin/users'),
 			subContent: [
 				{
 					subTitle: 'About user (summary)',
@@ -837,15 +839,15 @@ const OperatorControlSearch = ({
 					description:
 						"View and edit the user's main account information and summary.",
 					isActiveTab:
-						user?.permissions?.includes('/admin/user') ||
-						user?.permissions?.includes('/admin/user/role') ||
-						user?.permissions?.includes('/admin/flag-user') ||
-						user?.permissions?.includes('/admin/verify-email') ||
-						user?.permissions?.includes('/admin/deactivate-otp') ||
-						user?.permissions?.includes('/admin/user/note') ||
-						user?.permissions?.includes('/admin/restore') ||
-						user?.permissions?.includes('/admin/activate') ||
-						user?.permissions?.includes('/admin/user/disable-withdrawal') ||
+						getFilteredAdminPaths('/admin/user') ||
+						getFilteredAdminPaths('/admin/user/role') ||
+						getFilteredAdminPaths('/admin/flag-user') ||
+						getFilteredAdminPaths('/admin/verify-email') ||
+						getFilteredAdminPaths('/admin/deactivate-otp') ||
+						getFilteredAdminPaths('/admin/user/note') ||
+						getFilteredAdminPaths('/admin/restore') ||
+						getFilteredAdminPaths('/admin/activate') ||
+						getFilteredAdminPaths('/admin/user/disable-withdrawal') ||
 						false,
 					searchContent: [
 						'about tab',
@@ -973,6 +975,15 @@ const OperatorControlSearch = ({
 								'restrict',
 								'withdrawal',
 							],
+							path: `/admin/user?id=${user?.id}&tab=about`,
+						},
+						{
+							innerTitle: 'Edit Email',
+							description: `Change a user's email address.`,
+							onHandleOpenPopup: () => setIsEditEmail(true),
+							searchContent: ['change email', 'edit email'],
+							docLink:
+								'https://docs.hollaex.com/how-tos/operator-control-panel/user-profile#about',
 							path: `/admin/user?id=${user?.id}&tab=about`,
 						},
 					],
@@ -1952,7 +1963,7 @@ const OperatorControlSearch = ({
 			title: 'Announcements',
 			path: '/admin/announcement?activeAnnouncement',
 			description: 'Send or schedule announcements to exchange users.',
-			isActiveTab: user?.permissions?.includes('/admin/announcement'),
+			isActiveTab: getFilteredAdminPaths('/admin/announcements'),
 			searchContent: [
 				'announcement',
 				'send announcement',
@@ -2974,6 +2985,7 @@ const mapDispatchToProps = (dispatch) => ({
 	setIsDisplayAddPlugin: bindActionCreators(setIsDisplayAddPlugin, dispatch),
 	setIsActiveFilterUser: bindActionCreators(setIsActiveFilterUser, dispatch),
 	setRecentSearches: bindActionCreators(setRecentSearches, dispatch),
+	setIsEditEmail: bindActionCreators(setIsEditEmail, dispatch),
 });
 
 export default connect(

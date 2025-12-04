@@ -203,6 +203,25 @@ const rateLimitMiddleware = (app) => {
 			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
 		}
 	});
+
+	limiter({
+		path: '/v2/user/request-email-confirmation',
+		method: 'get',
+		total: 4,
+		expire: 1000 * 60 * 2,
+		lookup: (req, res, opts, next) => {
+			if (req.headers.hasOwnProperty('authorization') && req.headers.authorization.indexOf('Bearer ') > -1) {
+				opts.lookup = 'headers.authorization';
+			} else {
+				opts.lookup = 'headers.x-forwarded-for';
+			}
+			return next();
+		},
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'request-email-confirmation');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
 };
 
 module.exports = {

@@ -32,7 +32,10 @@ let configuration = {
 		offramp: {},
 		user_payments: {},
 		dust: {},
-		google_oauth: {}
+		google_oauth: {},
+		auto_deposit: {},
+		auto_withdrawal: {},
+		force_two_factor_authentication_withdrawal: {}
 	},
 	email: {}
 };
@@ -118,7 +121,10 @@ const resetAllConfig = () => {
 			offramp: {},
 			user_payments: {},
 			dust: {},
-			google_oauth: {}
+			google_oauth: {},
+			auto_deposit: {},
+			auto_withdrawal: {},
+			force_two_factor_authentication_withdrawal: {}
 		},
 		email: {}
 	};
@@ -230,7 +236,10 @@ exports.KIT_CONFIG_KEYS = [
 	'suspicious_login',
 	'apps',
 	'timezone',
-	'google_oauth'
+	'google_oauth',
+	'auto_deposit',
+	'auto_withdrawal',
+	'force_two_factor_authentication_withdrawal'
 ];
 
 exports.KIT_SECRETS_KEYS = [
@@ -288,6 +297,8 @@ exports.WEBSOCKET_CHANNEL = (topic, symbolOrUserId) => {
 			return `orderbook:${symbolOrUserId}`;
 		case 'trade':
 			return `trade:${symbolOrUserId}`;
+        case 'price':
+            return 'price';
 		case 'order':
 			return `order:${symbolOrUserId}`;
 		case 'usertrade':
@@ -311,6 +322,8 @@ exports.WEBSOCKET_CHANNEL = (topic, symbolOrUserId) => {
 exports.WS_PUBSUB_DEPOSIT_CHANNEL = 'channel:ws:deposit';
 exports.WS_PUBSUB_WITHDRAWAL_CHANNEL = 'channel:ws:withdrawal';
 exports.WS_HUB_CHANNEL = 'channel:websocket:hub';
+// Redis keys
+exports.PRICE_HASH_KEY = 'WS:PRICE_USDT';
 
 // Chat
 exports.CHAT_MAX_MESSAGES = 50;

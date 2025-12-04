@@ -120,6 +120,10 @@
 			"html": "<div><p><p>Dear ${name} </p></p><p>The request for account deletion is in progress. The information on your account is going to be removed according to the terms of service.</p><p> Regards<br> ${api_name} team </p></div>",
 			"title": "Account Deletion Request"
 		},
+		"SUBACCOUNT_REMOVED": {
+			"html": "<div><p>Dear ${name}</p><p>Your subaccount <strong>${sub_email}</strong> has been removed from your account.</p><p>Note: The subaccount is deactivated and can no longer access the platform. If this was not intended, please contact support.</p><p> Regards<br> ${api_name} team </p></div>",
+			"title": "Subaccount Removed"
+		},
 		"OTP_DISABLED": {
 			"html": "<div> <p> Dear ${name} </p> <p> We have recorded that your <b>two-factor authentication (2FA) has been disabled</b> on your account. It is highly recommended that you re-enable 2FA to secure your account.</p> <div> <div>Time: ${time}</div> <div>Country: ${country}</div> <div>IP Address: ${ip}</div> </div> <p> If this was not you please contact us immediately. </p> <p> Regards<br> ${api_name} team </p> </div>",
 			"title": "OTP Disabled"

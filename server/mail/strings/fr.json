@@ -120,6 +120,10 @@
 			"html": "<div><p><p>Bonjour ${name} </p></p><p>La demande de suppression de compte est en cours. Les informations de votre compte seront supprimées conformément aux conditions de service.</p><p> Cordialement<br> l'équipe de ${api_name} </p></div>",
 			"title": "Demande de suppression de compte"
 		},
+		"SUBACCOUNT_REMOVED": {
+			"html": "<div><p>Bonjour ${name}</p><p>Votre sous‑compte <strong>${sub_email}</strong> a été retiré de votre compte.</p><p>Remarque : le sous‑compte est désactivé et ne peut plus accéder à la plateforme. Si cela n’était pas intentionnel, veuillez contacter le support.</p><p> Cordialement<br> l’équipe ${api_name} </p></div>",
+			"title": "Sous‑compte supprimé"
+		},
 		"OTP_DISABLED": {
 			"html": "<div> <p> Cher/Chère ${name} </p> <p> Nous avons enregistré que votre <b>authentification à deux facteurs (2FA) a été désactivée</b> sur votre compte. Il est fortement recommandé de réactiver le 2FA pour sécuriser votre compte.</p> <div> <div>Heure: ${time}</div> <div>Pays: ${country}</div> <div>Adresse IP: ${ip}</div> </div> <p> Si ce n'était pas vous, veuillez nous contacter immédiatement. </p> <p> Cordialement<br> Équipe ${api_name} </p> </div>",
 			"title": "OTP Désactivé"
