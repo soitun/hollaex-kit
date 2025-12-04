@@ -594,9 +594,9 @@ class Container extends Component {
 						}
 					}
 					break;
-				case 'usertrade':
-					this.props.addUserTrades(data.data);
-					break;
+				// case 'usertrade':
+				// 	this.props.addUserTrades(data.data);
+				// 	break;
 				case 'wallet':
 					this.props.setBalance(data.data);
 					break;

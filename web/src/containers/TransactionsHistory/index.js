@@ -234,7 +234,7 @@ class TransactionsHistory extends Component {
 	};
 
 	requestData = () => {
-		const { params, activeTab } = this.state;
+		const { params, activeTab, jumpToPage } = this.state;
 		const {
 			getOrdersHistory,
 			getUserTrades,
@@ -247,6 +247,9 @@ class TransactionsHistory extends Component {
 			open = true;
 		} else if (temp && temp.type && temp.type === 'closed') {
 			open = false;
+		}
+		if (jumpToPage !== 0) {
+			this.setState({ jumpToPage: 0 });
 		}
 		switch (activeTab) {
 			case 1:
