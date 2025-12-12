@@ -26,6 +26,13 @@ test/Dev
 test/selenium/Onboarding/.log/*/*
 test/selenium/.env
 
+test/playwright/tests/utils/test-data.js
+*/*/*/test-data.js
+.playwright-mcp/
+test/playwright/session-storage/
+test/playwright/test-results/
+test/playwright/playwright-report/
+test/playwright/.auth
 
 # production
 build
@@ -69,6 +76,3 @@ templates/kubernetes/config/*
 backups
 .vscode/settings.json
 web/public/.vscode/settings.json
-
-test-playwright/tests/utils/test-data.js
-*/*/*/test-data.js

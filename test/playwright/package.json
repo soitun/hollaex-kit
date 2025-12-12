@@ -4,12 +4,7 @@
   "description": "Playwright page navigation tests for HollaEx Kit",
   "scripts": {
     "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug",
-    "test:report": "playwright show-report",
-    "test:page-navigation": "playwright test tests/page-navigation/",
-    "test:btc-usdt": "playwright test tests/page-navigation/ --grep \"BTC-USDT\""
+    "test:headed": "playwright test --headed"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

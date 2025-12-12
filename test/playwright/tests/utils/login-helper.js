@@ -1,55 +1,35 @@
 const testData = require('./test-data');
 
 /**
- * Check if user is already authenticated by checking cookies and trying to access a protected page
+ * Check if user is already authenticated by checking the /summary page
  * Returns true if authenticated, false otherwise
+ * If "To view you must login" text is visible, user is not authenticated
  */
 async function isAuthenticated(page) {
   try {
-    // Check cookies first - if we have auth cookies, we're likely authenticated
-    const cookies = await page.context().cookies();
-    const hasAuthCookies = cookies.length > 0 && cookies.some(cookie => {
-      const name = cookie.name.toLowerCase();
-      return name.includes('token') || 
-             name.includes('auth') || 
-             name.includes('session') ||
-             name.includes('access') ||
-             name.includes('jwt') ||
-             name.includes('cookie');
+    // Navigate to summary page to check authentication status
+    await page.goto(`${testData.baseUrl}/summary`, { waitUntil: 'domcontentloaded', timeout: 10000 });
+    
+    // Wait for page content to load
+    await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+      // Continue even if networkidle times out
     });
     
-    // If we have cookies (especially from storageState), try to verify by accessing a protected page
-    if (hasAuthCookies || cookies.length > 0) {
-      // Try navigating to a protected page to verify authentication
-      try {
-        // Use a short timeout to quickly check if we're authenticated
-        await page.goto(`${testData.baseUrl}/wallet`, { waitUntil: 'domcontentloaded', timeout: 5000 });
-        const url = page.url();
-        // If we're not redirected to login, we're authenticated
-        if (!url.includes('/login')) {
-          return true;
-        }
-      } catch (error) {
-        // If navigation times out or fails, check the current URL
-        const url = page.url();
-        if (url && !url.includes('/login') && !url.includes('about:blank')) {
-          return true;
-        }
-      }
+    // Check if "To view you must login" text is visible
+    // If this text exists, user is not authenticated
+    const loginRequiredText = page.getByText('To view you must login', { exact: false });
+    const isLoginRequiredVisible = await loginRequiredText.isVisible().catch(() => false);
+    
+    // If login required text is visible, user is not authenticated
+    if (isLoginRequiredVisible) {
+      return false;
     }
     
-    // If no cookies or check failed, check current page state
-    const currentUrl = page.url();
-    if (currentUrl && !currentUrl.includes('/login') && !currentUrl.includes('about:blank')) {
-      // If we're on a protected page, we're likely authenticated
-      if (currentUrl.includes('/account') || currentUrl.includes('/wallet') || currentUrl.includes('/trade')) {
-        return true;
-      }
-    }
-    
-    return false;
+    // If login required text is not visible, user is authenticated
+    return true;
   } catch (error) {
     // If check fails, assume not authenticated
+    console.log('⚠️ Authentication check failed:', error.message);
     return false;
   }
 }
@@ -70,7 +50,7 @@ async function loginUser(page, userType = 'admin') {
   const user = testData.users[userType];
   
   // Navigate to login page
-  await page.goto(`${testData.baseUrl}/login`, { waitUntil: 'load', timeout: 10000 });
+  await page.goto(`${testData.baseUrl}/login`, { waitUntil: 'load', timeout: 20000 });
   
   // Check if we're redirected away from login (already authenticated)
   const currentUrl = page.url();
