@@ -224,7 +224,7 @@
 		"INPUT_TEXT": "Input the 6-digit code from your phone's Google Authenticator app:"
 	},
 	"EMAIL_CODE_FORM": {
-		"TITLE": "Input you security codes",
+		"TITLE": "Input your security codes",
 		"LABEL": "Input code (please check your email)",
 		"PLACEHOLDER": "Input the code sent to your email",
 		"FORM_TITLE_TEXT": "A unique code was sent to your email that is required to finish the process. Please input the code sent to your email below{0}.",
