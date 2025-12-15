@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -85,6 +85,10 @@ const OperatorControlSearch = ({
 	const [selectedCategory, setSelectedCategory] = useState('all');
 	const [openPanels, setOpenPanels] = useState({});
 	const [openInnerPanels, setOpenInnerPanels] = useState({});
+	const [hoveredCard, setHoveredCard] = useState(null);
+	const [activeChildTooltip, setActiveChildTooltip] = useState(null);
+
+	const childTooltipTimeoutRef = useRef(null);
 
 	const categories = [
 		'All',
@@ -95,6 +99,35 @@ const OperatorControlSearch = ({
 		'Business',
 		'Operations',
 	];
+
+	const onCardMouseEnter = (cardDescription) => {
+		setHoveredCard(cardDescription);
+	};
+
+	const onCardMouseLeave = () => {
+		if (childTooltipTimeoutRef.current) {
+			clearTimeout(childTooltipTimeoutRef.current);
+			childTooltipTimeoutRef.current = null;
+		}
+		setHoveredCard(null);
+		setActiveChildTooltip(null);
+	};
+
+	const onChildTooltipChange = (isOpen, childKey) => {
+		if (childTooltipTimeoutRef.current) {
+			clearTimeout(childTooltipTimeoutRef.current);
+			childTooltipTimeoutRef.current = null;
+		}
+		
+		if (isOpen) {
+			setActiveChildTooltip(childKey);
+		} else {
+			childTooltipTimeoutRef.current = setTimeout(() => {
+				setActiveChildTooltip(null);
+				childTooltipTimeoutRef.current = null;
+			}, 100);
+		}
+	};
 
 	const getFilteredAdminPaths = (path) => {
 		const { permissions = [], configs = [] } = user ?? {};
@@ -2036,71 +2069,87 @@ const OperatorControlSearch = ({
 			content: generalContent,
 			icon: STATIC_ICONS.GENERAL_SETUP,
 			category: ['All', 'Common'],
+			description: 'Manage global settings for branding, security, features, onboarding, email, localization, footer, and apps.',
 		},
 		{
 			label: 'Users',
 			content: usersContent,
 			icon: STATIC_ICONS.USERS_SETUP,
 			category: ['All', 'Common'],
+			description:'Search, add, and manage users, including profiles, balances, payment methods, orders, and referrals.',
 		},
 		{
 			label: 'Assets',
 			content: assetsContent,
 			icon: STATIC_ICONS.DIGITAL_ASSETS_ICON,
 			category: ['All', 'Trading'],
+			description:'Review and manage exchange assets, balances, activity, fees, and limits.',
 		},
 		{
 			label: 'Markets',
 			content: marketsContent,
 			icon: STATIC_ICONS.MARKET_ICON,
 			category: ['All', 'Trading'],
+			description:'Monitor and manage market activity, including order books, OTC, P2P, and quick trades.',
 		},
 		{
 			label: 'Fiat Controls',
 			content: fiatControlContent,
 			icon: STATIC_ICONS.FIAT_CONTROLS_ICON,
 			category: ['All', 'Advanced'],
+			description:'Configure and monitor fiat deposits, payment accounts, on/off-ramps, and fiat fee settings.',
 		},
 		{
 			label: 'Plugins',
 			content: pluginsContent,
 			icon: STATIC_ICONS.ADMIN_PLUGINS,
 			category: ['All', 'Advanced'],
+			description:'Manage exchange plugins, including installed, third-party, and new integrations to explore.',
 		},
 		{
 			label: 'Console',
 			content: consoleContent,
 			category: ['All', 'Advanced'],
+			description:'Edit advanced site layout code for the exchange, including HEAD and BODY sections',
 		},
 		{
 			label: 'Roles',
 			content: rolesContent,
 			icon: STATIC_ICONS.ADMIN_ROLES,
 			category: ['All', 'High level'],
+			description:'Define and manage user roles and their permissions across the exchange.',
 		},
 		{
 			label: 'Sessions',
 			content: sessionsContent,
 			category: ['All', 'High level'],
+			description: 'Monitor active user sessions and review login history for security oversight.',
 		},
 		{
 			label: 'Edit Mode',
 			content: editModeContent,
 			icon: STATIC_ICONS.ADMIN_CUSTOMIZE,
 			category: ['All', 'Common'],
+			description:'Customize the exchange appearance and text, including graphics, themes, and all UI strings',
 		},
-		{ content: billingContent, category: ['All', 'Business'] },
+		{ 
+			content: billingContent, 
+			category: ['All', 'Business'],
+			description:`View and manage your crypto platform's plans, billing, invoices, and payment details`,
+		},
 		{
 			label: 'Tiers',
 			content: tiersContent,
 			icon: STATIC_ICONS.ADMIN_TIERS,
 			category: ['All', 'Business'],
+			description:'Configure account tiers and their corresponding trading fees.',
 		},
 		{
 			label: 'Stakes',
 			content: stakeContent,
 			icon: STATIC_ICONS.STAKING_ICON,
 			category: ['All', 'Business'],
+			description:'Configure CeFi staking pools and monitor user stake positions.',
 		},
 		{ content: announcementContent, category: ['All', 'Operations'] },
 		{ content: chatContent, category: ['All', 'Operations'] },
@@ -2338,6 +2387,9 @@ const OperatorControlSearch = ({
 		onHandleRoute = () => {},
 		onHandleNavigate = () => {},
 	}) => {
+
+		const childKey = `${item?.title}-${item?.description}`;
+		
 		const titleEl = (
 			<span
 				className="operator-control-search-content-title pointer"
@@ -2386,6 +2438,8 @@ const OperatorControlSearch = ({
 				}
 				placement="right"
 				overlayClassName="custom-description-tooltip"
+				visible={activeChildTooltip === childKey}
+				onVisibleChange={(open) => onChildTooltipChange(open, childKey)}
 			>
 				{titleEl}
 			</Tooltip>
@@ -2442,6 +2496,8 @@ const OperatorControlSearch = ({
 							}
 							placement="right"
 							overlayClassName="custom-description-tooltip"
+							visible={activeChildTooltip === `${subItem?.subTitle}-${subItem?.description}`}
+							onVisibleChange={(open) => onChildTooltipChange(open, `${subItem?.subTitle}-${subItem?.description}`)}
 						>
 							<span className="operator-control-search-content-title pointer">
 								{highlightWithOpacity(
@@ -2573,6 +2629,8 @@ const OperatorControlSearch = ({
 																				}
 																				placement="right"
 																				overlayClassName="custom-description-tooltip"
+																				visible={activeChildTooltip === `${innerItem?.innerTitle}-${innerItem?.description}`}
+																				onVisibleChange={(open) => onChildTooltipChange(open, `${innerItem?.innerTitle}-${innerItem?.description}`)}
 																			>
 																				<span className="operator-control-search-content-title pointer">
 																					{highlightWithOpacity(
@@ -2798,7 +2856,7 @@ const OperatorControlSearch = ({
 									}
 								>
 									{categorySections[key]?.map(
-										({ label: sectionLabel, content = [], icon }, idx) => {
+										({ label: sectionLabel, content = [], icon, description = '' }, idx) => {
 											if (!content?.length) return null;
 											const sectionHasAnyMatch = content?.some(cardHasMatch);
 											const cardLevelInactive =
@@ -2813,13 +2871,20 @@ const OperatorControlSearch = ({
 											if (!filteredContent?.length) return null;
 
 											return (
-												<div
+												<Tooltip
+												title={description}
+												placement="top"
+												visible={hoveredCard === description && activeChildTooltip === null && !!description}
+												>
+													<div
 													className={
 														cardLevelInactive
 															? 'operator-control-search-cards inactive-text'
 															: 'operator-control-search-cards'
 													}
 													key={sectionLabel || idx}
+													onMouseEnter={() => onCardMouseEnter(description)}
+													onMouseLeave={() => onCardMouseLeave()}
 													{...(icon && {
 														style: { backgroundImage: `url(${icon})` },
 													})}
@@ -2901,6 +2966,7 @@ const OperatorControlSearch = ({
 														</div>
 													</div>
 												</div>
+											</Tooltip>
 											);
 										}
 									)}
