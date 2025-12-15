@@ -1400,6 +1400,17 @@ const changeUserVerificationLevelById = (userId, newLevel, domain) => {
 			);
 		})
 		.then((user) => {
+			if (currentVerificationLevel !== user.verification_level) {
+				publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+					type: 'user',
+					data: {
+						action: 'verification_level',
+						user_id: user.id,
+						previous_level: currentVerificationLevel,
+						current_level: user.verification_level,
+					}
+				}));
+			}
 			if (currentVerificationLevel < user.verification_level) {
 				sendEmail(
 					MAILTYPE.ACCOUNT_UPGRADE,
