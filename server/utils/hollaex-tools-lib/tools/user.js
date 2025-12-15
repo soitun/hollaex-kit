@@ -2130,11 +2130,22 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 	}
 	const oldValues = { user_id: userId };
 	Object.keys(updateData).forEach(key => { oldValues[key] = user.dataValues[key]; });
+	const previousUserData = omitUserFields(user.dataValues);
 
 	await user.update(
 		updateData,
 		{ fields: Object.keys(updateData) }
 	);
+
+	publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+		type: 'user',
+		data: {
+			action: 'update',
+			user_id: userId,
+			previous_user: previousUserData,
+			...user
+		}
+	}));
 
 	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, updateData, oldValues);
 	return omitUserFields(user.dataValues);
