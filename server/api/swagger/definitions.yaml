@@ -1634,6 +1634,8 @@ definitions:
       category:
         type: ['string', 'null']
         maxLength: 256
+      is_automatic:
+        type: ['boolean', 'null']
       user_id:
         type: number
         format: int32

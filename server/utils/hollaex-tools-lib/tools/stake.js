@@ -300,6 +300,7 @@ const createExchangeStakePool = async (stake) => {
 		fields: [
 			'name',
 			'category',
+			'is_automatic',
 			'user_id',
 			'currency',
 			'reward_currency',
@@ -425,6 +426,7 @@ const updateExchangeStakePool = async (id, data, auditInfo) => {
 		fields: [
 			'name',
 			'category',
+			'is_automatic',
 			'currency',
 			'reward_currency',
 			'account_id',

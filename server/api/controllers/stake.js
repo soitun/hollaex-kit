@@ -47,6 +47,7 @@ const createExchangeStakes = (req, res) => {
 	const {
 		name,
 		category,
+		is_automatic,
 		currency,
 		reward_currency,
 		account_id,
@@ -68,6 +69,7 @@ const createExchangeStakes = (req, res) => {
 		'controllers/stake/createExchangeStakes data',
 		name,
 		category,
+		is_automatic,
 		currency,
 		reward_currency,
 		account_id,
@@ -87,6 +89,7 @@ const createExchangeStakes = (req, res) => {
 	toolsLib.stake.createExchangeStakePool({
 		name,
 		category,
+		is_automatic,
 		currency,
 		reward_currency,
 		account_id,
@@ -126,6 +129,7 @@ const updateExchangeStakes = (req, res) => {
 		id,
 		name,
 		category,
+		is_automatic,
 		currency,
 		reward_currency,
 		account_id,
@@ -148,6 +152,7 @@ const updateExchangeStakes = (req, res) => {
 		id,
 		name,
 		category,
+		is_automatic,
 		currency,
 		reward_currency,
 		account_id,
@@ -167,6 +172,7 @@ const updateExchangeStakes = (req, res) => {
 	toolsLib.stake.updateExchangeStakePool(id, {
 		name,
 		category,
+		is_automatic,
 		currency,
 		reward_currency,
 		account_id,

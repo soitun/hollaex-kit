@@ -11,6 +11,11 @@ module.exports = function (sequelize, DataTypes) {
 				type: DataTypes.STRING,
 				allowNull: true
 			},
+			is_automatic: {
+				type: DataTypes.BOOLEAN,
+				allowNull: false,
+				defaultValue: true
+			},
 			user_id: {
 				type: DataTypes.INTEGER,
 				onDelete: 'CASCADE',
