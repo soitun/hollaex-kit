@@ -545,6 +545,7 @@ const createExchangeStaker = async (stake_id, amount, user_id) => {
 		user_id,
 		stake_id,
 		amount,
+		nav: amount,
 		currency: stakePool.currency,
 		reward_currency: stakePool.reward_currency || stakePool.currency,
 		status: 'staking',
@@ -561,6 +562,7 @@ const createExchangeStaker = async (stake_id, amount, user_id) => {
 				'user_id',
 				'stake_id',
 				'amount',
+				'nav',
 				'currency',
 				'reward_currency',
 				'status',
@@ -644,6 +646,52 @@ const deleteExchangeStaker = async (staker_id, user_id) => {
 	});
 };
 
+const updateExchangeStaker = async (id, data = {}, auditInfo) => {
+	const staker = await getModel('staker').findOne({ where: { id } });
+
+	if (!staker) {
+		throw new Error(STAKER_NOT_EXIST);
+	}
+
+	if (data.nav !== undefined) {
+		const nav = Number(data.nav);
+		if (!Number.isFinite(nav)) {
+			throw new Error('Invalid nav');
+		}
+	}
+
+	if (data.reward !== undefined) {
+		const reward = Number(data.reward);
+		if (!Number.isFinite(reward)) {
+			throw new Error('Invalid reward');
+		}
+	}
+
+	const updatedStaker = {
+		...staker.get({ plain: true }),
+		...Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined))
+	};
+
+	if (auditInfo?.userEmail) {
+		createAuditLog(
+			{ email: auditInfo.userEmail, session_id: auditInfo.sessionId },
+			auditInfo.apiPath,
+			auditInfo.method,
+			updatedStaker,
+			staker.dataValues
+		);
+	}
+
+	const fields = Object.keys(data).filter((key) => data[key] !== undefined);
+	if (!fields.length) {
+		return staker;
+	}
+
+	return staker.update(updatedStaker, {
+		fields
+	});
+};
+
 const unstakeEstimateSlash = async (staker_id) => {
 	const staker = await getModel('staker').findOne({ where: { id: staker_id } });
 
@@ -706,6 +754,7 @@ module.exports = {
 	getExchangeStakers,
 	createExchangeStaker,
 	deleteExchangeStaker,
+	updateExchangeStaker,
 	unstakeEstimateSlash,
 	unstakeEstimateSlashAdmin,
 	fetchStakeAnalytics

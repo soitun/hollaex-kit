@@ -3696,6 +3696,47 @@ paths:
       x-security-types:
         - bearer
         - hmac
+  /admin/staker:
+    x-swagger-router-controller: stake
+    put:
+      description: Update exchange staker values for admin
+      operationId: updateExchangeStaker
+      tags:
+        - Admin
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - id
+            properties:
+              id:
+                type: number
+                format: int32
+              nav:
+                type: number
+                format: double
+              reward:
+                type: number
+                format: double
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ObjectResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-token-permissions:
+        - can_write
   /admin/stake/slash-estimate:
     x-swagger-router-controller: stake
     get:
