@@ -60,6 +60,8 @@ const CeFi = ({ coins, features, kit }) => {
 
 	const defaultStakePool = {
 		name: null,
+		category: null,
+		is_automatic: true,
 		currency: null,
 		reward_currency: null,
 		account_id: null,
@@ -136,6 +138,18 @@ const CeFi = ({ coins, features, kit }) => {
 				return (
 					<div className="d-flex" style={{ fontSize: '1rem' }}>
 						{data?.name}
+					</div>
+				);
+			},
+		},
+		{
+			title: 'Category',
+			dataIndex: 'category',
+			key: 'category',
+			render: (category) => {
+				return (
+					<div className="d-flex" style={{ fontSize: '1rem' }}>
+						{category || '-'}
 					</div>
 				);
 			},
@@ -277,6 +291,8 @@ const CeFi = ({ coins, features, kit }) => {
 							setDisplayStatePoolCreation(true);
 							setStakePoolCreation({
 								...data,
+								is_automatic:
+									data?.is_automatic !== undefined ? data.is_automatic : true,
 								perpetual_stake: data.duration ? false : true,
 								slash_earnings: data.slashing_earning_percentage ? true : false,
 							});
@@ -690,6 +706,49 @@ const CeFi = ({ coins, features, kit }) => {
 							}
 							value={stakePoolCreation.name}
 						/>
+					</div>
+
+					<div style={{ marginBottom: 30 }}>
+						<div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>
+							Category (optional)
+						</div>
+						<Input
+							style={{ backgroundColor: 'rgba(0,0,0,0.1)', color: 'white' }}
+							placeholder="e.g. Promotions, Long-term, VIP"
+							onChange={(e) =>
+								setStakePoolCreation({
+									...stakePoolCreation,
+									category: e.target.value,
+								})
+							}
+							value={stakePoolCreation.category}
+						/>
+					</div>
+
+					<div style={{ marginBottom: 30 }}>
+						<div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>
+							Automatic reward calculation
+						</div>
+						<div style={{ color: '#ccc', marginBottom: 10 }}>
+							If disabled, the daily rewards cron job will skip updating rewards
+							for this pool.
+						</div>
+						<div className="d-flex align-items-center">
+							<Switch
+								checked={stakePoolCreation.is_automatic !== false}
+								onChange={(checked) =>
+									setStakePoolCreation({
+										...stakePoolCreation,
+										is_automatic: checked,
+									})
+								}
+							/>
+							<span style={{ marginLeft: 10, color: 'white' }}>
+								{stakePoolCreation.is_automatic !== false
+									? 'Enabled'
+									: 'Disabled'}
+							</span>
+						</div>
 					</div>
 				</>
 			);
@@ -1321,6 +1380,13 @@ const CeFi = ({ coins, features, kit }) => {
 											'-'}{' '}
 									</div>
 									<div>Disclamier: {stakePoolCreation.disclaimer || '-'} </div>
+									<div>Category: {stakePoolCreation.category || '-'} </div>
+									<div>
+										Auto rewards:{' '}
+										{stakePoolCreation.is_automatic !== false
+											? 'Enabled'
+											: 'Disabled'}{' '}
+									</div>
 								</div>
 								<div className="right-content">
 									<div className="title font-weight-bold">
@@ -1392,6 +1458,16 @@ const CeFi = ({ coins, features, kit }) => {
 								<div>
 									<span style={{ fontWeight: 'bold' }}>Pool name: </span>
 									{stakePoolCreation.name}
+								</div>
+								<div>
+									<span style={{ fontWeight: 'bold' }}>Category: </span>
+									{stakePoolCreation.category || '-'}
+								</div>
+								<div>
+									<span style={{ fontWeight: 'bold' }}>Auto rewards: </span>
+									{stakePoolCreation.is_automatic !== false
+										? 'Enabled'
+										: 'Disabled'}
 								</div>
 								<div>
 									<span style={{ fontWeight: 'bold' }}>Min amount: </span>

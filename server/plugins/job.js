@@ -247,6 +247,11 @@ const updateRewardsCheckRunner = () => {
 			const stakePools = await stakePoolModel.findAll({ where: { status: 'active' } });
 
 			for (const stakePool of stakePools) {
+				// If automatic calculations are disabled for this pool, skip reward updates
+				if (stakePool.is_automatic === false) {
+					continue;
+				}
+
 				const stakers = await stakerModel.findAll({ where: { stake_id: stakePool.id, status: 'staking' } });
 
 				for (const staker of stakers) {

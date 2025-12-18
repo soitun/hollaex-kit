@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { withRouter } from 'react-router';
-import { Table, Button, Spin, Input, Select } from 'antd';
+import {
+	Table,
+	Button,
+	Spin,
+	Input,
+	Select,
+	Modal,
+	InputNumber,
+	message,
+} from 'antd';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import moment from 'moment';
 import BigNumber from 'bignumber.js';
@@ -10,6 +19,7 @@ import {
 	requestStakersByAdmin,
 	requestStakePools,
 	getStakingAnalytics,
+	updateStaker,
 } from './actions';
 import { DEFAULT_COIN_DATA } from 'config/constants';
 
@@ -35,6 +45,11 @@ const UserStaking = ({
 	const [userQuery, setUserQuery] = useState({});
 
 	const [stakingAnayltics, setStakingAnalytics] = useState({});
+
+	const [isEditNavOpen, setIsEditNavOpen] = useState(false);
+	const [selectedStaker, setSelectedStaker] = useState(null);
+	const [navValue, setNavValue] = useState(null);
+	const [rewardValue, setRewardValue] = useState(null);
 
 	const statuses = {
 		staking: 2,
@@ -124,6 +139,32 @@ const UserStaking = ({
 				return (
 					<div className="d-flex">
 						{data?.amount} {data?.stake?.currency?.toUpperCase()}{' '}
+					</div>
+				);
+			},
+		},
+		{
+			title: 'NAV',
+			dataIndex: 'nav',
+			key: 'nav',
+			render: (nav, data) => {
+				const displayNav = nav === null || nav === undefined ? '-' : nav;
+				return (
+					<div className="d-flex">
+						<span>
+							{displayNav} {data?.stake?.currency?.toUpperCase()}{' '}
+						</span>
+						<span
+							className="ml-2 underline-text pointer"
+							onClick={() => {
+								setSelectedStaker(data);
+								setNavValue(data?.nav ?? data?.amount);
+								setRewardValue(data?.reward ?? 0);
+								setIsEditNavOpen(true);
+							}}
+						>
+							(Edit)
+						</span>
 					</div>
 				);
 			},
@@ -282,6 +323,49 @@ const UserStaking = ({
 
 	return (
 		<div className="admin-users-stake-wrapper">
+			<Modal
+				open={isEditNavOpen}
+				title="Edit NAV"
+				okText="Save"
+				cancelText="Cancel"
+				onCancel={() => {
+					setIsEditNavOpen(false);
+					setSelectedStaker(null);
+					setNavValue(null);
+					setRewardValue(null);
+				}}
+				onOk={async () => {
+					try {
+						if (!selectedStaker?.id) return;
+						await updateStaker({
+							id: selectedStaker.id,
+							nav: navValue,
+							reward: rewardValue,
+						});
+						message.success('Staker updated.');
+						setIsEditNavOpen(false);
+						setSelectedStaker(null);
+						setNavValue(null);
+						setRewardValue(null);
+						requestExchangeStakers(queryFilters?.page, queryFilters?.limit);
+					} catch (error) {
+						message.error(error?.response?.data?.message || error?.message);
+					}
+				}}
+			>
+				<div style={{ marginBottom: 8 }}>NAV</div>
+				<InputNumber
+					style={{ width: '100%' }}
+					value={navValue}
+					onChange={(value) => setNavValue(value)}
+				/>
+				<div style={{ marginBottom: 8, marginTop: 16 }}>Earnings (reward)</div>
+				<InputNumber
+					style={{ width: '100%' }}
+					value={rewardValue}
+					onChange={(value) => setRewardValue(value)}
+				/>
+			</Modal>
 			{!isUserProfileStakeTab && (
 				<>
 					<div className="bold">User active stakes</div>
