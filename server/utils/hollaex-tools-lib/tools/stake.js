@@ -299,6 +299,7 @@ const createExchangeStakePool = async (stake) => {
 	return getModel('stake').create(stake, {
 		fields: [
 			'name',
+			'category',
 			'user_id',
 			'currency',
 			'reward_currency',
@@ -423,6 +424,7 @@ const updateExchangeStakePool = async (id, data, auditInfo) => {
 	return stakePool.update(updatedStakePool, {
 		fields: [
 			'name',
+			'category',
 			'currency',
 			'reward_currency',
 			'account_id',

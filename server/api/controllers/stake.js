@@ -46,6 +46,7 @@ const createExchangeStakes = (req, res) => {
 
 	const {
 		name,
+		category,
 		currency,
 		reward_currency,
 		account_id,
@@ -66,6 +67,7 @@ const createExchangeStakes = (req, res) => {
 		req.uuid,
 		'controllers/stake/createExchangeStakes data',
 		name,
+		category,
 		currency,
 		reward_currency,
 		account_id,
@@ -84,6 +86,7 @@ const createExchangeStakes = (req, res) => {
 
 	toolsLib.stake.createExchangeStakePool({
 		name,
+		category,
 		currency,
 		reward_currency,
 		account_id,
@@ -122,6 +125,7 @@ const updateExchangeStakes = (req, res) => {
 	const {
 		id,
 		name,
+		category,
 		currency,
 		reward_currency,
 		account_id,
@@ -143,6 +147,7 @@ const updateExchangeStakes = (req, res) => {
 		'controllers/stake/updateExchangeStakes data',
 		id,
 		name,
+		category,
 		currency,
 		reward_currency,
 		account_id,
@@ -161,6 +166,7 @@ const updateExchangeStakes = (req, res) => {
 	const auditInfo = { userEmail: req?.auth?.sub?.email, sessionId: req?.session_id, apiPath: req?.swagger?.apiPath, method: req?.swagger?.operationPath?.[2] };
 	toolsLib.stake.updateExchangeStakePool(id, {
 		name,
+		category,
 		currency,
 		reward_currency,
 		account_id,

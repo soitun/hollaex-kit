@@ -60,6 +60,7 @@ const CeFi = ({ coins, features, kit }) => {
 
 	const defaultStakePool = {
 		name: null,
+		category: null,
 		currency: null,
 		reward_currency: null,
 		account_id: null,
@@ -136,6 +137,18 @@ const CeFi = ({ coins, features, kit }) => {
 				return (
 					<div className="d-flex" style={{ fontSize: '1rem' }}>
 						{data?.name}
+					</div>
+				);
+			},
+		},
+		{
+			title: 'Category',
+			dataIndex: 'category',
+			key: 'category',
+			render: (category) => {
+				return (
+					<div className="d-flex" style={{ fontSize: '1rem' }}>
+						{category || '-'}
 					</div>
 				);
 			},
@@ -689,6 +702,23 @@ const CeFi = ({ coins, features, kit }) => {
 								})
 							}
 							value={stakePoolCreation.name}
+						/>
+					</div>
+
+					<div style={{ marginBottom: 30 }}>
+						<div style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 4 }}>
+							Category (optional)
+						</div>
+						<Input
+							style={{ backgroundColor: 'rgba(0,0,0,0.1)', color: 'white' }}
+							placeholder="e.g. Promotions, Long-term, VIP"
+							onChange={(e) =>
+								setStakePoolCreation({
+									...stakePoolCreation,
+									category: e.target.value,
+								})
+							}
+							value={stakePoolCreation.category}
 						/>
 					</div>
 				</>
@@ -1321,6 +1351,7 @@ const CeFi = ({ coins, features, kit }) => {
 											'-'}{' '}
 									</div>
 									<div>Disclamier: {stakePoolCreation.disclaimer || '-'} </div>
+									<div>Category: {stakePoolCreation.category || '-'} </div>
 								</div>
 								<div className="right-content">
 									<div className="title font-weight-bold">
@@ -1392,6 +1423,10 @@ const CeFi = ({ coins, features, kit }) => {
 								<div>
 									<span style={{ fontWeight: 'bold' }}>Pool name: </span>
 									{stakePoolCreation.name}
+								</div>
+								<div>
+									<span style={{ fontWeight: 'bold' }}>Category: </span>
+									{stakePoolCreation.category || '-'}
 								</div>
 								<div>
 									<span style={{ fontWeight: 'bold' }}>Min amount: </span>
