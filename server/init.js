@@ -77,6 +77,7 @@ const checkStatus = () => {
 			links: {},
 			strings: {},
 			captcha: {},
+			cloudflare_turnstile: {},
 			defaults: {},
 			features: {},
 			meta: {},
@@ -100,6 +101,7 @@ const checkStatus = () => {
 		security: {},
 		accounts: {},
 		captcha: {},
+		cloudflare_turnstile: {},
 		emails: {},
 		smtp: {}
 	};

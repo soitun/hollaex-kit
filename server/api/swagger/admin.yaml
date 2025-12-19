@@ -3745,7 +3745,7 @@ paths:
         - bearer
         - hmac
       x-token-permissions:
-        - can_write
+        - can_withdraw
   /admin/stake/slash-estimate:
     x-swagger-router-controller: stake
     get:
