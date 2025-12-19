@@ -88,8 +88,48 @@ const checkIp = async (remoteip = '') => {
 };
 
 const checkCaptcha = (captcha = '', remoteip = '') => {
-	// Google Recaptcha is deprecated feature from v2.10.3.
-	return;
+	// Cloudflare Turnstile verification (server-side).
+	const turnstileSecret = getKitSecrets()?.cloudflare_turnstile?.secret_key;
+	const turnstileSiteKey = getKitConfig()?.cloudflare_turnstile?.site_key;
+
+	if (!turnstileSiteKey || !turnstileSecret) {
+		return;
+	}
+
+	if (!captcha || typeof captcha !== 'string') {
+		throw new Error(INVALID_CAPTCHA);
+	}
+
+	return rp({
+		method: 'POST',
+		uri: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+		form: {
+			secret: turnstileSecret,
+			response: captcha,
+			...(remoteip ? { remoteip } : {})
+		},
+		json: true,
+		timeout: 10000
+	})
+		.then((result) => {
+			if (!result || result.success !== true) {
+				loggerAuth.error(
+					'helpers/auth/checkCaptcha turnstile failed',
+					remoteip,
+					result?.['error-codes'] || result
+				);
+				throw new Error(INVALID_CAPTCHA);
+			}
+			return;
+		})
+		.catch((err) => {
+			// Normalize any network/parse errors to INVALID_CAPTCHA for callers.
+			if (err && err.message === INVALID_CAPTCHA) {
+				throw err;
+			}
+			loggerAuth.error('helpers/auth/checkCaptcha turnstile error', remoteip, err?.message);
+			throw new Error(INVALID_CAPTCHA);
+		});
 };
 
 const validatePassword = (userPassword, inputPassword) => {
@@ -889,7 +929,9 @@ const verifyHmacTokenPromise = (apiKey, apiSignature, apiExpires, method, origin
 				} else if (!permissions.every((permission) => token[permission] === true)) {
 					loggerAuth.error(
 						'helpers/auth/checkApiKey/findTokenByApiKey not permitted',
-						apiKey
+						apiKey,
+						permissions,
+						token
 					);
 					throw new Error(API_KEY_NOT_PERMITTED);
 				} else {

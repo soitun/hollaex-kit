@@ -45,6 +45,11 @@ Status.findOne()
 			captcha: {
 				site_key: existingKitConfigurations.captcha ? (existingKitConfigurations.captcha.site_key || process.env.CAPTCHA_SITE_KEY) : process.env.CAPTCHA_SITE_KEY
 			},
+			cloudflare_turnstile: {
+				site_key: existingKitConfigurations.cloudflare_turnstile
+					? (existingKitConfigurations.cloudflare_turnstile.site_key || process.env.CLOUDFLARE_TURNSTILE_SITE_KEY)
+					: (process.env.CLOUDFLARE_TURNSTILE_SITE_KEY)
+			},
 			defaults: {
 				language: existingKitConfigurations.defaults ? (existingKitConfigurations.defaults.language || process.env.NEW_USER_DEFAULT_LANGUAGE || 'en') : (process.env.NEW_USER_DEFAULT_LANGUAGE || 'en'),
 				theme: existingKitConfigurations.defaults ? (existingKitConfigurations.defaults.theme || process.env.DEFAULT_THEME || 'white') : (process.env.DEFAULT_THEME || 'white'),
@@ -100,6 +105,11 @@ Status.findOne()
 			},
 			captcha: {
 				secret_key: existingSecrets.captcha ? (existingSecrets.captcha.secret_key || process.env.CAPTCHA_SECRET_KEY) : process.env.CAPTCHA_SECRET_KEY
+			},
+			cloudflare_turnstile: {
+				secret_key: existingSecrets.cloudflare_turnstile
+					? (existingSecrets.cloudflare_turnstile.secret_key || process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY)
+					: (process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY)
 			},
 			smtp: {
 				server: existingSecrets.smtp ? (existingSecrets.smtp.server || process.env.SMTP_SERVER || '') : (process.env.SMTP_SERVER || ''),
