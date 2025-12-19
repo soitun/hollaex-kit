@@ -175,6 +175,12 @@ paths:
           description: Resend email to user
           required: false
           type: boolean
+        - name: version
+          in: query
+          description: API version. If 'v3', a short code email is sent
+          required: false
+          type: string
+          enum: ['v2', 'v3']
         - name: verification_code
           in: query
           description: Verification code
@@ -362,6 +368,10 @@ paths:
           required: true
           type: string
           maxLength: 256
+        - name: version
+          in: query
+          required: false
+          type: string
       responses:
         301:
           description: "301 redirect"

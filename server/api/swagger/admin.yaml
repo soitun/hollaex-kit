@@ -273,6 +273,9 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
+      x-token-permissions:
+        - can_read
   /admin/fees/settle:
     x-swagger-router-controller: admin
     get:
@@ -301,7 +304,7 @@ paths:
         - bearer
         - hmac
       x-token-permissions:
-        - can_read
+        - can_withdraw
   /admin/signup:
     x-swagger-router-controller: admin
     post:
@@ -2023,6 +2026,34 @@ paths:
           required: true
           type: number
           format: int32
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+  /admin/order/match:
+    x-swagger-router-controller: admin
+    post:
+      description: Match an existing user order (admin only)
+      operationId: adminMatchOrder
+      tags:
+        - Admin
+      parameters:
+        - in: body
+          name: order
+          required: true
+          description: Match order request
+          schema:
+            $ref: "#/definitions/AdminMatchOrderRequest"
       responses:
         200:
           description: Success
@@ -4637,6 +4668,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     put:
       operationId: updateBrokerPair
       description: Edit a broker deal
@@ -4661,6 +4693,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     get:
       operationId: getBrokerPairs
       description: Get all broker deals
@@ -4686,6 +4719,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
     delete:
       operationId: deleteBrokerPair
       description: Delete a broker deal
@@ -4710,6 +4744,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/markets:
     x-swagger-router-controller: broker
     get:
@@ -4739,6 +4774,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/test:
     x-swagger-router-controller: broker
     post:
@@ -4774,6 +4810,7 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
   /admin/broker/connect:
     x-swagger-router-controller: broker
     get:
@@ -4819,6 +4856,9 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+        - hmac
+      x-token-permissions:
+        - can_read
   /admin/fees/csv:
     x-swagger-router-controller: admin
     get:
@@ -4857,6 +4897,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/users/csv:
     x-swagger-router-controller: admin
     get:
@@ -5028,6 +5070,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/logins/csv:
     x-swagger-router-controller: admin
     get:
@@ -5117,6 +5161,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/audits/csv:
     x-swagger-router-controller: admin
     get:
@@ -5197,6 +5243,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/user/balance-history/csv:
     x-swagger-router-controller: admin
     get:
@@ -5271,6 +5319,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/orders/csv:
     x-swagger-router-controller: order
     get:
@@ -5368,6 +5418,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/trades/csv:
     x-swagger-router-controller: trade
     get:
@@ -5448,6 +5500,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/deposits/csv:
     x-swagger-router-controller: deposit
     get:
@@ -5572,6 +5626,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/withdrawals/csv:
     x-swagger-router-controller: withdrawal
     get:
@@ -5696,6 +5752,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/user/wallet/csv:
     x-swagger-router-controller: admin
     get:
@@ -5793,6 +5851,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/user/sessions/csv:
     x-swagger-router-controller: admin
     get:
@@ -5877,6 +5937,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/balances/csv:
     x-swagger-router-controller: admin
     get:
@@ -5917,6 +5979,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/stakes/csv:
     x-swagger-router-controller: stake
     get:
@@ -5984,6 +6048,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/stakers/csv:
     x-swagger-router-controller: stake
     get:
@@ -6086,6 +6152,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read
   /admin/p2p/dispute/csv:
     x-swagger-router-controller: p2p
     get:
@@ -6159,3 +6227,5 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_read

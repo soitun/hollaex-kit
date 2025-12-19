@@ -4,7 +4,7 @@ module.exports = function (sequelize, DataTypes) {
 		{
 			user_id: {
 				type: DataTypes.INTEGER,
-                onDelete: 'CASCADE',
+				onDelete: 'CASCADE',
 				allowNull: false,
 				references: {
 					model: 'Users',
@@ -13,7 +13,7 @@ module.exports = function (sequelize, DataTypes) {
 			},
 			stake_id: {
 				type: DataTypes.INTEGER,
-                onDelete: 'CASCADE',
+				onDelete: 'CASCADE',
 				allowNull: false,
 				references: {
 					model: 'Stakes',
@@ -62,7 +62,7 @@ module.exports = function (sequelize, DataTypes) {
 		}
 	);
 
-    Staker.associate = (models) => {
+	Staker.associate = (models) => {
 		Staker.belongsTo(models.User, {
 			as: 'user',
 			foreignKey: 'user_id',
@@ -70,7 +70,7 @@ module.exports = function (sequelize, DataTypes) {
 			onDelete: 'CASCADE'
 		});
 
-        Staker.belongsTo(models.Stake, {
+		Staker.belongsTo(models.Stake, {
 			as: 'stake',
 			foreignKey: 'stake_id',
 			targetKey: 'id',

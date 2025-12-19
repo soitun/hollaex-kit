@@ -80,6 +80,10 @@
 			"html": "<div><p> ${name}様 </p><p>アカウントのパスワードの変更をリクエストしました。<br />パスワードが変更されたことを確認するには、以下のリンクをクリックしてください。<br /></p><div style=\"padding-top: 10px; margin-bottom: 10px;\"><a href=\"${link}\" target='_blank'><Button style=\"cursor: pointer; background-color: #333333; color: white; border: none; padding: 1rem; text-transform: uppercase; cursor: pointer !important; font-size: 14px; min-width: 11rem;\">パスワードの変更を確認する</Button></a></div><p>この要求が誤って行われた場合は、無視しても問題ありません。 アカウントに変更は加えられません。</p><p>リクエストの開始元： ${ip}</p><p> 敬具<br> ${api_name} チーム </p></div>",
 			"title": "パスワードの変更の確認"
 		},
+		"CHANGE_PASSWORD_CODE": {
+			"html": "<div><p> ${name}様 </p><p>アカウントの<strong>パスワード変更</strong>をリクエストしました。<br />この変更を確認するため、以下の認証コードをご利用ください。</p><div style=\"padding:1rem;background-color:#f5f5f5;border:1px dashed #999;font-family:monospace;font-size:1.5rem;letter-spacing:4px;text-align:center;margin-bottom:20px;\">${confirmation_code}</div><p>このコードをパスワード変更確認画面に入力してください。コードには有効期限があります。</p><p><strong>ご本人でない場合</strong>は、<a href=\"${freeze_account_link}\">アカウントを凍結</a>し、サポートへご連絡ください。</p><p><strong>注意：</strong>セキュリティのため、パスワード変更後24時間は出金が制限されます。</p><p>リクエスト発信元：${ip}</p><p>よろしくお願いいたします。<br />${api_name}チーム</p></div>",
+			"title": "パスワード変更確認コード"
+		},
 		"DEPOSIT_PENDING": {
 			"html": "<div><div><p> ${name}様 </p><p> 現在、お客様の${api_name}ウォレットへの${amount} ${currency}入金は保留中です。取引が承認されるまでお待ちください お客様の取引には、ブロックチェーン上で${confirmation}個の承認が必要です。</p><p>金額: ${amount} ${currency}<br />取引状態: ${status}<br />アドレス: ${address}<br />取引ID: ${transaction_id}<br /><span id='network'>ネットワーク: ${network}</span><br />手数料: ${fee} ${currency}<br /><ul>${explorers}</ul></div><p> 敬具<br> ${api_name} チーム </p></div>",
 			"title": "${currency}デポジットは保留中です"
@@ -115,6 +119,10 @@
 		"USER_DELETED": {
 			"html": "<div><p><p>${name} 様 </p></p><p>アカウント削除のリクエストが進行中です。 あなたのアカウントの情報は利用規約に従って削除されます。</p><p> よろしく<br> ${api_name} チーム </p></div>",
 			"title": "アカウント削除リクエスト"
+		},
+		"SUBACCOUNT_REMOVED": {
+			"html": "<div><p>${name} 様</p><p>サブアカウント <strong>${sub_email}</strong> はお客様のアカウントから削除されました。</p><p>注: サブアカウントは無効化され、プラットフォームにアクセスできなくなりました。意図しない操作の場合は、サポートまでご連絡ください。</p><p> 敬具<br> ${api_name} チーム </p></div>",
+			"title": "サブアカウントの削除"
 		},
 		"OTP_DISABLED": {
 			"html": "<div> <p> ${name} 様 </p> <p> お客様のアカウントで<b>二段階認証（2FA）が無効になったことを記録しました</b>。 アカウントを保護するために2FAを再度有効にすることを強くお勧めします。</p> <div> <div>時間: ${time}</div> <div>国: ${country}</div> <div>IPアドレス: ${ip}</div> </div> <p> もしこれがあなたでない場合、すぐにお問い合わせください。 </p> <p> 敬具<br> ${api_name} チーム </p> </div>",

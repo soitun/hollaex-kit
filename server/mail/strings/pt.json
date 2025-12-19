@@ -80,6 +80,10 @@
 			"html": "<div><p> Dear ${name} </p><p>Você fez uma solicitação para alterar a senha da sua conta.<br />Para confirmar sua alteração de senha, clique no link abaixo.<br /></p><div style=\"padding-top: 10px; margin-bottom: 10px;\"><a href=\"${link}\" target='_blank'><Button style=\"cursor: pointer; background-color: #333333; color: white; border: none; padding: 1rem; text-transform: uppercase; cursor: pointer !important; font-size: 14px; min-width: 11rem;\">Confirm Change My Password</Button></a></div><p>If this request was made in error, it is safe to ignore it; no changes will be made to your account.</p><p>Request initiated from: ${ip}</p><p> Saudações<br> ${api_name} equipe </p></div>",
 			"title": "Confirmação de alteração de senha"
 		},
+		"CHANGE_PASSWORD_CODE": {
+			"html": "<div><p>Prezado(a) ${name}</p><p>Você solicitou a <strong>alteração da senha</strong> da sua conta.<br />Use o código de verificação abaixo para confirmar esta alteração.</p><div style=\"padding:1rem;background-color:#f5f5f5;border:1px dashed #999;font-family:monospace;font-size:1.5rem;letter-spacing:4px;text-align:center;margin-bottom:20px;\">${confirmation_code}</div><p>Insira este código na tela de confirmação de alteração de senha. O código é válido por tempo limitado.</p><p>Se <strong>não</strong> foi você, <a href=\"${freeze_account_link}\">congele sua conta</a> imediatamente e contate o suporte.</p><p><strong>Observação:</strong> Por segurança, os saques ficam restritos por 24 horas após uma alteração de senha.</p><p>Solicitação iniciada de: ${ip}</p><p>Atenciosamente<br>Equipe ${api_name}</p></div>",
+			"title": "Código de verificação de alteração de senha"
+		},
 		"DEPOSIT_PENDING": {
 			"html": "<div><div><p> Dear ${name} </p><p> Você tem um novo depósito de ${amount} ${currency} pendente em sua carteira ${api_name} . Aguarde até que a transação seja confirmada e seus fundos estejam disponíveis em sua carteira. Sua transação requer ${confirmation} confirmação ou confirmações no blockchain.</p><p>Quantia: ${amount} ${currency}<br />Status: ${status}<br />Endereço: ${address}<br />ID da transação: ${transaction_id}<br /><span id='network'>Rede: ${network}</span><br />Taxa: ${fee} ${currency}<br /><ul>${explorers}</ul></div><p> Saudações<br> ${api_name} equipe </p></div>",
 			"title": "${currency} Depósito Pendente"
@@ -115,6 +119,10 @@
 		"USER_DELETED": {
 			"html": "<div><p><p>Caro ${name} </p></p><p>A solicitação de exclusão da conta está em andamento. As informações da sua conta serão removidas de acordo com os termos de serviço.</p><p> Atenciosamente<br> equipe ${api_name} </p></div>",
 			"title": "Solicitação de exclusão de conta"
+		},
+		"SUBACCOUNT_REMOVED": {
+			"html": "<div><p>Olá ${name}</p><p>Seu subconta <strong>${sub_email}</strong> foi removida da sua conta.</p><p>Observação: a subconta foi desativada e não pode mais acessar a plataforma. Se isso não foi intencional, entre em contato com o suporte.</p><p> Atenciosamente<br> Equipe ${api_name} </p></div>",
+			"title": "Subconta removida"
 		},
 		"OTP_DISABLED": {
 			"html": "<div> <p> Prezado/a ${name} </p> <p> Registramos que a sua <b>autenticação de dois fatores (2FA) foi desativada</b> na sua conta. É altamente recomendável que você reative o 2FA para proteger a sua conta.</p> <div> <div>Horário: ${time}</div> <div>País: ${country}</div> <div>Endereço IP: ${ip}</div> </div> <p> Se isso não foi você, por favor, entre em contato conosco imediatamente. </p> <p> Atenciosamente<br> Equipe ${api_name} </p> </div>",

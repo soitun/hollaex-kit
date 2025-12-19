@@ -20,7 +20,8 @@ const {
 	USER_NOT_REGISTERED_ON_NETWORK,
 	INVALID_NETWORK,
 	NETWORK_REQUIRED,
-	WITHDRAWAL_DISABLED
+	WITHDRAWAL_DISABLED,
+	WITHDRAWAL_OTP_REQUIRED
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
@@ -433,8 +434,16 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		throw new Error(USER_NOT_REGISTERED_ON_NETWORK);
 	} else if (user.verification_level < 1) {
 		throw new Error(UPGRADE_VERIFICATION_LEVEL(1));
+	} else if (user.is_subaccount) {
+		throw new Error(WITHDRAWAL_DISABLED);
 	} else if(user.withdrawal_blocked && moment().isBefore(moment(user.withdrawal_blocked))) {
 		throw new Error(WITHDRAWAL_DISABLED);	
+	}
+
+	// Enforce 2FA for withdrawals when feature flag is enabled
+	const requireOtp = getKitConfig()?.force_two_factor_authentication_withdrawal?.active;
+	if (requireOtp && !user.otp_enabled) {
+		throw new Error(WITHDRAWAL_OTP_REQUIRED);
 	}
 
 	let { fee, fee_coin } = getWithdrawalFee(currency, network, amount, user.verification_level);
@@ -716,6 +725,7 @@ const getUserTransactionsByKitId = (
 	description,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -876,6 +886,7 @@ const getUserDepositsByKitId = (
 	description,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -921,6 +932,7 @@ const getUserWithdrawalsByKitId = (
 	description,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -964,6 +976,7 @@ const getExchangeDeposits = (
 	address,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -1018,6 +1031,7 @@ const getExchangeWithdrawals = (
 	address,
 	format,
 	opts = {
+		onhold: false,
 		additionalHeaders: null
 	}
 ) => {
@@ -1064,6 +1078,12 @@ const mintAssetByKitId = async (
 		status: null,
 		email: null,
 		fee: null,
+		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	// check mapKitIdToNetworkId
@@ -1088,6 +1108,11 @@ const mintAssetByNetworkId = (
 		email: null,
 		fee: null,
 		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	return getNodeLib().mintAsset(networkId, currency, amount, opts);
@@ -1101,6 +1126,7 @@ const updatePendingMint = (
 		rejected: null,
 		processing: null,
 		waiting: null,
+		onhold: null,
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
@@ -1120,6 +1146,12 @@ const burnAssetByKitId = async (
 		status: null,
 		email: null,
 		fee: null,
+		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	// check mapKitIdToNetworkId
@@ -1144,6 +1176,11 @@ const burnAssetByNetworkId = (
 		email: null,
 		fee: null,
 		address: null,
+		dismissed: null,
+		rejected: null,
+		processing: null,
+		waiting: null,
+		onhold: null,
 		additionalHeaders: null
 	}) => {
 	return getNodeLib().burnAsset(networkId, currency, amount, opts);
@@ -1157,6 +1194,7 @@ const updatePendingBurn = (
 		rejected: null,
 		processing: null,
 		waiting: null,
+		onhold: null,
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
@@ -1309,6 +1347,34 @@ const getUserWithdrawalCode = async () => {
 	return latestToken;
 };
 
+const createUserWalletByNetworkId = (networkId, currency, address, opts = {
+	network: null,
+	skipValidate: false,
+	additionalHeaders: null
+}) => {
+	if (!networkId) {
+		return reject(new Error(USER_NOT_REGISTERED_ON_NETWORK));
+	}
+	return getNodeLib().createUserWallet(networkId, currency, address, opts);
+};
+
+const createUserWalletByKitId = async (kitId, currency, address, opts = {
+	network: null,
+	skipValidate: false,
+	additionalHeaders: null
+}) => {
+	// check mapKitIdToNetworkId
+	const idDictionary = await mapKitIdToNetworkId([kitId]);
+
+	if (!has(idDictionary, kitId)) {
+		throw new Error(USER_NOT_FOUND);
+	} else if (!idDictionary[kitId]) {
+		throw new Error(USER_NOT_REGISTERED_ON_NETWORK);
+	}
+
+	return getNodeLib().createUserWallet(idDictionary[kitId], currency, address, opts);
+};
+
 module.exports = {
 	sendRequestWithdrawalEmail,
 	validateWithdrawal,
@@ -1338,5 +1404,7 @@ module.exports = {
 	validateDeposit,
 	getWallets,
 	calculateWithdrawalMax,
-	getUserWithdrawalCode
+	getUserWithdrawalCode,
+	createUserWalletByNetworkId,
+	createUserWalletByKitId
 };
