@@ -346,7 +346,7 @@ const UserStaking = ({
 		<div className="admin-users-stake-wrapper">
 			<Modal
 				visible={isEditNavOpen}
-				title="Edit Stake"
+				title={<span style={{ color: '#fff' }}>Edit Stake</span>}
 				okText="Save"
 				cancelText="Cancel"
 				onCancel={() => {
@@ -400,6 +400,10 @@ const UserStaking = ({
 					<Select.Option value="unstaking">Unstaking</Select.Option>
 					<Select.Option value="closed">Closed</Select.Option>
 				</Select>
+				<div style={{ marginTop: 12, color: '#ccc', fontSize: 12 }}>
+					Note: Updating a user’s stake status does not automatically transfer
+					assets. Any required transfers must be handled manually.
+				</div>
 			</Modal>
 			{!isUserProfileStakeTab && (
 				<>
