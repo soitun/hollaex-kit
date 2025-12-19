@@ -96,6 +96,10 @@ const CeFi = ({ coins, features, kit }) => {
 	const [displayOnboarding, setDisplayOnboarding] = useState(false);
 
 	const [displayStatusModel, setDisplayStatusModel] = useState(false);
+	const [displayStakePoolDetails, setDisplayStakePoolDetails] = useState(false);
+	const [selectedStakePoolDetails, setSelectedStakePoolDetails] = useState(
+		null
+	);
 
 	const [selectedPool, setSelectedPool] = useState();
 	const [editMode, setEditMode] = useState(false);
@@ -141,9 +145,14 @@ const CeFi = ({ coins, features, kit }) => {
 			title: 'Pool name',
 			dataIndex: 'name',
 			key: 'name',
+			width: 150,
+			ellipsis: true,
 			render: (user_id, data) => {
 				return (
-					<div className="d-flex" style={{ fontSize: '1rem' }}>
+					<div
+						className="d-flex"
+						style={{ fontSize: '1rem', whiteSpace: 'nowrap' }}
+					>
 						{data?.name}
 					</div>
 				);
@@ -162,62 +171,6 @@ const CeFi = ({ coins, features, kit }) => {
 			},
 		},
 		{
-			title: 'Time created',
-			dataIndex: 'created_at',
-			key: 'created_at',
-			render: (user_id, data) => {
-				return (
-					<div className="d-flex" style={{ fontSize: '1rem' }}>
-						{formatDate(data?.created_at)}
-					</div>
-				);
-			},
-		},
-		{
-			title: 'User / source wallet',
-			dataIndex: 'status',
-			key: 'status',
-			render: (user_id, data) => {
-				return (
-					<div
-						className="d-flex align-items-center"
-						style={{ fontSize: '1rem' }}
-					>
-						<div className="mr-2">User ID: </div>
-						<div className="mr-3">{renderUser(data.account_id)}</div>{' '}
-						{isShowBalance && selectedPoolId === data.id ? (
-							<div>
-								<div>
-									{data.currency}:{' '}
-									{balanceData[`${data.currency}_available`] || 0}
-								</div>
-							</div>
-						) : (
-							<div
-								style={{ textDecoration: 'underline', cursor: 'pointer' }}
-								onClick={() => getUserBalance(data.account_id, true, data.id)}
-							>
-								(display balance)
-							</div>
-						)}
-					</div>
-				);
-			},
-		},
-		{
-			title: 'Stake amounts',
-			dataIndex: 'amlunt',
-			key: 'amlunt',
-			render: (user_id, data) => {
-				return (
-					<div style={{ fontSize: '1rem' }}>
-						<div>Min: {data.min_amount}</div>
-						<div>Max: {data.max_amount}</div>
-					</div>
-				);
-			},
-		},
-		{
 			title: 'Duration',
 			dataIndex: 'duration',
 			key: 'duration',
@@ -225,27 +178,6 @@ const CeFi = ({ coins, features, kit }) => {
 				return (
 					<div className="d-flex" style={{ fontSize: '1rem' }}>
 						{data?.duration ? `${data.duration} days` : 'Perpetual Staking'}
-					</div>
-				);
-			},
-		},
-		{
-			title: 'Slashing',
-			dataIndex: 'slashing',
-			key: 'slashing',
-			render: (user_id, data) => {
-				return (
-					<div style={{ fontSize: '1rem' }}>
-						{data.slashing_principle_percentage ? (
-							<div>-{data.slashing_principle_percentage}% on principle</div>
-						) : (
-							'-'
-						)}
-						{data.slashing_earning_percentage ? (
-							<div>-{data.slashing_earning_percentage}% on earnings</div>
-						) : (
-							'-'
-						)}
 					</div>
 				);
 			},
@@ -285,39 +217,6 @@ const CeFi = ({ coins, features, kit }) => {
 			},
 		},
 		{
-			title: 'Config',
-			dataIndex: 'edit',
-			key: 'edit',
-			render: (user_id, data) => {
-				if (data?.status === 'terminated') {
-					return <div style={{ fontSize: '1rem' }}>-</div>;
-				}
-				return (
-					<div
-						onClick={async () => {
-							setEditMode(true);
-							await handleEmailChange(data.account_id);
-							setDisplayStatePoolCreation(true);
-							setStakePoolCreation({
-								...data,
-								is_automatic:
-									data?.is_automatic !== undefined ? data.is_automatic : true,
-								perpetual_stake: data.duration ? false : true,
-								slash_earnings: data.slashing_earning_percentage ? true : false,
-							});
-						}}
-						style={{
-							textDecoration: 'underline',
-							cursor: 'pointer',
-							fontSize: '1rem',
-						}}
-					>
-						Edit
-					</div>
-				);
-			},
-		},
-		{
 			title: 'Onboarding',
 			dataIndex: 'onboarding',
 			key: 'onboarding',
@@ -352,12 +251,28 @@ const CeFi = ({ coins, features, kit }) => {
 			dataIndex: 'status',
 			key: 'status',
 			render: (user_id, data) => {
-				return (
-					<div className="d-flex" style={{ fontSize: '1rem' }}>
-						{data?.status
+				const status = data?.status;
+				const statusColor =
+					status === 'terminated'
+						? '#ff4d4f'
+						: status === 'paused' || status === 'uninitialized'
+						? '#faad14'
+						: status === 'active'
+						? '#52c41a'
+						: '#ffffff';
+
+				const statusLabel = status
+					? status
 							.split(' ')
 							.map((word) => `${word[0].toUpperCase()}${word.slice(1)}`)
-							.join('')}
+							.join('')
+					: '';
+
+				return (
+					<div className="d-flex" style={{ fontSize: '1rem' }}>
+						<span style={{ color: statusColor, fontWeight: 600 }}>
+							{statusLabel}
+						</span>
 						{data?.status !== 'terminated' && (
 							<span
 								onClick={async () => {
@@ -378,12 +293,36 @@ const CeFi = ({ coins, features, kit }) => {
 									textDecoration: 'underline',
 									cursor: 'pointer',
 									marginLeft: 2,
+									color: '#ffffff',
 								}}
 							>
 								{' '}
 								(Edit)
 							</span>
 						)}
+					</div>
+				);
+			},
+		},
+		{
+			title: 'Config Pool',
+			dataIndex: 'edit',
+			key: 'edit',
+			render: (user_id, data) => {
+				return (
+					<div
+						onClick={() => {
+							setSelectedStakePoolDetails(data);
+							setDisplayStakePoolDetails(true);
+						}}
+						style={{
+							textDecoration: 'underline',
+							cursor: 'pointer',
+							fontSize: '1rem',
+							color: '#ffffff',
+						}}
+					>
+						View More
 					</div>
 				);
 			},
@@ -1587,6 +1526,147 @@ const CeFi = ({ coins, features, kit }) => {
 	};
 	return (
 		<div>
+			{displayStakePoolDetails && (
+				<Modal
+					maskClosable={false}
+					closeIcon={<CloseOutlined style={{ color: 'white' }} />}
+					bodyStyle={{
+						backgroundColor: '#27339D',
+						marginTop: 60,
+					}}
+					visible={displayStakePoolDetails}
+					footer={null}
+					onCancel={() => {
+						setDisplayStakePoolDetails(false);
+						setSelectedStakePoolDetails(null);
+					}}
+				>
+					<div
+						style={{
+							display: 'flex',
+							justifyContent: 'space-between',
+							alignItems: 'center',
+							marginBottom: 10,
+						}}
+					>
+						<h1 style={{ fontWeight: '600', color: 'white', margin: 0 }}>
+							Pool details
+						</h1>
+					</div>
+					<div className="otc-Container">
+						<div style={{ marginBottom: 16 }}>
+							<div style={{ fontWeight: 'bold' }}>Time created</div>
+							<div>{formatDate(selectedStakePoolDetails?.created_at)}</div>
+						</div>
+
+						<div style={{ marginBottom: 16 }}>
+							<div style={{ fontWeight: 'bold' }}>User / source wallet</div>
+							<div className="d-flex align-items-center" style={{ gap: 10 }}>
+								<div>{renderUser(selectedStakePoolDetails?.account_id)}</div>
+								{isShowBalance &&
+								selectedPoolId === selectedStakePoolDetails?.id ? (
+									<div>
+										{selectedStakePoolDetails?.currency}:{' '}
+										{balanceData[
+											`${selectedStakePoolDetails?.currency}_available`
+										] || 0}
+									</div>
+								) : (
+									<div
+										style={{
+											textDecoration: 'underline',
+											cursor: 'pointer',
+											color: '#ffffff',
+										}}
+										onClick={() =>
+											getUserBalance(
+												selectedStakePoolDetails?.account_id,
+												true,
+												selectedStakePoolDetails?.id
+											)
+										}
+									>
+										(display balance)
+									</div>
+								)}
+							</div>
+						</div>
+
+						<div style={{ marginBottom: 16 }}>
+							<div style={{ fontWeight: 'bold' }}>Stake amounts</div>
+							<div>
+								Min: {selectedStakePoolDetails?.min_amount} / Max:{' '}
+								{selectedStakePoolDetails?.max_amount}{' '}
+								{selectedStakePoolDetails?.currency}
+							</div>
+						</div>
+
+						<div style={{ marginBottom: 16 }}>
+							<div style={{ fontWeight: 'bold' }}>Slashing</div>
+							<div>
+								{selectedStakePoolDetails?.slashing_principle_percentage ? (
+									<div>
+										-{selectedStakePoolDetails?.slashing_principle_percentage}%
+										on principle
+									</div>
+								) : (
+									<div>-</div>
+								)}
+								{selectedStakePoolDetails?.slashing_earning_percentage ? (
+									<div>
+										-{selectedStakePoolDetails?.slashing_earning_percentage}% on
+										earnings
+									</div>
+								) : (
+									<div>-</div>
+								)}
+							</div>
+						</div>
+
+						<div
+							style={{
+								display: 'flex',
+								justifyContent: 'flex-end',
+								marginTop: 24,
+							}}
+						>
+							<Button
+								type="default"
+								disabled={selectedStakePoolDetails?.status === 'terminated'}
+								onClick={async () => {
+									const pool = selectedStakePoolDetails;
+									if (!pool || pool.status === 'terminated') return;
+									setDisplayStakePoolDetails(false);
+									setSelectedStakePoolDetails(null);
+									setEditMode(true);
+									await handleEmailChange(pool.account_id);
+									setDisplayStatePoolCreation(true);
+									setStakePoolCreation({
+										...pool,
+										is_automatic:
+											pool?.is_automatic !== undefined
+												? pool.is_automatic
+												: true,
+										perpetual_stake: pool.duration ? false : true,
+										slash_earnings: pool.slashing_earning_percentage
+											? true
+											: false,
+									});
+								}}
+								style={{
+									backgroundColor: '#288500',
+									color: 'white',
+									height: 35,
+									opacity:
+										selectedStakePoolDetails?.status === 'terminated' ? 0.4 : 1,
+								}}
+							>
+								Edit Pool
+							</Button>
+						</div>
+					</div>
+				</Modal>
+			)}
 			{displayStakePoolCreation && (
 				<Modal
 					maskClosable={false}
