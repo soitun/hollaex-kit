@@ -193,6 +193,7 @@ const getExchangeStakePools = async (opts = {
 	order: null,
 	start_date: null,
 	end_date: null,
+	status: null,
 	format: null
 }) => {
 	const pagination = paginationQuery(opts.limit, opts.page);
@@ -202,6 +203,7 @@ const getExchangeStakePools = async (opts = {
 	const query = {
 		where: {
 			created_at: timeframe,
+			...(opts.status && { status: opts.status }),
 		},
 		order: [ordering],
 		...(!opts.format && pagination),
@@ -666,6 +668,13 @@ const updateExchangeStaker = async (id, data = {}, auditInfo) => {
 		const reward = Number(data.reward);
 		if (!Number.isFinite(reward)) {
 			throw new Error('Invalid reward');
+		}
+	}
+
+	if (data.status !== undefined) {
+		const allowedStatuses = ['staking', 'unstaking', 'closed'];
+		if (!allowedStatuses.includes(data.status)) {
+			throw new Error('Invalid status');
 		}
 	}
 

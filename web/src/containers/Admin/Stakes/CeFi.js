@@ -31,6 +31,8 @@ import {
 	ExclamationCircleFilled,
 } from '@ant-design/icons';
 import Coins from '../Coins';
+import { Coin } from 'components';
+import { DEFAULT_COIN_DATA } from 'config/constants';
 import BigNumber from 'bignumber.js';
 import { updateConstants } from '../General/action';
 import _toLower from 'lodash/toLower';
@@ -42,7 +44,7 @@ const CeFi = ({ coins, features, kit }) => {
 	const searchRef = useRef(null);
 	const [userData, setUserData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
-	const [queryValues] = useState({});
+	const [queryValues, setQueryValues] = useState({ status: 'active' });
 	const [queryFilters, setQueryFilters] = useState({
 		total: 0,
 		page: 1,
@@ -120,11 +122,16 @@ const CeFi = ({ coins, features, kit }) => {
 			dataIndex: 'currency',
 			key: 'currency',
 			render: (currency, data) => {
+				const { icon_id } = coins?.[data?.currency] || DEFAULT_COIN_DATA;
 				return (
 					<div className="d-flex" style={{ fontSize: '1rem' }}>
-						<Coins type={data.currency} />
+						{icon_id && (
+							<span className="mr-2">
+								<Coin iconId={icon_id} type="CS7" />
+							</span>
+						)}
 						<span style={{ position: 'relative', left: 5, top: 8 }}>
-							{data.currency && coins?.[data?.currency]?.fullname}
+							{data.currency ? String(data.currency).toUpperCase() : ''}
 						</span>
 					</div>
 				);
@@ -262,7 +269,7 @@ const CeFi = ({ coins, features, kit }) => {
 			render: (user_id, data) => {
 				const incrementUnit =
 					coins?.[data.reward_currency || data.currency]?.increment_unit;
-				const decimalPoint = new BigNumber(incrementUnit).dp();
+				const decimalPoint = new BigNumber(incrementUnit).dp() + 2;
 				const sourceAmount =
 					data?.reward &&
 					new BigNumber(data?.reward).decimalPlaces(decimalPoint).toNumber();
@@ -282,10 +289,12 @@ const CeFi = ({ coins, features, kit }) => {
 			dataIndex: 'edit',
 			key: 'edit',
 			render: (user_id, data) => {
+				if (data?.status === 'terminated') {
+					return <div style={{ fontSize: '1rem' }}>-</div>;
+				}
 				return (
 					<div
 						onClick={async () => {
-							if (data.status === 'terminated') return;
 							setEditMode(true);
 							await handleEmailChange(data.account_id);
 							setDisplayStatePoolCreation(true);
@@ -459,9 +468,9 @@ const CeFi = ({ coins, features, kit }) => {
 		}
 	};
 
-	const requestStakes = (page = 1, limit = 50) => {
+	const requestStakes = (page = 1, limit = 50, overrides = {}) => {
 		setIsLoading(true);
-		requestStakePools({ page, limit, ...queryValues })
+		requestStakePools({ page, limit, ...queryValues, ...overrides })
 			.then((response) => {
 				setUserData(
 					page === 1 ? response.data : [...userData, ...response.data]
@@ -730,8 +739,9 @@ const CeFi = ({ coins, features, kit }) => {
 							Automatic reward calculation
 						</div>
 						<div style={{ color: '#ccc', marginBottom: 10 }}>
-							If disabled, the daily rewards cron job will skip updating rewards
-							for this pool.
+							If disabled, the daily rewards will not be automatically
+							calculated. You should only turn this off if you have your own
+							manual system using APIs.
 						</div>
 						<div className="d-flex align-items-center">
 							<Switch
@@ -1318,23 +1328,14 @@ const CeFi = ({ coins, features, kit }) => {
 								// justifyContent: 'space-around',
 							}}
 						>
-							<div
-								className="d-flex flex-container left-container"
-								style={{ marginLeft: 30 }}
-							>
-								<div>
-									<Coins
-										nohover
-										large
-										small
-										type={stakePoolCreation.currency}
-										// fullname={getFullName(previewData && previewData.pair_base)}
-									/>
-								</div>
-							</div>
-							<div className="right-container" style={{ marginLeft: 30 }}>
+							<div className="right-container" style={{ width: '100%' }}>
 								<div className="right-content">
-									<div className="title font-weight-bold">Asset</div>
+									<div
+										className="title font-weight-bold"
+										style={{ fontSize: 22, lineHeight: '28px' }}
+									>
+										Asset
+									</div>
 									<div>
 										Stake asset:{' '}
 										{stakePoolCreation.currency &&
@@ -1343,7 +1344,10 @@ const CeFi = ({ coins, features, kit }) => {
 									</div>
 								</div>
 								<div className="right-content">
-									<div className="title font-weight-bold">
+									<div
+										className="title font-weight-bold"
+										style={{ fontSize: 22, lineHeight: '28px' }}
+									>
 										Min and max parameters
 									</div>
 
@@ -1358,7 +1362,12 @@ const CeFi = ({ coins, features, kit }) => {
 								</div>
 
 								<div className="right-content">
-									<div className="title font-weight-bold">Duration</div>
+									<div
+										className="title font-weight-bold"
+										style={{ fontSize: 22, lineHeight: '28px' }}
+									>
+										Duration
+									</div>
 
 									<div>
 										Duration:{' '}
@@ -1367,7 +1376,12 @@ const CeFi = ({ coins, features, kit }) => {
 									</div>
 								</div>
 								<div className="right-content">
-									<div className="title font-weight-bold">Slashing rules</div>
+									<div
+										className="title font-weight-bold"
+										style={{ fontSize: 22, lineHeight: '28px' }}
+									>
+										Slashing rules
+									</div>
 									<div>
 										Slash on principle:{' '}
 										{stakePoolCreation.slashing_principle_percentage + '%' ||
@@ -1389,7 +1403,10 @@ const CeFi = ({ coins, features, kit }) => {
 									</div>
 								</div>
 								<div className="right-content">
-									<div className="title font-weight-bold">
+									<div
+										className="title font-weight-bold"
+										style={{ fontSize: 22, lineHeight: '28px' }}
+									>
 										Funding account source
 									</div>
 									<div>Account: {selectedEmailData?.label} </div>
@@ -1399,7 +1416,10 @@ const CeFi = ({ coins, features, kit }) => {
 									</div>
 								</div>
 								<div className="right-content">
-									<div className="title font-weight-bold">
+									<div
+										className="title font-weight-bold"
+										style={{ fontSize: 22, lineHeight: '28px' }}
+									>
 										Distribution rate
 									</div>
 									<div>APY: {stakePoolCreation.apy + '%'} </div>
@@ -2080,43 +2100,13 @@ const CeFi = ({ coins, features, kit }) => {
 					</div>
 				</Modal>
 			)}
-			<div style={{ display: 'flex', justifyContent: 'space-between' }}>
-				<div>
-					<div style={{ color: '#ccc' }}>
-						Allow your users to grow their assets by rewarding them for locking
-						up funds (staking) on your platform.
-					</div>
-					<div style={{ color: '#ccc', marginTop: 10 }}>
-						To setup a staking pool please click →{' '}
-						<span style={{ textDecoration: 'underline' }}>
-							Create Stake Pool
-						</span>
-					</div>
-				</div>
-				<div>
-					<Button
-						onClick={() => {
-							setEditMode(false);
-							setStakePoolCreation(defaultStakePool);
-							setDisplayStatePoolCreation(true);
-						}}
-						disabled={!hasCefiStaking || isUpgrade}
-						style={{
-							backgroundColor: '#288500',
-							color: 'white',
-							flex: 1,
-							height: 35,
-							marginRight: 10,
-							opacity: !hasCefiStaking || isUpgrade ? 0.4 : 1,
-						}}
-						type="default"
-					>
-						Create CeFi Stake Pool
-					</Button>
-				</div>
-			</div>
-
-			<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+			<div
+				style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					marginBottom: 20,
+				}}
+			>
 				<div style={{ marginLeft: 15, marginTop: 10 }}>
 					<div style={{ fontSize: 18, marginBottom: 5 }}>
 						Allow CeFi Staking
@@ -2172,6 +2162,77 @@ const CeFi = ({ coins, features, kit }) => {
 						</div>
 					</div>
 				)}
+			</div>
+
+			<div style={{ display: 'flex', justifyContent: 'space-between' }}>
+				<div>
+					<div style={{ color: '#ccc' }}>
+						Allow your users to grow their assets by rewarding them for locking
+						up funds (staking) on your platform.
+					</div>
+					<div style={{ color: '#ccc', marginTop: 10 }}>
+						To setup a staking pool please click →{' '}
+						<span style={{ textDecoration: 'underline' }}>
+							Create Stake Pool
+						</span>
+					</div>
+				</div>
+				<div>
+					<Button
+						onClick={() => {
+							setEditMode(false);
+							setStakePoolCreation(defaultStakePool);
+							setDisplayStatePoolCreation(true);
+						}}
+						disabled={!hasCefiStaking || isUpgrade}
+						style={{
+							backgroundColor: '#288500',
+							color: 'white',
+							flex: 1,
+							height: 35,
+							marginRight: 10,
+							opacity: !hasCefiStaking || isUpgrade ? 0.4 : 1,
+						}}
+						type="default"
+					>
+						Create CeFi Stake Pool
+					</Button>
+				</div>
+			</div>
+
+			<div
+				style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center',
+					marginTop: 20,
+				}}
+			>
+				<div style={{ color: '#ccc' }}>
+					Show pools by status:{' '}
+					<Select
+						style={{ minWidth: 200 }}
+						value={queryValues?.status}
+						onChange={(status) => {
+							setUserData([]);
+							setQueryFilters((prev) => ({
+								...prev,
+								page: 1,
+								currentTablePage: 1,
+								isRemaining: true,
+							}));
+							setQueryValues((prev) => ({ ...(prev || {}), status }));
+							requestStakes(1, queryFilters.limit, { status });
+						}}
+						getPopupContainer={(trigger) => trigger?.parentNode}
+					>
+						<Option value="active">Active</Option>
+						<Option value="paused">Paused</Option>
+						<Option value="uninitialized">Uninitialized</Option>
+						<Option value="terminated">Terminated</Option>
+					</Select>
+				</div>
+				<div />
 			</div>
 
 			<div>
