@@ -50,6 +50,7 @@ const UserStaking = ({
 	const [selectedStaker, setSelectedStaker] = useState(null);
 	const [navValue, setNavValue] = useState(null);
 	const [rewardValue, setRewardValue] = useState(null);
+	const [statusValue, setStatusValue] = useState(null);
 
 	const statuses = {
 		staking: 2,
@@ -65,7 +66,14 @@ const UserStaking = ({
 			render: (user_id, data) => {
 				return (
 					<div className="d-flex">
-						<Button className="ant-btn green-btn no-border ant-tooltip-open ant-btn-primary">
+						<Button
+							className="ant-btn green-btn no-border ant-tooltip-open ant-btn-primary"
+							onClick={() => {
+								if (data?.user_id) {
+									router.push(`/admin/user?id=${data.user_id}`);
+								}
+							}}
+						>
 							{data?.user_id}
 						</Button>
 						{/* <div className="ml-3">{data.User.email}</div> */}
@@ -154,17 +162,6 @@ const UserStaking = ({
 						<span>
 							{displayNav} {data?.stake?.currency?.toUpperCase()}{' '}
 						</span>
-						<span
-							className="ml-2 underline-text pointer"
-							onClick={() => {
-								setSelectedStaker(data);
-								setNavValue(data?.nav ?? data?.amount);
-								setRewardValue(data?.reward ?? 0);
-								setIsEditNavOpen(true);
-							}}
-						>
-							(Edit)
-						</span>
 					</div>
 				);
 			},
@@ -176,7 +173,7 @@ const UserStaking = ({
 			render: (user_id, data) => {
 				const incrementUnit =
 					coins[data?.reward_currency || data?.currency]?.increment_unit;
-				const decimalPoint = new BigNumber(incrementUnit)?.dp();
+				const decimalPoint = new BigNumber(incrementUnit)?.dp() + 2;
 				const sourceAmount =
 					data?.reward &&
 					new BigNumber(data?.reward - data?.slashed)
@@ -210,6 +207,30 @@ const UserStaking = ({
 						) : (
 							<span>Closed</span>
 						)}
+					</div>
+				);
+			},
+		},
+		{
+			title: 'Config',
+			dataIndex: 'config',
+			key: 'config',
+			render: (_value, data) => {
+				return (
+					<div className="d-flex">
+						<span
+							className="underline-text pointer"
+							style={{ color: '#fff' }}
+							onClick={() => {
+								setSelectedStaker(data);
+								setNavValue(data?.nav ?? data?.amount);
+								setRewardValue(data?.reward ?? 0);
+								setStatusValue(data?.status ?? 'staking');
+								setIsEditNavOpen(true);
+							}}
+						>
+							Edit Stake
+						</span>
 					</div>
 				);
 			},
@@ -324,8 +345,8 @@ const UserStaking = ({
 	return (
 		<div className="admin-users-stake-wrapper">
 			<Modal
-				open={isEditNavOpen}
-				title="Edit NAV"
+				visible={isEditNavOpen}
+				title="Edit Stake"
 				okText="Save"
 				cancelText="Cancel"
 				onCancel={() => {
@@ -333,6 +354,7 @@ const UserStaking = ({
 					setSelectedStaker(null);
 					setNavValue(null);
 					setRewardValue(null);
+					setStatusValue(null);
 				}}
 				onOk={async () => {
 					try {
@@ -341,12 +363,14 @@ const UserStaking = ({
 							id: selectedStaker.id,
 							nav: navValue,
 							reward: rewardValue,
+							status: statusValue,
 						});
-						message.success('Staker updated.');
+						message.success('Stake updated.');
 						setIsEditNavOpen(false);
 						setSelectedStaker(null);
 						setNavValue(null);
 						setRewardValue(null);
+						setStatusValue(null);
 						requestExchangeStakers(queryFilters?.page, queryFilters?.limit);
 					} catch (error) {
 						message.error(error?.response?.data?.message || error?.message);
@@ -365,6 +389,17 @@ const UserStaking = ({
 					value={rewardValue}
 					onChange={(value) => setRewardValue(value)}
 				/>
+				<div style={{ marginBottom: 8, marginTop: 16 }}>Status</div>
+				<Select
+					style={{ width: '100%' }}
+					value={statusValue}
+					onChange={(value) => setStatusValue(value)}
+					getPopupContainer={(triggerNode) => triggerNode.parentNode}
+				>
+					<Select.Option value="staking">Active</Select.Option>
+					<Select.Option value="unstaking">Unstaking</Select.Option>
+					<Select.Option value="closed">Closed</Select.Option>
+				</Select>
 			</Modal>
 			{!isUserProfileStakeTab && (
 				<>

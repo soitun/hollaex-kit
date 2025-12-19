@@ -11,7 +11,7 @@ const { errorMessageConverter } = require('../../utils/conversion');
 const getExchangeStakes = (req, res) => {
 	loggerStake.verbose(req.uuid, 'controllers/stake/getExchangeStakes/auth', req.auth);
 
-	const { limit, page, order_by, order, start_date, end_date } = req.swagger.params;
+	const { limit, page, order_by, order, start_date, end_date, status } = req.swagger.params;
 
 	if (order_by.value && typeof order_by.value !== 'string') {
 		loggerStake.error(
@@ -29,6 +29,7 @@ const getExchangeStakes = (req, res) => {
 		order: order.value,
 		start_date: start_date.value,
 		end_date: end_date.value,
+		status: status?.value,
 	}
 	)
 		.then((data) => {
@@ -368,9 +369,9 @@ const deleteExchangeStaker = (req, res) => {
 const updateExchangeStaker = (req, res) => {
 	loggerStake.verbose(req.uuid, 'controllers/stake/updateExchangeStaker/auth', req.auth);
 
-	const { id, nav, reward } = req.swagger.params.data.value;
+	const { id, nav, reward, status } = req.swagger.params.data.value;
 
-	loggerStake.verbose(req.uuid, 'controllers/stake/updateExchangeStaker data', id, nav, reward);
+	loggerStake.verbose(req.uuid, 'controllers/stake/updateExchangeStaker data', id, nav, reward, status);
 
 	const auditInfo = {
 		userEmail: req?.auth?.sub?.email,
@@ -379,7 +380,7 @@ const updateExchangeStaker = (req, res) => {
 		method: req?.swagger?.operationPath?.[2]
 	};
 
-	toolsLib.stake.updateExchangeStaker(id, { nav, reward }, auditInfo)
+	toolsLib.stake.updateExchangeStaker(id, { nav, reward, status }, auditInfo)
 		.then((data) => {
 			toolsLib.user.createAuditLog(
 				{ email: req?.auth?.sub?.email, session_id: req?.session_id },
