@@ -686,6 +686,56 @@ test.describe('Page Navigation Tests', () => {
       // Verify prices page is loaded - use more specific selector
       await expect(page.getByText('Asset', { exact: true })).toBeVisible();
     });
+
+    test('should load Announcements page with filters and table', async ({ page }) => {
+      // Double the timeout for this test (default is 30s, so 60s)
+      test.setTimeout(60000);
+      
+      await page.goto(`${testData.baseUrl}/announcement`);
+      await page.waitForTimeout(3000);
+      await expect(page).toHaveURL(/.*\/announcement/);
+      
+      // Wait for table to load first (more reliable indicator that page is loaded)
+      await expect(page.getByRole('table')).toBeVisible({ timeout: 10000 });
+      
+      // Verify page title - use first() to avoid strict mode violation (Announcements appears in top bar and main content)
+      const hasAnnouncementsTitle = await page.getByText('Announcements').first().isVisible().catch(() => false);
+      expect(hasAnnouncementsTitle).toBeTruthy();
+      
+      // Verify description text - only check for "Exchange events and messages"
+      const hasDescription = await page.getByText('Exchange events and messages').isVisible().catch(() => false);
+      expect(hasDescription).toBeTruthy();
+      
+      // Verify filter tabs are visible (at least some common ones)
+      const hasAllTab = await page.getByText('All').isVisible().catch(() => false);
+      const hasListingTab = await page.getByText('Listing').isVisible().catch(() => false);
+      const hasNewsTab = await page.getByText('News').isVisible().catch(() => false);
+      const hasEventsTab = await page.getByText('Events').isVisible().catch(() => false);
+      
+      // At least 2 filter tabs should be visible
+      const filterTabsCount = [hasAllTab, hasListingTab, hasNewsTab, hasEventsTab].filter(Boolean).length;
+      expect(filterTabsCount).toBeGreaterThanOrEqual(2);
+      
+      // Verify table headers (table already verified above)
+      await expect(page.getByText('Type')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Title')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Message/Contents')).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText('Time')).toBeVisible({ timeout: 10000 });
+      
+      // Verify at least one announcement row is visible (check for "View more" button which appears in each row)
+      const hasViewMore = await page.getByText('View more').isVisible().catch(() => false);
+      expect(hasViewMore).toBeTruthy();
+      
+      // Verify navigation links are visible
+      const hasSummaryLink = await page.getByText('< Summary').isVisible().catch(() => false);
+      const hasDepositLink = await page.getByText('DEPOSIT').isVisible().catch(() => false);
+      const hasWithdrawLink = await page.getByText('WITHDRAW').isVisible().catch(() => false);
+      const hasTradeLink = await page.getByText('TRADE').isVisible().catch(() => false);
+      
+      // At least 2 navigation links should be visible
+      const navLinksCount = [hasSummaryLink, hasDepositLink, hasWithdrawLink, hasTradeLink].filter(Boolean).length;
+      expect(navLinksCount).toBeGreaterThanOrEqual(2);
+    });
   });
 
   test.describe('Top Bar Tests', () => {
