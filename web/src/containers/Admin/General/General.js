@@ -339,8 +339,8 @@ class GeneralContent extends Component {
 				cloudflareTurnstile: { enabled: false, site_key: '', secret_key: '' },
 			});
 			return this.handleSubmitGeneral({
-				kit: { cloudflare_turnstile: {} },
-				secrets: { cloudflare_turnstile: {} },
+				kit: { cloudflare_turnstile: { site_key: '' } },
+				secrets: { cloudflare_turnstile: { secret_key: '' } },
 			});
 		}
 
