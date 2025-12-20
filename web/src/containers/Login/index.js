@@ -13,7 +13,7 @@ import {
 	setLogoutMessage,
 	performGoogleLogin,
 } from 'actions/authAction';
-import LoginForm from './LoginForm';
+import LoginForm, { FORM_NAME } from './LoginForm';
 import {
 	Dialog,
 	OtpForm,
@@ -28,6 +28,7 @@ import { FLEX_CENTER_CLASSES } from 'config/constants';
 import STRINGS from 'config/localizedStrings';
 import withConfig from 'components/ConfigProvider/withConfig';
 import GoogleOAuthLogin from 'utils/googleOAuth';
+import CloudflareTurnstile from 'components/CloudflareTurnstile';
 
 let errorTimeOut = null;
 
@@ -120,6 +121,13 @@ class Login extends Component {
 	// };
 
 	onSubmitLogin = (values) => {
+		const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
+			?.site_key;
+		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
+		if (turnstileEnabled && !values?.captcha) {
+			throw new SubmissionError({ _error: STRINGS['INVALID_CAPTCHA'] });
+		}
+
 		const service = this.getServiceParam();
 		if (service) {
 			values.service = service;
@@ -251,6 +259,8 @@ class Login extends Component {
 			icons: ICONS,
 		} = this.props;
 		const { otpDialogIsOpen, logoutDialogIsOpen } = this.state;
+		const turnstileSiteKey = constants?.cloudflare_turnstile?.site_key;
+		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
 
 		return (
 			<div className={classnames(...FLEX_CENTER_CLASSES, 'flex-column', 'f-1')}>
@@ -292,7 +302,22 @@ class Login extends Component {
 							'w-100'
 						)}
 					>
-						<LoginForm onSubmit={this.onSubmitLogin} theme={activeTheme} />
+						<LoginForm
+							onSubmit={this.onSubmitLogin}
+							theme={activeTheme}
+							turnstileEnabled={turnstileEnabled}
+							extraContent={
+								turnstileEnabled ? (
+									<CloudflareTurnstile
+										siteKey={turnstileSiteKey}
+										theme={activeTheme}
+										onToken={(token) =>
+											this.props.change(FORM_NAME, 'captcha', token)
+										}
+									/>
+								) : null
+							}
+						/>
 						{isMobile && <BottomLink />}
 					</div>
 					{!!constants?.google_oauth?.client_id && (
