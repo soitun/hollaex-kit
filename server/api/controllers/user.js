@@ -30,6 +30,7 @@ const {
 	INVALID_OTP_CODE,
 	OTP_CODE_NOT_FOUND,
 	INVALID_CAPTCHA,
+	RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS,
 	GOOGLE_ACCOUNT_MISMATCH,
 	SERVICE_NOT_AVAILABLE,
 	SUBACCOUNT_CANNOT_GENERATE_ADDRESS
@@ -188,6 +189,8 @@ const getVerifyUser = (req, res) => {
 	const resendEmail = req.swagger.params.resend.value;
 	const version = req.swagger.params.version && req.swagger.params.version.value;
 	const domain = req.headers['x-real-origin'];
+	const ip = req.headers['x-real-ip'];
+	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
 	let promiseQuery;
 
 	if (email && typeof email === 'string' && isEmail(email)) {
@@ -200,6 +203,8 @@ const getVerifyUser = (req, res) => {
 				throw new Error(USER_VERIFIED);
 			}
 			if (resendEmail) {
+				// Validate captcha before resending verification email to reduce spam/bot abuse.
+				await toolsLib.security.checkCaptcha(captcha, ip);
 				let verificationCode;
 				if (version === 'v3') {
 					const letters = Array.from({ length: 2 }, () =>
@@ -234,9 +239,23 @@ const getVerifyUser = (req, res) => {
 	promiseQuery
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/getVerifyUser', err.message);
-			// obfuscate the error message
-			let errorMessage = VERIFICATION_EMAIL_MESSAGE;
-			return res.status(err.statusCode || 400).json({ message: errorMessage });
+			// Obfuscate most errors to avoid leaking whether a user/email exists.
+			// Exception: surface captcha failures so the client can prompt a new challenge.
+			if (err?.message === INVALID_CAPTCHA) {
+				const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+				return res.status(err.statusCode || 400).json({
+					message: messageObj?.message,
+					lang: messageObj?.lang,
+					code: messageObj?.code
+				});
+			}
+
+			const messageObj = errorMessageConverter({ message: VERIFICATION_EMAIL_MESSAGE }, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({
+				message: messageObj?.message,
+				lang: messageObj?.lang,
+				code: messageObj?.code
+			});
 		});
 };
 
@@ -872,6 +891,7 @@ function requestEmailConfirmation(req, res) {
 const requestResetPassword = (req, res) => {
 	let email = req.swagger.params.email.value;
 	let version = req.swagger.params.version.value;
+	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
 
@@ -892,23 +912,37 @@ const requestResetPassword = (req, res) => {
 			'controllers/user/requestResetPassword invalid email',
 			email
 		);
-		return res.status(400).json({ message: `Password request sent to: ${email}` });
+		const messageObj = errorMessageConverter({ message: safeResponseMessage }, req?.auth?.sub?.lang);
+		return res.status(400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 	}
 
 	email = email.toLowerCase();
 
-	toolsLib.security.sendResetPasswordCode(email, null, ip, domain, version)
+	toolsLib.security.sendResetPasswordCode(email, captcha, ip, domain, version)
 		.then(() => {
-			return res.json({ message: `Password request sent to: ${email}` });
+			const messageObj = errorMessageConverter({ message: safeResponseMessage }, req?.auth?.sub?.lang);
+			return res.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		})
 		.catch((err) => {
-			let errorMessage = errorMessageConverter(err, req?.auth?.sub?.lang)?.message;
-
-			if (errorMessage === USER_NOT_FOUND) {
-				errorMessage = `Password request sent to: ${email}`;
-			}
 			loggerUser.error(req.uuid, 'controllers/user/requestResetPassword', err.message);
-			return res.status(err.statusCode || 400).json({ message: errorMessage });
+
+			// Surface captcha failures so the client can prompt a new challenge.
+			if (err?.message === INVALID_CAPTCHA) {
+				const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+				return res.status(err.statusCode || 400).json({
+					message: messageObj?.message,
+					lang: messageObj?.lang,
+					code: messageObj?.code
+				});
+			}
+
+			// Obfuscate user existence (and other internal errors) to prevent enumeration.
+			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({
+				message: messageObj?.message,
+				lang: messageObj?.lang,
+				code: messageObj?.code
+			});
 		});
 };
 

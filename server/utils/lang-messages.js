@@ -4105,6 +4105,25 @@ const messages = {
 		'vi': 'Tài khoản phụ không thể tạo địa chỉ nạp tiền',
 		'zh': '子账户无法生成充值地址'
 	},
+	'Reset password request is sent if the user exists.': {
+		'en': 'Reset password request is sent if the user exists.',
+		'de': 'Reset password request is sent if the user exists.',
+		'es': 'Reset password request is sent if the user exists.',
+		'fa': 'Reset password request is sent if the user exists.',
+		'fr': 'Reset password request is sent if the user exists.',
+		'id': 'Reset password request is sent if the user exists.',
+		'it': 'Reset password request is sent if the user exists.',
+		'ja': 'Reset password request is sent if the user exists.',
+		'ko': 'Reset password request is sent if the user exists.',
+		'mn': 'Reset password request is sent if the user exists.',
+		'nl': 'Reset password request is sent if the user exists.',
+		'pt': 'Reset password request is sent if the user exists.',
+		'ru': 'Reset password request is sent if the user exists.',
+		'tr': 'Reset password request is sent if the user exists.',
+		'ur': 'Reset password request is sent if the user exists.',
+		'vi': 'Reset password request is sent if the user exists.',
+		'zh': 'Reset password request is sent if the user exists.'
+	}
 };
 
 
