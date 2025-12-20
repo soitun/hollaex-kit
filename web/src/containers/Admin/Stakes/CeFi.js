@@ -1742,7 +1742,25 @@ const CeFi = ({ coins, features, kit }) => {
 										}
 										setStakePoolCreation(defaultStakePool);
 										setStep(1);
-										requestStakes(queryFilters.page, queryFilters.limit);
+										// Newly created pools are always uninitialized. Switch the table
+										// filter so the admin can immediately see it.
+										if (!editMode) {
+											const limit = queryFilters.limit;
+											setUserData([]);
+											setQueryFilters((prev) => ({
+												...prev,
+												page: 1,
+												currentTablePage: 1,
+												isRemaining: true,
+											}));
+											setQueryValues((prev) => ({
+												...(prev || {}),
+												status: 'uninitialized',
+											}));
+											requestStakes(1, limit, { status: 'uninitialized' });
+										} else {
+											requestStakes(queryFilters.page, queryFilters.limit);
+										}
 										setConfirmText();
 										message.success(
 											`Stake pool ${!editMode ? 'created' : 'edited'}.`
