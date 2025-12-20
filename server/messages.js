@@ -97,6 +97,7 @@ exports.LEVEL_UPGRADE_NOT_ELIGIBLE = 'You are not eligible for level upgrade.';
 exports.SERVICE_NOT_AVAILABLE = 'Service not available';
 
 exports.INVALID_CAPTCHA = 'Invalid captcha';
+exports.RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS = 'Reset password request is sent if the user exists.';
 exports.INVALID_USERNAME =
 	'Invalid username. Username must be 3-15 characters length and only contains lowercase charaters, numbers or underscore';
 exports.USERNAME_CANNOT_BE_CHANGED = 'Username can not be changed';
