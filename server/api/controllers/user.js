@@ -273,7 +273,7 @@ const createAttemptMessage = (loginData, user, domain) => {
 	return ` You have ${currentNumberOfAttemps} more ${currentNumberOfAttemps === 1 ? 'attempt' : 'attempts'} left`;
 };
 
-const loginPost = (req, res) => {
+const loginPost = async (req, res) => {
 	const {
 		password,
 		otp_code,
@@ -317,8 +317,6 @@ const loginPost = (req, res) => {
 			deviceParts.pop();
 			device = deviceParts.join(' ').trim();
 		}
-
-
 	}
 
 	const domain = req.headers['x-real-origin'];
@@ -386,188 +384,243 @@ const loginPost = (req, res) => {
 		phone_number = phone_number.trim();
 	}
 
-	toolsLib.security.checkIp(ip)
-		.then(() => {
-			if (email) {
-				return toolsLib.user.getUserByEmail(email);
-			} else {
-				return toolsLib.user.getUserByPhoneNumber(phone_number);
-			}
-		})
-		.then(async (user) => {
-			if (!user) {
-				throw new Error(USER_NOT_FOUND);
-			}
-			if (user.verification_level === 0) {
-				throw new Error(USER_NOT_VERIFIED);
-			} else if (toolsLib.getKitConfig().email_verification_required && !user.email_verified) {
-				throw new Error(USER_EMAIL_NOT_VERIFIED);
-			} else if (!user.activated) {
-				throw new Error(USER_NOT_ACTIVATED);
-			}
+	try {
+		await toolsLib.security.checkIp(ip);
 
-			const loginData = await toolsLib.user.findUserLatestLogin(user, false);
-			if (loginData && loginData.attempt === NUMBER_OF_ALLOWED_ATTEMPTS && loginData.status == false) {
-				throw new Error(LOGIN_NOT_ALLOW);
-			}
+		const user = email
+			? await toolsLib.user.getUserByEmail(email)
+			: await toolsLib.user.getUserByPhoneNumber(phone_number);
 
-			return all([
-				user,
-				toolsLib.security.validatePassword(user.password, password)
-			]);
-		})
-		.then(async ([user, passwordIsValid]) => {
-			if (!passwordIsValid) {
-				await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, null, long_term, false);
+		if (!user) {
+			throw new Error(USER_NOT_FOUND);
+		}
+		if (user.verification_level === 0) {
+			throw new Error(USER_NOT_VERIFIED);
+		} else if (
+			toolsLib.getKitConfig().email_verification_required &&
+			!user.email_verified
+		) {
+			throw new Error(USER_EMAIL_NOT_VERIFIED);
+		} else if (!user.activated) {
+			throw new Error(USER_NOT_ACTIVATED);
+		}
+
+		const latestLogin = await toolsLib.user.findUserLatestLogin(user, false);
+		if (
+			latestLogin &&
+			latestLogin.attempt === NUMBER_OF_ALLOWED_ATTEMPTS &&
+			latestLogin.status == false
+		) {
+			throw new Error(LOGIN_NOT_ALLOW);
+		}
+
+		// If OTP is enabled, require OTP code before consuming Turnstile tokens.
+		if (user.otp_enabled && !otp_code) {
+			throw new Error(INVALID_OTP_CODE);
+		}
+
+		// Validate captcha early (before password check) to reduce brute-force attempts.
+		// Note: Turnstile tokens are short-lived and typically single-use.
+		await toolsLib.security.checkCaptcha(captcha, ip);
+
+		if (user.otp_enabled) {
+			try {
+				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
+			} catch (err) {
+				// Mirror previous behavior: log a failed login attempt and include attempt message.
+				await toolsLib.user.createUserLogin(
+					user,
+					ip,
+					device,
+					domain,
+					origin,
+					referer,
+					null,
+					long_term,
+					false
+				);
 				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
 				const message = createAttemptMessage(loginData, user, domain);
-				throw new Error(INVALID_CREDENTIALS + message);
+				throw new Error((err?.message || INVALID_OTP_CODE) + message);
 			}
+		}
 
-			const lastLogins = await toolsLib.user.findUserLastLogins(user);
-			let suspiciousLogin = false;
+		const passwordIsValid = await toolsLib.security.validatePassword(
+			user.password,
+			password
+		);
 
-			const successfulRecords = lastLogins.filter(login => login.status);
+		if (!passwordIsValid) {
+			await toolsLib.user.createUserLogin(
+				user,
+				ip,
+				device,
+				domain,
+				origin,
+				referer,
+				null,
+				long_term,
+				false
+			);
+			const loginData = await toolsLib.user.findUserLatestLogin(user, false);
+			const message = createAttemptMessage(loginData, user, domain);
+			throw new Error(INVALID_CREDENTIALS + message);
+		}
 
-			// if (isArray(lastLogins) && lastLogins.length > 0 && !successfulRecords?.find(login => login.device === device)) {
-			// 	suspiciousLogin = true;
-			// }
+		const lastLogins = await toolsLib.user.findUserLastLogins(user);
+		const successfulRecords = (lastLogins || []).filter((login) => login.status);
 
+		const geo = geoip.lookup(ip);
+		const country = geo?.country || '';
 
-			const geo = geoip.lookup(ip);
+		let suspiciousLogin = false;
+		if (
+			isArray(lastLogins) &&
+			lastLogins.length > 0 &&
+			!successfulRecords?.find((login) => login.country === country)
+		) {
+			loggerUser.verbose(
+				req.uuid,
+				'controllers/user/loginPost suspicious login detected',
+				'user id',
+				user.id,
+				'country',
+				country,
+				'login records length',
+				lastLogins.length,
+				'successful records length',
+				successfulRecords.length
+			);
+			suspiciousLogin = true;
+		}
 
-			const country = geo?.country || '';
-
-			if (isArray(lastLogins) && lastLogins.length > 0 && !successfulRecords?.find(login => login.country === country)) {
-				loggerUser.verbose(
-					req.uuid,
-					'controllers/user/loginPost suspicious login detected',
-					'user id',
-					user.id,
-					'country',
-					country,
-					'login records length',
-					lastLogins.length,
-					'successful records length',
-					successfulRecords.length
-				);
-				suspiciousLogin = true;
-			}
-
-
-			const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
-
-			if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
-				let verification_code;
-				if (version === 'v3') {
-					const letters = Array.from({ length: 2 }, () =>
-						String.fromCharCode(65 + crypto.randomInt(0, 26))
-					).join('');
-					const numbers = Math.floor(10000 + Math.random() * 90000);
-					verification_code = `${letters}-${numbers}`;
-				} else {
-					verification_code = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
-
-				}
-
-				const loginData = await toolsLib.user.createSuspiciousLogin(user, ip, device, country, domain, origin, referer, null, long_term);
-
-				const data = {
-					id: loginData.id,
-					email: user.email,
-					verification_code,
-					ip,
-					time,
-					device,
-					country,
-					user_id: user.id
-				};
-				await toolsLib.database.client.setexAsync(`user:confirm-login:${verification_code}`, 5 * 60, JSON.stringify(data));
-				await toolsLib.database.client.setexAsync(`user:freeze-account:${verification_code}`, 60 * 60 * 6, JSON.stringify(data));
-
-				sendEmail(version === 'v3' ? MAILTYPE.SUSPICIOUS_LOGIN_CODE : MAILTYPE.SUSPICIOUS_LOGIN, user.email, data, user.settings, domain);
-				throw new Error('Suspicious login detected, please check your email.');
-			}
-
-			if (!user.otp_enabled) {
-				return all([user, toolsLib.security.checkCaptcha(captcha, ip), country]);
+		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
+		if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
+			let verification_code;
+			if (version === 'v3') {
+				const letters = Array.from({ length: 2 }, () =>
+					String.fromCharCode(65 + crypto.randomInt(0, 26))
+				).join('');
+				const numbers = Math.floor(10000 + Math.random() * 90000);
+				verification_code = `${letters}-${numbers}`;
 			} else {
-				return all([
-					user,
-					toolsLib.security.verifyOtpBeforeAction(user.id, otp_code)
-						.then(async () => {
-							return toolsLib.security.checkCaptcha(captcha, ip);
-						})
-						.catch(async (err) => {
-							if (!otp_code) {
-								throw new Error(INVALID_OTP_CODE);
-							}
-							await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, null, long_term, false);
-							const loginData = await toolsLib.user.findUserLatestLogin(user, false);
-							const message = createAttemptMessage(loginData, user, domain);
-
-							if (err.message === INVALID_CAPTCHA) {
-								throw new Error(err.message);
-							} else {
-								throw new Error(err.message + message);
-							}
-						}),
-					country
-				]);
+				verification_code = crypto
+					.randomBytes(9)
+					.toString('base64')
+					.replace(/[^a-zA-Z0-9]/g, '')
+					.substring(0, 12);
 			}
-		})
-		.then(async ([user, otp, country]) => {
+
+			const loginData = await toolsLib.user.createSuspiciousLogin(
+				user,
+				ip,
+				device,
+				country,
+				domain,
+				origin,
+				referer,
+				null,
+				long_term
+			);
+
 			const data = {
+				id: loginData.id,
+				email: user.email,
+				verification_code,
 				ip,
 				time,
 				device,
-				country
+				country,
+				user_id: user.id,
 			};
 
-			publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+			await toolsLib.database.client.setexAsync(
+				`user:confirm-login:${verification_code}`,
+				5 * 60,
+				JSON.stringify(data)
+			);
+			await toolsLib.database.client.setexAsync(
+				`user:freeze-account:${verification_code}`,
+				60 * 60 * 6,
+				JSON.stringify(data)
+			);
+
+			sendEmail(
+				version === 'v3'
+					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
+					: MAILTYPE.SUSPICIOUS_LOGIN,
+				user.email,
+				data,
+				user.settings,
+				domain
+			);
+			throw new Error('Suspicious login detected, please check your email.');
+		}
+
+		const emailData = {
+			ip,
+			time,
+			device,
+			country,
+		};
+
+		publisher.publish(
+			EVENTS_CHANNEL,
+			JSON.stringify({
 				type: 'user',
 				data: {
 					action: 'login',
-					user_id: user.id
-				}
-			}));
+					user_id: user.id,
+				},
+			})
+		);
 
-			if (!service) {
-				sendEmail(MAILTYPE.LOGIN, user.email, data, user.settings, domain);
-			}
+		if (!service) {
+			sendEmail(MAILTYPE.LOGIN, user.email, emailData, user.settings, domain);
+		}
 
-			let userRole;
-			if (user.role) {
-				const roles = toolsLib.getRoles();
-				userRole = roles.find(role => role.role_name === user.role);
-			}
+		let userRole;
+		if (user.role) {
+			const roles = toolsLib.getRoles();
+			userRole = roles.find((role) => role.role_name === user.role);
+		}
 
-			return all([
-				user,
-				toolsLib.security.issueToken(
-					user.id,
-					user.network_id,
-					user.email,
-					ip,
-					long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL,
-					user.settings.language,
-					userRole?.permissions,
-					userRole?.configs,
-					user.role
-				)
-			]);
-		})
-		.then(async ([user, token]) => {
-			if (!ip) {
-				throw new Error(NO_IP_FOUND);
-			}
-			await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true);
-			return res.status(201).json({ token });
-		})
-		.catch((err) => {
-			loggerUser.error(req.uuid, 'controllers/user/loginPost catch', err.message);
-			return res.status(err.statusCode || 401).json({ message: errorMessageConverter(err, req?.auth?.sub?.lang)?.message, lang: errorMessageConverter(err, req?.auth?.sub?.lang)?.lang, code: errorMessageConverter(err, req?.auth?.sub?.lang)?.code });
-		});
+		const token = await toolsLib.security.issueToken(
+			user.id,
+			user.network_id,
+			user.email,
+			ip,
+			long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL,
+			user.settings.language,
+			userRole?.permissions,
+			userRole?.configs,
+			user.role
+		);
+
+		if (!ip) {
+			throw new Error(NO_IP_FOUND);
+		}
+
+		await toolsLib.user.createUserLogin(
+			user,
+			ip,
+			device,
+			domain,
+			origin,
+			referer,
+			token,
+			long_term,
+			true
+		);
+
+		return res.status(201).json({ token });
+	} catch (err) {
+		loggerUser.error(req.uuid, 'controllers/user/loginPost catch', err.message);
+		const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+		return res
+			.status(err.statusCode || 401)
+			.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+	}
 };
 
 // Google OAuth login function
