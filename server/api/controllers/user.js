@@ -912,15 +912,15 @@ const requestResetPassword = (req, res) => {
 			'controllers/user/requestResetPassword invalid email',
 			email
 		);
-		const messageObj = errorMessageConverter({ message: safeResponseMessage }, req?.auth?.sub?.lang);
-		return res.status(400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
+		return res.status(200).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 	}
 
 	email = email.toLowerCase();
 
 	toolsLib.security.sendResetPasswordCode(email, captcha, ip, domain, version)
 		.then(() => {
-			const messageObj = errorMessageConverter({ message: safeResponseMessage }, req?.auth?.sub?.lang);
+			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 			return res.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		})
 		.catch((err) => {
@@ -938,7 +938,7 @@ const requestResetPassword = (req, res) => {
 
 			// Obfuscate user existence (and other internal errors) to prevent enumeration.
 			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
-			return res.status(err.statusCode || 400).json({
+			return res.status(200).json({
 				message: messageObj?.message,
 				lang: messageObj?.lang,
 				code: messageObj?.code
