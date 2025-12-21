@@ -1892,6 +1892,7 @@ class GeneralContent extends Component {
 												)
 											}
 											placeholder="Enter Cloudflare Turnstile site key"
+											style={{ maxWidth: 360 }}
 										/>
 									</div>
 									<div style={{ marginBottom: 12 }}>
@@ -1911,6 +1912,7 @@ class GeneralContent extends Component {
 												)
 											}
 											placeholder="Enter Cloudflare Turnstile secret key"
+											style={{ maxWidth: 360 }}
 										/>
 									</div>
 									<Button

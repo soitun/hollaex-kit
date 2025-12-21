@@ -78,6 +78,10 @@ const VerificationEmailCode = Loadable({
 	loader: () => import('./containers/VerificationEmailCode'),
 	loading: LoadingComponent,
 });
+const Turnstile = Loadable({
+	loader: () => import('./containers/Turnstile'),
+	loading: LoadingComponent,
+});
 const Home = Loadable({
 	loader: () => import('./containers/Home'),
 	loading: LoadingComponent,
@@ -540,6 +544,7 @@ export const generateRoutes = (routes = []) => {
 	return (
 		<Router history={browserHistory}>
 			<Route path="lang/:locale" component={createLocalizedRoutes} />
+			<Route path="turnstile" name="Turnstile" component={Turnstile} />
 			<Route component={AuthContainer} {...noAuthRoutesCommonProps}>
 				<Route path="login" name="Login" component={Login} />
 				<Route path="signup" name="signup" component={Signup} />

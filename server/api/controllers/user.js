@@ -238,7 +238,7 @@ const getVerifyUser = (req, res) => {
 
 	promiseQuery
 		.catch((err) => {
-			loggerUser.error(req.uuid, 'controllers/user/getVerifyUser', err.message);
+			loggerUser.error(req.uuid, 'controllers/user/getVerifyUser catch', err.message);
 			// Obfuscate most errors to avoid leaking whether a user/email exists.
 			// Exception: surface captcha failures so the client can prompt a new challenge.
 			if (err?.message === INVALID_CAPTCHA) {
@@ -251,7 +251,7 @@ const getVerifyUser = (req, res) => {
 			}
 
 			const messageObj = errorMessageConverter({ message: VERIFICATION_EMAIL_MESSAGE }, req?.auth?.sub?.lang);
-			return res.status(err.statusCode || 400).json({
+			return res.status(200).json({
 				message: messageObj?.message,
 				lang: messageObj?.lang,
 				code: messageObj?.code
