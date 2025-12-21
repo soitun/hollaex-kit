@@ -238,7 +238,7 @@ const getVerifyUser = (req, res) => {
 
 	promiseQuery
 		.catch((err) => {
-			loggerUser.error(req.uuid, 'controllers/user/getVerifyUser', err.message);
+			loggerUser.error(req.uuid, 'controllers/user/getVerifyUser catch', err.message);
 			// Obfuscate most errors to avoid leaking whether a user/email exists.
 			// Exception: surface captcha failures so the client can prompt a new challenge.
 			if (err?.message === INVALID_CAPTCHA) {
@@ -251,7 +251,7 @@ const getVerifyUser = (req, res) => {
 			}
 
 			const messageObj = errorMessageConverter({ message: VERIFICATION_EMAIL_MESSAGE }, req?.auth?.sub?.lang);
-			return res.status(err.statusCode || 400).json({
+			return res.status(200).json({
 				message: messageObj?.message,
 				lang: messageObj?.lang,
 				code: messageObj?.code
@@ -912,15 +912,15 @@ const requestResetPassword = (req, res) => {
 			'controllers/user/requestResetPassword invalid email',
 			email
 		);
-		const messageObj = errorMessageConverter({ message: safeResponseMessage }, req?.auth?.sub?.lang);
-		return res.status(400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
+		return res.status(200).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 	}
 
 	email = email.toLowerCase();
 
 	toolsLib.security.sendResetPasswordCode(email, captcha, ip, domain, version)
 		.then(() => {
-			const messageObj = errorMessageConverter({ message: safeResponseMessage }, req?.auth?.sub?.lang);
+			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 			return res.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		})
 		.catch((err) => {
@@ -938,7 +938,7 @@ const requestResetPassword = (req, res) => {
 
 			// Obfuscate user existence (and other internal errors) to prevent enumeration.
 			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
-			return res.status(err.statusCode || 400).json({
+			return res.status(200).json({
 				message: messageObj?.message,
 				lang: messageObj?.lang,
 				code: messageObj?.code
