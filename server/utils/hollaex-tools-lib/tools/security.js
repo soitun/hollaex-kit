@@ -93,10 +93,12 @@ const checkCaptcha = (captcha = '', remoteip = '') => {
 	const turnstileSiteKey = getKitConfig()?.cloudflare_turnstile?.site_key;
 
 	if (!turnstileSiteKey || !turnstileSecret) {
+		loggerAuth.error('helpers/auth/checkCaptcha turnstile not set so skipped', remoteip);
 		return;
 	}
 
 	if (!captcha || typeof captcha !== 'string') {
+		loggerAuth.error('helpers/auth/checkCaptcha turnstile not found', captcha,remoteip);
 		throw new Error(INVALID_CAPTCHA);
 	}
 
@@ -120,13 +122,10 @@ const checkCaptcha = (captcha = '', remoteip = '') => {
 				);
 				throw new Error(INVALID_CAPTCHA);
 			}
+			loggerAuth.info('helpers/auth/checkCaptcha turnstile success', remoteip);
 			return;
 		})
 		.catch((err) => {
-			// Normalize any network/parse errors to INVALID_CAPTCHA for callers.
-			if (err && err.message === INVALID_CAPTCHA) {
-				throw err;
-			}
 			loggerAuth.error('helpers/auth/checkCaptcha turnstile error', remoteip, err?.message);
 			throw new Error(INVALID_CAPTCHA);
 		});
