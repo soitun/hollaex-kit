@@ -55,8 +55,8 @@ const RampPaymentAccounts = ({
 	setOfframpCurrentType = () => {},
 	offrampCurrentType = '',
 	setCoinSymbol = () => {},
-	setOnRamp = () => { },
-	setCoins = () => { },
+	setOnRamp = () => {},
+	setCoins = () => {},
 }) => {
 	const [isVisible, setIsVisible] = useState(false);
 	const [currentTab, setCurrentTab] = useState('payment');
@@ -118,7 +118,7 @@ const RampPaymentAccounts = ({
 			setIsDisable(false);
 		}
 	}, [isCurrentFormOpen, setIsDisable]);
-	
+
 	useEffect(() => {
 		if (isModalVisible) {
 			setIsOpen({});
@@ -337,13 +337,13 @@ const RampPaymentAccounts = ({
 				if (customName === 'bank') {
 					tempBank =
 						Object.keys(user_payments).length &&
-							user_payments['bank']?.data?.length > 0
+						user_payments['bank']?.data?.length > 0
 							? getStructedDataFromArray(user_payments['bank'].data)
 							: defaultBankInitialValues;
 				} else if (customName === 'paypal') {
 					tempPaypal =
 						Object.keys(user_payments).length &&
-							user_payments['paypal']?.data?.length > 0
+						user_payments['paypal']?.data?.length > 0
 							? getStructedDataFromArray(user_payments['paypal'].data)
 							: defaultPaypalInitialValues;
 				} else if (customName.trim() !== '') {
@@ -359,17 +359,23 @@ const RampPaymentAccounts = ({
 					setPaymentSelect(firstPayment[0]);
 				}
 				OnsetCurrentType('addSuccess');
-			}
-			else if (currentOnrampType === 'addSuccess' && currentActiveTab === 'onRamp' && selectedAsset === currentsymbol) {
-				if (onramp && typeof onramp === 'object' && Object.keys(onramp)?.length > 0) {
+			} else if (
+				currentOnrampType === 'addSuccess' &&
+				currentActiveTab === 'onRamp' &&
+				selectedAsset === currentsymbol
+			) {
+				if (
+					onramp &&
+					typeof onramp === 'object' &&
+					Object.keys(onramp)?.length > 0
+				) {
 					const paymentKeys = Object.keys(onramp);
 					const lastPayment = paymentKeys[paymentKeys?.length - 1];
 					if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
-					setPaymentSelect(lastPayment);
+						setPaymentSelect(lastPayment);
 					}
 				}
 			}
-
 		} else {
 			setPayOption(false);
 			setFormValues(user_payments);
@@ -413,8 +419,8 @@ const RampPaymentAccounts = ({
 					}
 					if (_get(res, 'kit.onramp')) {
 						const onrampData = _get(res, `kit.onramp[${currentsymbol}]`);
-						if(Object.keys(onrampData || {})?.length){
-							setOnRamp(prev => ({...prev, [currentsymbol]: onrampData}))
+						if (Object.keys(onrampData || {})?.length) {
+							setOnRamp((prev) => ({ ...prev, [currentsymbol]: onrampData }));
 						}
 						setFormValues(onrampData || {});
 						if (type === 'add' && onrampData) {
@@ -633,22 +639,23 @@ const RampPaymentAccounts = ({
 					};
 				}
 			});
-			let updatedOnRamp = JSON.parse(JSON.stringify(originalonramp))
-			if(paymentMethods?.length <= 1) {
-			delete updatedOnRamp[currentsymbol];
-			setCoins(coins => coins?.filter(({ symbol }) => symbol !== selectedAsset));
-		}
-			else{
+			let updatedOnRamp = JSON.parse(JSON.stringify(originalonramp));
+			if (paymentMethods?.length <= 1) {
+				delete updatedOnRamp[currentsymbol];
+				setCoins((coins) =>
+					coins?.filter(({ symbol }) => symbol !== selectedAsset)
+				);
+			} else {
 				updatedOnRamp = {
 					...originalonramp,
 					[currentsymbol]: deletedData,
 				};
 			}
-			delete updatedOnRamp[""];
+			delete updatedOnRamp[''];
 			deletedBodyData = {
 				kit: {
 					onramp: {
-						...updatedOnRamp
+						...updatedOnRamp,
 					},
 				},
 			};
@@ -656,10 +663,10 @@ const RampPaymentAccounts = ({
 			const filteredOfframp = originalofframp[coinSymbol].filter(
 				(item) => item !== method
 			);
-			let updatedOffRamp = JSON.parse(JSON.stringify(originalofframp))
-			if(filteredOfframp?.length < 1) {
-			delete updatedOffRamp[currentsymbol];}
-			else{
+			let updatedOffRamp = JSON.parse(JSON.stringify(originalofframp));
+			if (filteredOfframp?.length < 1) {
+				delete updatedOffRamp[currentsymbol];
+			} else {
 				updatedOffRamp = {
 					...originalofframp,
 					[currentsymbol]: filteredOfframp,
@@ -668,7 +675,7 @@ const RampPaymentAccounts = ({
 			deletedBodyData = {
 				kit: {
 					offramp: {
-						...updatedOffRamp
+						...updatedOffRamp,
 					},
 				},
 			};
@@ -705,7 +712,7 @@ const RampPaymentAccounts = ({
 		setIsCurrentFormOpen(false);
 		setPaymentmethodIndex(currentIndex);
 		if (currentActiveTab && currentActiveTab === 'onRamp') {
-			getConstantData("add")
+			getConstantData('add');
 			setIsProceed(false);
 			OnsetCurrentType('');
 		}
