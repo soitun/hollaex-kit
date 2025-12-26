@@ -287,7 +287,10 @@ const RampPaymentAccounts = ({
 				setCustomInitValue(tempCustom);
 			}
 			setFormValues(user_payments);
-			if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+			if (
+				(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+				firstPayment?.length
+			) {
 				setPaymentSelect(firstPayment[0]);
 			}
 		} else if (currentActiveTab === 'onRamp') {
@@ -327,11 +330,14 @@ const RampPaymentAccounts = ({
 				setCustomInitValue(tempCustom);
 				setFormValues(onramp);
 				setPayOption(true);
-				if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+				if (
+					(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+					firstPayment?.length
+				) {
 					setPaymentSelect(firstPayment[0]);
 				}
 			} else if (currentOnrampType === 'add') {
-				Object.keys(user_payments).forEach((item) => {
+				Object.keys(onramp || {}).forEach((item) => {
 					firstPayment = [...firstPayment, item];
 				});
 				if (customName === 'bank') {
@@ -355,7 +361,10 @@ const RampPaymentAccounts = ({
 				setCustomInitValue(tempCustom);
 				setFormValues(onramp);
 				setPayOption(true);
-				if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+				if (
+					(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+					firstPayment?.length
+				) {
 					setPaymentSelect(firstPayment[0]);
 				}
 				OnsetCurrentType('addSuccess');
@@ -371,7 +380,10 @@ const RampPaymentAccounts = ({
 				) {
 					const paymentKeys = Object.keys(onramp);
 					const lastPayment = paymentKeys[paymentKeys?.length - 1];
-					if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+					if (
+						(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+						firstPayment?.length
+					) {
 						setPaymentSelect(lastPayment);
 					}
 				}
@@ -613,13 +625,6 @@ const RampPaymentAccounts = ({
 			kit: {
 				onramp: {
 					...originalonramp,
-					[coinSymbol]: {
-						...originalonramp[coinSymbol],
-						[selectedPlugin]: {
-							data: selectedPlugin,
-							type: 'plugin',
-						},
-					},
 				},
 			},
 		};
