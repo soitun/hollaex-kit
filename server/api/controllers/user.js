@@ -1566,6 +1566,7 @@ const addUserBank = (req, res) => {
 			const currentBanks = Array.isArray(user.bank_account) ? user.bank_account : [];
 			const newBank = [...currentBanks, bank_account];
 
+			user.changed('bank_account', true);
 			const updatedUser = await user.update(
 				{ bank_account: newBank },
 				{ fields: ['bank_account'] }
