@@ -49,7 +49,9 @@ const Index = ({
 	};
 
 	useEffect(() => {
-		const level = isLoggedIn() ? verification_level?.toString() : Object.keys(config_level)[0];
+		const level = isLoggedIn()
+			? verification_level?.toString()
+			: Object.keys(config_level)[0];
 		setSelectedAccount(level);
 		setSelectedLevel(level);
 		//eslint-disable-next-line
