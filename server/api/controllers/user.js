@@ -1563,9 +1563,10 @@ const addUserBank = (req, res) => {
 			bank_account.id = crypto.randomBytes(8).toString('hex');
 			bank_account.status = VERIFY_STATUS.PENDING;
 
-			let newBank = user.bank_account;
-			newBank.push(bank_account);
+			const currentBanks = Array.isArray(user.bank_account) ? user.bank_account : [];
+			const newBank = [...currentBanks, bank_account];
 
+			user.changed('bank_account', true);
 			const updatedUser = await user.update(
 				{ bank_account: newBank },
 				{ fields: ['bank_account'] }
