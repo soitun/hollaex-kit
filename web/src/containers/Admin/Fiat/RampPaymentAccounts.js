@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { connect } from 'react-redux';
 import { Modal, Select, message } from 'antd';
 import { CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons';
 import _get from 'lodash/get';
@@ -57,6 +58,7 @@ const RampPaymentAccounts = ({
 	setCoinSymbol = () => {},
 	setOnRamp = () => {},
 	setCoins = () => {},
+	allOnRamp = {},
 }) => {
 	const [isVisible, setIsVisible] = useState(false);
 	const [currentTab, setCurrentTab] = useState('payment');
@@ -287,7 +289,10 @@ const RampPaymentAccounts = ({
 				setCustomInitValue(tempCustom);
 			}
 			setFormValues(user_payments);
-			if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+			if (
+				(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+				firstPayment?.length
+			) {
 				setPaymentSelect(firstPayment[0]);
 			}
 		} else if (currentActiveTab === 'onRamp') {
@@ -327,11 +332,14 @@ const RampPaymentAccounts = ({
 				setCustomInitValue(tempCustom);
 				setFormValues(onramp);
 				setPayOption(true);
-				if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+				if (
+					(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+					firstPayment?.length
+				) {
 					setPaymentSelect(firstPayment[0]);
 				}
 			} else if (currentOnrampType === 'add') {
-				Object.keys(user_payments).forEach((item) => {
+				Object.keys(onramp || {}).forEach((item) => {
 					firstPayment = [...firstPayment, item];
 				});
 				if (customName === 'bank') {
@@ -355,7 +363,10 @@ const RampPaymentAccounts = ({
 				setCustomInitValue(tempCustom);
 				setFormValues(onramp);
 				setPayOption(true);
-				if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+				if (
+					(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+					firstPayment?.length
+				) {
 					setPaymentSelect(firstPayment[0]);
 				}
 				OnsetCurrentType('addSuccess');
@@ -371,7 +382,10 @@ const RampPaymentAccounts = ({
 				) {
 					const paymentKeys = Object.keys(onramp);
 					const lastPayment = paymentKeys[paymentKeys?.length - 1];
-					if (!paymentSelect || !firstPayment?.includes(paymentSelect)) {
+					if (
+						(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
+						firstPayment?.length
+					) {
 						setPaymentSelect(lastPayment);
 					}
 				}
@@ -432,7 +446,7 @@ const RampPaymentAccounts = ({
 								setPayOption(true);
 								setIsProceed(false);
 								OnsetCurrentType('addSuccess');
-								setSavedContent(true);
+								setSavedContent(false);
 							}
 						} else {
 							setCurrentIndex(1);
@@ -582,6 +596,13 @@ const RampPaymentAccounts = ({
 		}
 		if (currentActiveTab && currentActiveTab === 'onRamp') {
 			setIsCurrentFormOpen(true);
+			if (
+				allOnRamp[currentsymbol]?.[currentPaymentType] &&
+				currentPaymentType?.trim()?.length &&
+				type === 'plugin'
+			) {
+				setSavedContent(true);
+			}
 		} else {
 			setCoinSymbol(currentsymbol);
 		}
@@ -613,18 +634,11 @@ const RampPaymentAccounts = ({
 			kit: {
 				onramp: {
 					...originalonramp,
-					[coinSymbol]: {
-						...originalonramp[coinSymbol],
-						[selectedPlugin]: {
-							data: selectedPlugin,
-							type: 'plugin',
-						},
-					},
 				},
 			},
 		};
 		updateConstantsData(pluginBodyData);
-		setSavedContent(true);
+		setSavedContent(false);
 		setIsVisible(false);
 	};
 	const handlePopupDel = (method) => {
@@ -878,4 +892,10 @@ const RampPaymentAccounts = ({
 	);
 };
 
-export default RampPaymentAccounts;
+const mapStateToProps = (state) => {
+	return {
+		allOnRamp: state.app.constants?.onramp,
+	};
+};
+
+export default connect(mapStateToProps)(RampPaymentAccounts);
