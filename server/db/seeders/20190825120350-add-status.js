@@ -170,7 +170,9 @@ module.exports = {
 							send_email_to_support: (SEND_EMAIL_TO_SUPPORT && SEND_EMAIL_TO_SUPPORT === 'true') || false,
 							sender: '',
 							audit: '',
-							audit_sensitive: ''
+							audit_sensitive: '',
+							audit_enabled: true,
+							audit_sensitive_enabled: true
 						},
 						captcha: {
 							secret_key: CAPTCHA_SECRET_KEY
