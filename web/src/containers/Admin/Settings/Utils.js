@@ -172,6 +172,12 @@ export const generateAdminSettings = (key) => {
 					placeholder: 'auditor email address',
 					validate: [validateRequired, email],
 				},
+				audit_sensitive: {
+					type: 'input',
+					label: 'Sensitive auditor email',
+					placeholder: 'sensitive auditor email address',
+					validate: [validateRequired, email],
+				},
 				send_email_to_support: {
 					type: 'checkbox',
 					label: 'send email to support',

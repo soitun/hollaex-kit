@@ -95,7 +95,8 @@ const secrets = {
 		timezone: EMAILS_TIMEZONE || '',
 		send_email_to_support: (SEND_EMAIL_TO_SUPPORT && SEND_EMAIL_TO_SUPPORT === 'true') || false,
 		sender: '',
-		audit: ''
+		audit: '',
+		audit_sensitive: ''
 	},
 	captcha: {
 		secret_key: CAPTCHA_SECRET_KEY

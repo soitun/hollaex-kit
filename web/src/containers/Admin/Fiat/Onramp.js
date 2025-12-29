@@ -143,23 +143,37 @@ const Onramp = ({
 		}
 	};
 
-	const handleAddPlugin = (plugin) => {
-		const pluginData = {
-			...onramp,
-			[selectedAsset]: {
-				...onramp[selectedAsset],
-				[plugin]: {
-					data: [],
-					type: 'manual',
+	const handleAddPlugin = (type, plugin) => {
+		let pluginData = {};
+		if (type === 'plugin') {
+			pluginData = {
+				...onramp,
+				[selectedAsset]: {
+					...onramp[selectedAsset],
+					[plugin]: {
+						data: plugin,
+						type: 'plugin',
+					},
 				},
-			},
-		};
+			};
+		} else {
+			pluginData = {
+				...onramp,
+				[selectedAsset]: {
+					...onramp[selectedAsset],
+					[plugin]: {
+						data: [],
+						type: 'manual',
+					},
+				},
+			};
+		}
 		setOnRamp(pluginData);
 	};
 
 	const formUpdate = (val, plugin, isCustomPay, curIndex, currentType = '') => {
 		if (currentType === 'add') {
-			handleAddPlugin(plugin);
+			handleAddPlugin(val, plugin);
 		}
 		let selectedAssetData = allCoins;
 		selectedAssetData = selectedAssetData?.filter(

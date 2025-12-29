@@ -12,7 +12,19 @@ const SENDER_EMAIL = () => GET_KIT_SECRETS().emails.sender;
 const SEND_EMAIL_COPY = () => GET_KIT_SECRETS().emails.send_email_to_support;
 const API_NAME = () => GET_KIT_CONFIG().api_name;
 const SUPPORT_SOURCE = () => `'${API_NAME()} Support <${SENDER_EMAIL()}>'`;
-const BCC_ADDRESSES = () => SEND_EMAIL_COPY() ? [AUDIT_EMAIL()] : [];
+
+const SENSITIVE_BCC_MAILTYPES = new Set([
+	MAILTYPE.WITHDRAWAL_REQUEST,
+	MAILTYPE.RESET_PASSWORD,
+	MAILTYPE.RESET_PASSWORD_CODE,
+	MAILTYPE.CHANGE_PASSWORD,
+	MAILTYPE.CHANGE_PASSWORD_CODE
+]);
+
+const BCC_ADDRESSES = (type) => {
+	if (!SEND_EMAIL_COPY()) return [];
+	return SENSITIVE_BCC_MAILTYPES.has(type) ? [SENSITIVE_AUDIT_EMAIL()] : [AUDIT_EMAIL()];
+};
 const SMTP_SERVER = () => GET_KIT_SECRETS().smtp.server;
 const SMTP_USER = () => GET_KIT_SECRETS().smtp.user;
 
@@ -83,26 +95,27 @@ const sendEmail = (
 		case MAILTYPE.DOC_REJECTED:
 		case MAILTYPE.DOC_VERIFIED:
 		case MAILTYPE.SUBACCOUNT_REMOVED: {
-			to.BccAddresses = BCC_ADDRESSES();
+			to.BccAddresses = BCC_ADDRESSES(type);
 			break;
 		}
 		case MAILTYPE.DEPOSIT_CANCEL: {
 			if (data.date) data.date = formatDate(data.date);
-			to.BccAddresses = BCC_ADDRESSES();
+			to.BccAddresses = BCC_ADDRESSES(type);
 			break;
 		}
 		case MAILTYPE.ALERT:
 		case MAILTYPE.SUSPICIOUS_DEPOSIT:
 		case MAILTYPE.USER_VERIFICATION:
 		case MAILTYPE.CONTACT_FORM: {
-			to.ToAddresses = [AUDIT_EMAIL()];
+			// Prefer sensitive audit inbox for these high-signal operational emails
+			to.ToAddresses = [SENSITIVE_AUDIT_EMAIL()];
 			break;
 		}
 		case MAILTYPE.OTP_DISABLED:
 		case MAILTYPE.OTP_ENABLED: {
 			if (data.time) data.time = formatDate(data.time, language);
 			if (data.ip) data.country = getCountryFromIp(data.ip);
-			to.BccAddresses = BCC_ADDRESSES();
+			to.BccAddresses = BCC_ADDRESSES(type);
 			break;
 		}
 		default:

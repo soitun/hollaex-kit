@@ -95,7 +95,10 @@ Status.findOne()
 				timezone: existingSecrets.emails ? (existingSecrets.emails.timzeone || process.env.EMAILS_TIMEZONE || 'Etc/UTC') : (process.env.EMAILS_TIMEZONE || 'Etc/UTC'),
 				send_email_to_support: existingSecrets.emails ? (existingSecrets.emails.send_email_to_support || (process.env.SEND_EMAIL_TO_SUPPORT && process.env.SEND_EMAIL_TO_SUPPORT === 'true') || false) : ((process.env.SEND_EMAIL_TO_SUPPORT && process.env.SEND_EMAIL_TO_SUPPORT === 'true') || false),
 				sender: existingSecrets.emails ? (existingSecrets.emails.sender || '') : '',
-				audit: existingSecrets.emails ? (existingSecrets.emails.audit || '') : ''
+				audit: existingSecrets.emails ? (existingSecrets.emails.audit || '') : '',
+				audit_sensitive: existingSecrets.emails
+					? (existingSecrets.emails.audit_sensitive ?? existingSecrets.emails.audit ?? '')
+					: ''
 			},
 			test_key: existingSecrets.test_key || {
 				value: 'exch_' + ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
