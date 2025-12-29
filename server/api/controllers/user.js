@@ -1560,6 +1560,8 @@ const addUserBank = (req, res) => {
 				throw new Error('No payment system fields to add');
 			}
 
+			bank_account.type = data.type || 'bank';
+
 			bank_account.id = crypto.randomBytes(8).toString('hex');
 			bank_account.status = VERIFY_STATUS.PENDING;
 
