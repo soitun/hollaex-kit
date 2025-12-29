@@ -98,7 +98,13 @@ Status.findOne()
 				audit: existingSecrets.emails ? (existingSecrets.emails.audit || '') : '',
 				audit_sensitive: existingSecrets.emails
 					? (existingSecrets.emails.audit_sensitive ?? existingSecrets.emails.audit ?? '')
-					: ''
+					: '',
+				audit_enabled: existingSecrets.emails
+					? (existingSecrets.emails.audit_enabled ?? true)
+					: true,
+				audit_sensitive_enabled: existingSecrets.emails
+					? (existingSecrets.emails.audit_sensitive_enabled ?? true)
+					: true
 			},
 			test_key: existingSecrets.test_key || {
 				value: 'exch_' + ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>

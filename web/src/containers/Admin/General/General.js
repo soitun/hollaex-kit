@@ -519,8 +519,18 @@ class GeneralContent extends Component {
 			if (compareValues.audit !== formProps.audit) {
 				changedEmails.audit = formProps.audit;
 			}
+			if (compareValues.audit_enabled !== formProps.audit_enabled) {
+				changedEmails.audit_enabled = formProps.audit_enabled;
+			}
 			if (compareValues.audit_sensitive !== formProps.audit_sensitive) {
 				changedEmails.audit_sensitive = formProps.audit_sensitive;
+			}
+			if (
+				compareValues.audit_sensitive_enabled !==
+				formProps.audit_sensitive_enabled
+			) {
+				changedEmails.audit_sensitive_enabled =
+					formProps.audit_sensitive_enabled;
 			}
 			if (
 				compareValues.send_email_to_support !== formProps.send_email_to_support

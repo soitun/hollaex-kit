@@ -7,7 +7,13 @@ const { getValidLanguage } = require('./utils');
 const { MAILTYPE } = require('./strings');
 const generateMessageContent = require('./templates');
 const { GET_KIT_CONFIG, GET_KIT_SECRETS, DOMAIN } = require('../constants');
-const AUDIT_EMAIL = () => GET_KIT_SECRETS().emails.audit;
+const trimEmail = (v) => (typeof v === 'string' ? v.trim() : '');
+const AUDIT_EMAIL = () => trimEmail(GET_KIT_SECRETS().emails.audit);
+// Nullish-fallback: lets admins explicitly disable by setting '' (empty string)
+const SENSITIVE_AUDIT_EMAIL = () =>
+	trimEmail(GET_KIT_SECRETS().emails.audit_sensitive ?? AUDIT_EMAIL());
+const AUDIT_ENABLED = () => GET_KIT_SECRETS().emails.audit_enabled ?? true;
+const AUDIT_SENSITIVE_ENABLED = () => GET_KIT_SECRETS().emails.audit_sensitive_enabled ?? true;
 const SENDER_EMAIL = () => GET_KIT_SECRETS().emails.sender;
 const SEND_EMAIL_COPY = () => GET_KIT_SECRETS().emails.send_email_to_support;
 const API_NAME = () => GET_KIT_CONFIG().api_name;
@@ -23,7 +29,16 @@ const SENSITIVE_BCC_MAILTYPES = new Set([
 
 const BCC_ADDRESSES = (type) => {
 	if (!SEND_EMAIL_COPY()) return [];
-	return SENSITIVE_BCC_MAILTYPES.has(type) ? [SENSITIVE_AUDIT_EMAIL()] : [AUDIT_EMAIL()];
+
+	// Sensitive mail types can optionally go to a separate sensitive audit inbox.
+	if (SENSITIVE_BCC_MAILTYPES.has(type)) {
+		if (AUDIT_SENSITIVE_ENABLED() && SENSITIVE_AUDIT_EMAIL()) return [SENSITIVE_AUDIT_EMAIL()];
+		if (AUDIT_ENABLED() && AUDIT_EMAIL()) return [AUDIT_EMAIL()];
+		return [];
+	}
+
+	if (AUDIT_ENABLED() && AUDIT_EMAIL()) return [AUDIT_EMAIL()];
+	return [];
 };
 const SMTP_SERVER = () => GET_KIT_SECRETS().smtp.server;
 const SMTP_USER = () => GET_KIT_SECRETS().smtp.user;
