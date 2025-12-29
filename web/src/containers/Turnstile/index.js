@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import querystring from 'query-string';
 
 import CloudflareTurnstile from 'components/CloudflareTurnstile';
+import { getExchangeInfo } from 'actions/appActions';
 
 const isSafeRedirectUri = (value = '') => {
 	if (!value || typeof value !== 'string') return false;
@@ -28,9 +29,21 @@ const buildRedirect = (redirectUri, token, state) => {
 	return `${base}${sep}${parts.join('&')}`;
 };
 
-const Turnstile = ({ constants = {}, activeTheme, location }) => {
+const Turnstile = ({
+	constants = {},
+	activeTheme,
+	location,
+	getExchangeInfo,
+}) => {
 	const siteKey = constants?.cloudflare_turnstile?.site_key;
 	const turnstileEnabled = !!siteKey && siteKey !== 'null';
+
+	// Ensure constants are loaded even when this page is mounted outside of AuthContainer.
+	useEffect(() => {
+		if (!constants || Object.keys(constants).length === 0) {
+			getExchangeInfo();
+		}
+	}, [constants, getExchangeInfo]);
 
 	const query = useMemo(() => {
 		if (location?.query) return location.query;
@@ -180,4 +193,8 @@ const mapStateToProps = (store) => ({
 	constants: store.app.constants,
 });
 
-export default connect(mapStateToProps)(Turnstile);
+const mapDispatchToProps = (dispatch) => ({
+	getExchangeInfo: () => dispatch(getExchangeInfo()),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Turnstile);

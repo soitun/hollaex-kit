@@ -95,7 +95,9 @@ const Onramp = ({
 							color: item?.meta?.color,
 							fullname: item?.fullname,
 						},
-					]?.filter(({symbol}) => !Object.keys(onramp || {})?.includes(symbol));
+					]?.filter(
+						({ symbol }) => !Object.keys(onramp || {})?.includes(symbol)
+					);
 				}
 			});
 		setFiatCoins(filteredFiatCoins);
@@ -141,23 +143,37 @@ const Onramp = ({
 		}
 	};
 
-	const handleAddPlugin = (plugin) => {
-		const pluginData = {
-			...onramp,
-			[selectedAsset]: {
-				...onramp[selectedAsset],
-				[plugin]: {
-					data: [],
-					type: 'manual',
+	const handleAddPlugin = (type, plugin) => {
+		let pluginData = {};
+		if (type === 'plugin') {
+			pluginData = {
+				...onramp,
+				[selectedAsset]: {
+					...onramp[selectedAsset],
+					[plugin]: {
+						data: plugin,
+						type: 'plugin',
+					},
 				},
-			},
+			};
+		} else {
+			pluginData = {
+				...onramp,
+				[selectedAsset]: {
+					...onramp[selectedAsset],
+					[plugin]: {
+						data: [],
+						type: 'manual',
+					},
+				},
+			};
 		}
 		setOnRamp(pluginData);
 	};
 
 	const formUpdate = (val, plugin, isCustomPay, curIndex, currentType = '') => {
 		if (currentType === 'add') {
-			handleAddPlugin(plugin);
+			handleAddPlugin(val, plugin);
 		}
 		let selectedAssetData = allCoins;
 		selectedAssetData = selectedAssetData?.filter(
@@ -233,7 +249,9 @@ const Onramp = ({
 			coinData.push(item);
 		}
 	});
-	coinData = coinData?.filter(({ symbol }) => Object.keys(onramp || {})?.includes(symbol));
+	coinData = coinData?.filter(({ symbol }) =>
+		Object.keys(onramp || {})?.includes(symbol)
+	);
 	return (
 		<div className="ramp-wrapper">
 			<Spin spinning={isLoading || !allCoins.length} size="large">
@@ -360,8 +378,8 @@ const Onramp = ({
 								? renderSelect('deposit')
 								: null}
 							{coinData.map((item, index) => {
-						return (
-							<div key={index}>
+								return (
+									<div key={index}>
 										<div className="paymentbox2">
 											<div className="mr-4 ml-4">
 												<Coins
@@ -445,7 +463,9 @@ const Onramp = ({
 													}
 													currentOnrampType={currentType}
 													OnsetCurrentType={setCurrentType}
-													isProceed={isProceed && selectedAsset === item?.symbol}
+													isProceed={
+														isProceed && selectedAsset === item?.symbol
+													}
 													setIsProceed={setIsProceed}
 													isModalVisible={isVisible}
 													isLoading={isLoading}
