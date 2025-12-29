@@ -303,8 +303,8 @@ exports.WEBSOCKET_CHANNEL = (topic, symbolOrUserId) => {
 			return `orderbook:${symbolOrUserId}`;
 		case 'trade':
 			return `trade:${symbolOrUserId}`;
-        case 'price':
-            return 'price';
+		case 'price':
+			return 'price';
 		case 'order':
 			return `order:${symbolOrUserId}`;
 		case 'usertrade':
@@ -705,13 +705,13 @@ exports.EXPLORERS = {
 			txPath: '/tx'
 		}
 	],
-	// ton: [
-	// 	{
-	// 		name: 'OKLink',
-	// 		baseUrl: 'https://www.oklink.com/ton',
-	// 		txPath: '/tx'
-	// 	}
-	// ]
+	ton: [
+		{
+			name: 'TonScan',
+			baseUrl: 'https://tonscan.org',
+			txPath: '/tx'
+		}
+	]
 };
 
 // EMAIL CONSTANTS END --------------------------------------------------
