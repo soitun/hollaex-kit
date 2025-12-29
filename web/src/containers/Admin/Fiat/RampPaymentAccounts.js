@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { connect } from 'react-redux';
 import { Modal, Select, message } from 'antd';
 import { CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons';
 import _get from 'lodash/get';
@@ -57,6 +58,7 @@ const RampPaymentAccounts = ({
 	setCoinSymbol = () => {},
 	setOnRamp = () => {},
 	setCoins = () => {},
+	allOnRamp = {},
 }) => {
 	const [isVisible, setIsVisible] = useState(false);
 	const [currentTab, setCurrentTab] = useState('payment');
@@ -444,7 +446,7 @@ const RampPaymentAccounts = ({
 								setPayOption(true);
 								setIsProceed(false);
 								OnsetCurrentType('addSuccess');
-								setSavedContent(true);
+								setSavedContent(false);
 							}
 						} else {
 							setCurrentIndex(1);
@@ -594,6 +596,13 @@ const RampPaymentAccounts = ({
 		}
 		if (currentActiveTab && currentActiveTab === 'onRamp') {
 			setIsCurrentFormOpen(true);
+			if (
+				allOnRamp[currentsymbol]?.[currentPaymentType] &&
+				currentPaymentType?.trim()?.length &&
+				type === 'plugin'
+			) {
+				setSavedContent(true);
+			}
 		} else {
 			setCoinSymbol(currentsymbol);
 		}
@@ -629,7 +638,7 @@ const RampPaymentAccounts = ({
 			},
 		};
 		updateConstantsData(pluginBodyData);
-		setSavedContent(true);
+		setSavedContent(false);
 		setIsVisible(false);
 	};
 	const handlePopupDel = (method) => {
@@ -883,4 +892,10 @@ const RampPaymentAccounts = ({
 	);
 };
 
-export default RampPaymentAccounts;
+const mapStateToProps = (state) => {
+	return {
+		allOnRamp: state.app.constants?.onramp,
+	};
+};
+
+export default connect(mapStateToProps)(RampPaymentAccounts);

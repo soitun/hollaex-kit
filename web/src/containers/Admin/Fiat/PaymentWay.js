@@ -92,13 +92,7 @@ export const PaymentWay = withConfig(
 				) {
 					return (
 						<div className="payment-acc-wrapper">
-							<div
-								className={
-									!savedContent
-										? 'pluginContentWrapper'
-										: 'pluginContentWrapper boxcontent'
-								}
-							>
+							<div className="pluginContentWrapper">
 								<div className="d-flex mb-5 ml-1">
 									<div>Onramp 1</div>
 									{!savedContent ? (
@@ -116,7 +110,7 @@ export const PaymentWay = withConfig(
 										<span>
 											<b className="mr-1">Plugin:</b> True
 										</span>
-										{!savedContent ? (
+										{savedContent ? (
 											<span
 												className="txtanchor"
 												onClick={() =>
@@ -141,42 +135,58 @@ export const PaymentWay = withConfig(
 										</div>
 									</div>
 								</div>
-								{!savedContent ? (
-									<div className="d-flex align-items-center mb-4 ml-3">
-										<Image
-											icon={ICONS['ANNOUNCEMENT_ICON']}
-											wrapperClassName="announcement-icon mr-3 w-45 h-45"
-										/>
-										<div className="ml-3">
-											<div>Only show to verified or upgraded users</div>
-											<div>
-												(user won't be able to access these details unless they
-												complete part or all verification)
-											</div>
+								<div className="d-flex align-items-center mb-4 ml-3">
+									<Image
+										icon={ICONS['ANNOUNCEMENT_ICON']}
+										wrapperClassName="announcement-icon mr-3 w-45 h-45"
+									/>
+									<div className="ml-3">
+										<div>Only show to verified or upgraded users</div>
+										<div>
+											(user won't be able to access these details unless they
+											complete part or all verification)
 										</div>
 									</div>
-								) : null}
-								{!savedContent ? (
-									<Button
-										type="primary"
-										className="green-btn customizedbtn"
-										onClick={() =>
-											handleSave(
-												true,
-												pluginName ? pluginName : currentPaymentType
-											)
-										}
-									>
-										SAVE
-									</Button>
-								) : (
-									<div
-										className="txtanchor"
-										onClick={() => formUpdate('plugin', pluginName)}
-									>
-										EDIT
+								</div>
+								<div className="pt-5 d-flex justify-start w-100 gap-4">
+									<div>
+										<Button
+											type="ghost"
+											className="minimal-btn text-white"
+											onClick={handleBack}
+										>
+											Back
+										</Button>
 									</div>
-								)}
+									<div>
+										<Tooltip
+											title={
+												savedContent
+													? 'Plugin already saved'
+													: 'Save plugin configuration'
+											}
+											placement="right"
+										>
+											<span>
+												<Button
+													type="primary"
+													disabled={savedContent}
+													onClick={() =>
+														handleSave(
+															true,
+															pluginName ? pluginName : currentPaymentType
+														)
+													}
+													className={`green-btn minimal-btn mt-0 ml-4 ${
+														savedContent ? 'area-disabled' : ''
+													}`}
+												>
+													Save
+												</Button>
+											</span>
+										</Tooltip>
+									</div>
+								</div>
 							</div>
 						</div>
 					);
