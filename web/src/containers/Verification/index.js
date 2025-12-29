@@ -153,6 +153,8 @@ class Verification extends Component {
 				return 'kyc';
 			} else if (search.includes('banks')) {
 				return 'bank';
+			} else if (search.includes('payment-accounts')) {
+				return 'user_payments';
 			}
 		}
 
