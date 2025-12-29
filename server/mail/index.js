@@ -8,6 +8,7 @@ const { MAILTYPE } = require('./strings');
 const generateMessageContent = require('./templates');
 const { GET_KIT_CONFIG, GET_KIT_SECRETS, DOMAIN } = require('../constants');
 const AUDIT_EMAIL = () => GET_KIT_SECRETS().emails.audit;
+const SENSITIVE_AUDIT_EMAIL = () => GET_KIT_SECRETS().emails.audit_sensitive || AUDIT_EMAIL();
 const SENDER_EMAIL = () => GET_KIT_SECRETS().emails.sender;
 const SEND_EMAIL_COPY = () => GET_KIT_SECRETS().emails.send_email_to_support;
 const API_NAME = () => GET_KIT_CONFIG().api_name;
