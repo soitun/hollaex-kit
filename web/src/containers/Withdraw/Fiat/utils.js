@@ -10,7 +10,6 @@ export const withdrawalOptionsSelector = createSelector(
 		const verifiedMethods = bank_account.filter(
 			({ status }) => status === VERIFIED_BANK_STATUS
 		);
-		console.log('verifiedMethods', verifiedMethods);
 		const applicableMethods = verifiedMethods.filter(({ type = 'bank' }) =>
 			offramp.includes(type)
 		);

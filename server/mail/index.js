@@ -9,7 +9,6 @@ const generateMessageContent = require('./templates');
 const { GET_KIT_CONFIG, GET_KIT_SECRETS, DOMAIN } = require('../constants');
 const trimEmail = (v) => (typeof v === 'string' ? v.trim() : '');
 const AUDIT_EMAIL = () => trimEmail(GET_KIT_SECRETS().emails.audit);
-// Nullish-fallback: lets admins explicitly disable by setting '' (empty string)
 const SENSITIVE_AUDIT_EMAIL = () =>
 	trimEmail(GET_KIT_SECRETS().emails.audit_sensitive ?? AUDIT_EMAIL());
 const AUDIT_ENABLED = () => GET_KIT_SECRETS().emails.audit_enabled ?? true;
@@ -30,10 +29,8 @@ const SENSITIVE_BCC_MAILTYPES = new Set([
 const BCC_ADDRESSES = (type) => {
 	if (!SEND_EMAIL_COPY()) return [];
 
-	// Sensitive mail types can optionally go to a separate sensitive audit inbox.
 	if (SENSITIVE_BCC_MAILTYPES.has(type)) {
 		if (AUDIT_SENSITIVE_ENABLED() && SENSITIVE_AUDIT_EMAIL()) return [SENSITIVE_AUDIT_EMAIL()];
-		if (AUDIT_ENABLED() && AUDIT_EMAIL()) return [AUDIT_EMAIL()];
 		return [];
 	}
 
