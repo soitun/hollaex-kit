@@ -353,7 +353,7 @@ const createUserOnNetwork = (email, opts = {
 	return getNodeLib().createUser(email, opts);
 };
 
-const loginUser = (email, password, otp_code, captcha, ip, device, domain, origin, referer) => {
+const loginUser = (email, password, otp_code, captcha, ip, device, domain, origin, referer, headers = {}) => {
 	return getUserByEmail(email.toLowerCase())
 		.then((user) => {
 			if (!user) {
@@ -377,7 +377,7 @@ const loginUser = (email, password, otp_code, captcha, ip, device, domain, origi
 			}
 
 			if (!user.otp_enabled) {
-				return all([user, checkCaptcha(captcha, ip)]);
+				return all([user, checkCaptcha(captcha, ip, headers)]);
 			} else {
 				return all([
 					user,
@@ -385,7 +385,7 @@ const loginUser = (email, password, otp_code, captcha, ip, device, domain, origi
 						if (!validOtp) {
 							throw new Error(INVALID_OTP_CODE);
 						} else {
-							return checkCaptcha(captcha, ip);
+							return checkCaptcha(captcha, ip, headers);
 						}
 					})
 				]);
