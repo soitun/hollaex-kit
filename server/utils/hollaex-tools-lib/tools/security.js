@@ -87,7 +87,20 @@ const checkIp = async (remoteip = '') => {
 	return;
 };
 
-const checkCaptcha = (captcha = '', remoteip = '') => {
+const checkCaptcha = (captcha = '', remoteip = '', headers = {}) => {
+	// Backward-compatible bypass for legacy mobile clients:
+	// if they send the custom header `custom-device`, skip captcha verification.
+	// Note: Node lower-cases incoming header keys.
+	try {
+		const headerObj = headers?.headers ? headers.headers : headers;
+		if (headerObj && headerObj['custom-device']) {
+			loggerAuth.info('helpers/auth/checkCaptcha skipped due to custom-device header', remoteip);
+			return;
+		}
+	} catch (err) {
+		loggerAuth.error('helpers/auth/checkCaptcha cutom-header catch ALERT', err.message);
+	}
+
 	// Cloudflare Turnstile verification (server-side).
 	const turnstileSecret = getKitSecrets()?.cloudflare_turnstile?.secret_key;
 	const turnstileSiteKey = getKitConfig()?.cloudflare_turnstile?.site_key;
@@ -342,7 +355,7 @@ const createResetPasswordCode = (userId, version) => {
 		});
 };
 
-const sendResetPasswordCode = (email, captcha, ip, domain, version) => {
+const sendResetPasswordCode = (email, captcha, ip, domain, version, headers = {}) => {
 	if (typeof email !== 'string' || !isEmail(email)) {
 		return reject(new Error(USER_NOT_FOUND));
 	}
@@ -352,7 +365,11 @@ const sendResetPasswordCode = (email, captcha, ip, domain, version) => {
 			if (!user) {
 				throw new Error(USER_NOT_FOUND);
 			}
-			return all([createResetPasswordCode(user.id, version), user, checkCaptcha(captcha, ip)]);
+			return all([
+				createResetPasswordCode(user.id, version),
+				user,
+				checkCaptcha(captcha, ip, headers)
+			]);
 		})
 		.then(([code, user]) => {
 			// Create a freeze-account token (valid for 6 hours) tied to the reset code

@@ -109,7 +109,7 @@ const signUpUser = (req, res) => {
 
 	toolsLib.security.checkIp(ip)
 		.then(() => {
-			return toolsLib.security.checkCaptcha(captcha, ip);
+			return toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 		})
 		.then(() => toolsLib.user.signUpUser(email, password, { referral }, version))
 		.then(() => res.status(201).json({ message: USER_REGISTERED }))
@@ -204,7 +204,7 @@ const getVerifyUser = (req, res) => {
 			}
 			if (resendEmail) {
 				// Validate captcha before resending verification email to reduce spam/bot abuse.
-				await toolsLib.security.checkCaptcha(captcha, ip);
+				await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 				let verificationCode;
 				if (version === 'v3') {
 					const letters = Array.from({ length: 2 }, () =>
@@ -440,7 +440,7 @@ const loginPost = async (req, res) => {
 
 		// Validate captcha early (before password check) to reduce brute-force attempts.
 		// Note: Turnstile tokens are short-lived and typically single-use.
-		await toolsLib.security.checkCaptcha(captcha, ip);
+		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 
 		if (user.otp_enabled) {
 			try {
@@ -918,7 +918,7 @@ const requestResetPassword = (req, res) => {
 
 	email = email.toLowerCase();
 
-	toolsLib.security.sendResetPasswordCode(email, captcha, ip, domain, version)
+	toolsLib.security.sendResetPasswordCode(email, captcha, ip, domain, version, req.headers)
 		.then(() => {
 			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 			return res.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
