@@ -49,6 +49,7 @@ const flatten = require('flat');
 const { checkStatus: checkExchangeStatus, getNodeLib } = require(`${SERVER_PATH}/init`);
 const rp = require('request-promise');
 const { isEmail: isValidEmail } = require('validator');
+const { isIP } = require('net');
 const moment = require('moment');
 const { GET_BROKER, GET_QUICKTRADE, GET_NETWORK_QUICKTRADE, GET_TRADEPATHS } = require('../../../constants');
 const BigNumber = require('bignumber.js');
@@ -1060,11 +1061,43 @@ const getMinFees = () => {
 };
 
 const validateIp = (ip) => {
-	const regex = /^([0-9]{1,3}\.){3}[0-9]{1,3}($|\/(16|24|32))$/;
-	if (!regex.test(ip)) {
+	if (!isString(ip)) {
 		return false;
 	}
-	return true;
+
+	const ipString = ip.trim();
+	const segments = ipString.split('/');
+
+	if (segments.length > 2) {
+		return false;
+	}
+
+	const [address, prefix] = segments;
+	const version = isIP(address);
+
+	if (!version) {
+		return false;
+	}
+
+	if (prefix === undefined) {
+		return true;
+	}
+
+	if (prefix === '') {
+		return false;
+	}
+
+	const prefixNumber = Number(prefix);
+
+	if (!Number.isInteger(prefixNumber)) {
+		return false;
+	}
+
+	if (version === 4) {
+		return [16, 24, 32].includes(prefixNumber);
+	}
+
+	return prefixNumber >= 0 && prefixNumber <= 128;
 };
 
 const validatePair = (pair) => {

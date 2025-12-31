@@ -21,6 +21,7 @@ let configuration = {
 		strings: {},
 		links: {},
 		captcha: {},
+		cloudflare_turnstile: {},
 		defaults: {},
 		features: {},
 		meta: {},
@@ -44,6 +45,7 @@ let secrets = {
 	security: {},
 	accounts: {},
 	captcha: {},
+	cloudflare_turnstile: {},
 	emails: {},
 	smtp: {}
 };
@@ -95,6 +97,7 @@ const resetAllConfig = () => {
 		security: {},
 		accounts: {},
 		captcha: {},
+		cloudflare_turnstile: {},
 		emails: {},
 		smtp: {}
 	};
@@ -110,6 +113,7 @@ const resetAllConfig = () => {
 			strings: {},
 			links: {},
 			captcha: {},
+			cloudflare_turnstile: {},
 			defaults: {},
 			features: {},
 			meta: {},
@@ -199,6 +203,7 @@ exports.VALID_USER_META_TYPES = [
 
 exports.KIT_CONFIG_KEYS = [
 	'captcha',
+	'cloudflare_turnstile',
 	'api_name',
 	'description',
 	'color',
@@ -248,6 +253,7 @@ exports.KIT_SECRETS_KEYS = [
 	'emails',
 	'security',
 	'captcha',
+	'cloudflare_turnstile',
 	'smtp',
 	'test_key',
 ];
@@ -297,8 +303,8 @@ exports.WEBSOCKET_CHANNEL = (topic, symbolOrUserId) => {
 			return `orderbook:${symbolOrUserId}`;
 		case 'trade':
 			return `trade:${symbolOrUserId}`;
-        case 'price':
-            return 'price';
+		case 'price':
+			return 'price';
 		case 'order':
 			return `order:${symbolOrUserId}`;
 		case 'usertrade':
@@ -699,13 +705,13 @@ exports.EXPLORERS = {
 			txPath: '/tx'
 		}
 	],
-	// ton: [
-	// 	{
-	// 		name: 'OKLink',
-	// 		baseUrl: 'https://www.oklink.com/ton',
-	// 		txPath: '/tx'
-	// 	}
-	// ]
+	ton: [
+		{
+			name: 'TonScan',
+			baseUrl: 'https://tonscan.org',
+			txPath: '/tx'
+		}
+	]
 };
 
 // EMAIL CONSTANTS END --------------------------------------------------

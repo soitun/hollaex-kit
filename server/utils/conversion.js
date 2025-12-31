@@ -23,8 +23,6 @@ const errorMessageConverter = (error, lang) => {
 
 	if (error.name === 'SequelizeValidationError') {
 		message = error.errors[0].message;
-	} else if (error.message === INVALID_CAPTCHA) {
-		message = INVALID_CREDENTIALS;
 	} else if (error.statusCode) {
 		if (typeof error.error === 'string') {
 			try {

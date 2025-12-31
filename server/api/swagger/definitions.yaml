@@ -529,8 +529,12 @@ definitions:
         properties:
           captcha:
             type: object
-            required:
-              - site_key
+            properties:
+              site_key:
+                type: string
+                maxLength: 256
+          cloudflare_turnstile:
+            type: object
             properties:
               site_key:
                 type: string
@@ -675,8 +679,12 @@ definitions:
                 type: number
           captcha:
             type: object
-            required:
-              - secret_key
+            properties:
+              secret_key:
+                type: string
+                maxLength: 256
+          cloudflare_turnstile:
+            type: object
             properties:
               secret_key:
                 type: string
@@ -1631,6 +1639,11 @@ definitions:
       name:
         type: string
         maxLength: 256
+      category:
+        type: ['string', 'null']
+        maxLength: 256
+      is_automatic:
+        type: ['boolean', 'null']
       user_id:
         type: number
         format: int32
