@@ -4128,6 +4128,28 @@ const messages = {
 
 
 const functionMessages = {
+	'Invalid OTP Code': (msg) => {
+		const suffix = Array.isArray(msg) ? msg.join(' ') : msg;
+		return {
+			'en': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'de': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'es': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'fa': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'fr': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'id': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'it': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ja': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ko': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'mn': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'nl': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'pt': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ru': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'tr': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ur': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'vi': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'zh': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+		};
+	},
 	'Access denied': (msg) => {
 		return {
 			'en': `Access denied: ${msg}`,

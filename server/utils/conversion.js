@@ -42,10 +42,22 @@ const errorMessageConverter = (error, lang) => {
 	else {
 		try {
 			const messageKeys = Object.keys(functionMessages);
-			const Index = Object.keys(functionMessages).findIndex(x => message.startsWith(x))
+			const Index = messageKeys.findIndex((x) => message.startsWith(x));
 			if (Index > -1) {
 				let difference = message.split(' ').filter(x => !(functionMessages[messageKeys[Index]]('')['en'].split(' ')).includes(x));
-				return response = { message: functionMessages[messageKeys[Index]](difference)[lang], lang, code: Index + 10 };
+				// Prefer reusing the base code from the main message list (if it exists) to avoid
+				// collisions between getMessage() codes and functionMessages() codes.
+				const base = getMessage(messageKeys[Index], lang);
+				const code =
+					typeof base?.code === 'number'
+						? base.code
+						: 1000 + Index; // dedicated range for functionMessages
+
+				return (response = {
+					message: functionMessages[messageKeys[Index]](difference)[lang],
+					lang,
+					code,
+				});
 			} else return response = { message, lang };
 		} catch (error) {
 			return { message, lang };
