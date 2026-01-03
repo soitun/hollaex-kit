@@ -30,7 +30,6 @@ import {
 import isEmpty from 'lodash.isempty';
 
 import { STATIC_ICONS } from 'config/icons';
-import { DASH_TOKEN_KEY } from 'config/constants';
 import PlanStructure from 'containers/Admin/Billing/planStructure';
 import DIYPlanStructure from 'containers/Admin/Billing/diyPlanStructure';
 import GeneralChildContent from 'containers/Admin/Billing/generalChildContent';
@@ -77,6 +76,7 @@ import {
 	setAutoPaymentDetail,
 } from '../AdminFinancials/action';
 import { requestUsers } from '../Trades/actions';
+import { getDashToken as getDashTokenFromStorage } from 'utils/token';
 
 const { Option } = Select;
 const TabPane = Tabs.TabPane;
@@ -110,7 +110,7 @@ const GeneralContent = ({
 	setExplorePlugins,
 }) => {
 	const balance = user?.balance;
-	const dashToken = localStorage.getItem(DASH_TOKEN_KEY);
+	const dashToken = getDashTokenFromStorage();
 	const isPluginDataAvail = !isEmpty(pluginData);
 	const month = dashExchange.period !== 'year';
 

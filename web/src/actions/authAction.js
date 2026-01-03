@@ -2,7 +2,12 @@ import axios from 'axios';
 import { browserHistory } from 'react-router';
 import querystring from 'query-string';
 import store from '../store';
-import { setToken, removeToken, getToken } from '../utils/token';
+import {
+	setToken,
+	removeToken,
+	removeTokenLocal,
+	getToken,
+} from '../utils/token';
 
 export function getEmail(data) {
 	localStorage.setItem('email', data);
@@ -90,6 +95,13 @@ const clearTokenInApp = (router, path = '/') => {
 	router.push(path);
 };
 
+const clearTokenInAppLocal = (router, path = '/') => {
+	axios.defaults.headers.common['Authorization'] = {};
+	removeTokenLocal();
+	localStorage.removeItem('deposit_initial_display');
+	router.push(path);
+};
+
 export function verifyToken(token) {
 	return (dispatch) => {
 		dispatch({ type: 'VERIFY_TOKEN_PENDING' });
@@ -110,6 +122,18 @@ export const logout = (message = '') => (dispatch) => {
 	});
 	requestLogout();
 	clearTokenInApp(browserHistory, '/login');
+};
+
+// Used when this tab is holding a stale token (e.g. another tab logged in/out),
+// and we must not clear the shared token in localStorage.
+export const logoutLocal = (message = '') => (dispatch) => {
+	dispatch({
+		type: 'LOGOUT',
+		payload: {
+			message,
+		},
+	});
+	clearTokenInAppLocal(browserHistory, '/login');
 };
 
 export const requestLogout = () => axios.get('/logout');

@@ -7,7 +7,13 @@ import { PATHS } from './containers';
 import { verifyToken } from './actions/authAction';
 import { setLanguage } from './actions/appActions';
 import { SmartTarget, NotLoggedIn } from 'components';
-import { isLoggedIn, getToken, removeToken, isAdmin } from './utils/token';
+import {
+	isLoggedIn,
+	getToken,
+	removeTokenLocal,
+	removeToken,
+	isAdmin,
+} from './utils/token';
 import {
 	getLanguage,
 	getInterfaceLanguage,
@@ -459,7 +465,8 @@ const checkLanding = (nextState, replace) => {
 
 const logOutUser = () => {
 	if (getToken()) {
-		removeToken();
+		// Only log out this tab so we don't affect other active tabs.
+		removeTokenLocal();
 	}
 };
 
