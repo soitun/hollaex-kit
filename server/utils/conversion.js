@@ -19,6 +19,7 @@ const errorMessageConverter = (error, lang) => {
 		return error.message;
 	}
 
+	const normalizedLang = lang || 'en';
 	let message = error.message;
 
 	if (error.name === 'SequelizeValidationError') {
@@ -36,7 +37,7 @@ const errorMessageConverter = (error, lang) => {
 		}
 	}
 
-	let response = getMessage(message, lang);
+	let response = getMessage(message, normalizedLang);
 
 	if (response?.message) return response;
 	else {
@@ -47,15 +48,15 @@ const errorMessageConverter = (error, lang) => {
 				let difference = message.split(' ').filter(x => !(functionMessages[messageKeys[Index]]('')['en'].split(' ')).includes(x));
 				// Prefer reusing the base code from the main message list (if it exists) to avoid
 				// collisions between getMessage() codes and functionMessages() codes.
-				const base = getMessage(messageKeys[Index], lang);
+				const base = getMessage(messageKeys[Index], normalizedLang);
 				const code =
 					typeof base?.code === 'number'
 						? base.code
 						: 1000 + Index; // dedicated range for functionMessages
 
 				return (response = {
-					message: functionMessages[messageKeys[Index]](difference)[lang],
-					lang,
+					message: functionMessages[messageKeys[Index]](difference)[normalizedLang],
+					lang: normalizedLang,
 					code,
 				});
 			} else return response = { message, lang };

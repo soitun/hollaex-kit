@@ -167,6 +167,9 @@ class Login extends Component {
 				if (_error.toLowerCase().indexOf('otp') > -1) {
 					// A POST /login was made, always refresh captcha token for the next request
 					this.resetCaptcha();
+					// Ensure OTP form opens in a clean state (no stale error message)
+					this.props.reset('OtpForm');
+					this.props.stopSubmit('OtpForm', {});
 					const { captcha, ...rest } = values || {};
 					this.setState({ values: rest, otpDialogIsOpen: true });
 					error._error = STRINGS['VALIDATIONS.OTP_LOGIN'];
@@ -238,7 +241,9 @@ class Login extends Component {
 					this.setState({ otpDialogIsOpen: false, values: {} });
 					// Clear OTP inputs + login password field so user can re-enter safely
 					this.props.reset('OtpForm');
+					this.props.stopSubmit('OtpForm', {});
 					this.props.change(FORM_NAME, 'password', '');
+					this.resetCaptcha();
 					this.props.stopSubmit(FORM_NAME, { _error });
 					throw new SubmissionError({ _error });
 				}
@@ -248,6 +253,7 @@ class Login extends Component {
 				if (turnstileEnabled) {
 					this.setState({ otpDialogIsOpen: false });
 					this.props.reset('OtpForm');
+					this.props.stopSubmit('OtpForm', {});
 					this.resetCaptcha();
 					this.props.stopSubmit(FORM_NAME, { _error });
 					throw new SubmissionError({ _error });
@@ -267,6 +273,7 @@ class Login extends Component {
 	onCloseDialog = () => {
 		this.setState({ otpDialogIsOpen: false });
 		this.props.reset('OtpForm');
+		this.props.stopSubmit('OtpForm', {});
 	};
 
 	onCloseLogoutDialog = () => {

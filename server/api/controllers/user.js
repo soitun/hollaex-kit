@@ -405,6 +405,11 @@ const loginPost = async (req, res) => {
 
 	try {
 		await toolsLib.security.checkIp(ip);
+		loggerUser.verbose(
+			req.uuid,
+			'controllers/user/loginPost checkIp passed',
+			ip
+		);
 
 		const user = email
 			? await toolsLib.user.getUserByEmail(email)
@@ -412,6 +417,9 @@ const loginPost = async (req, res) => {
 
 		if (!user) {
 			throw new Error(USER_NOT_FOUND);
+		}
+		if (!ip) {
+			throw new Error(NO_IP_FOUND);
 		}
 		if (user.verification_level === 0) {
 			throw new Error(USER_NOT_VERIFIED);
@@ -441,10 +449,18 @@ const loginPost = async (req, res) => {
 		// Validate captcha early (before password check) to reduce brute-force attempts.
 		// Note: Turnstile tokens are short-lived and typically single-use.
 		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
+		loggerUser.verbose(
+			req.uuid,
+			'controllers/user/loginPost checkCaptcha passed'
+		);
 
 		if (user.otp_enabled) {
 			try {
 				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
+				loggerUser.verbose(
+					req.uuid,
+					'controllers/user/loginPost otp passed'
+				);
 			} catch (err) {
 				// Mirror previous behavior: log a failed login attempt and include attempt message.
 				await toolsLib.user.createUserLogin(
@@ -469,7 +485,12 @@ const loginPost = async (req, res) => {
 			password
 		);
 
+
 		if (!passwordIsValid) {
+			loggerUser.verbose(
+				req.uuid,
+				'controllers/user/loginPost password not passed'
+			);
 			await toolsLib.user.createUserLogin(
 				user,
 				ip,
@@ -486,34 +507,42 @@ const loginPost = async (req, res) => {
 			throw new Error(INVALID_CREDENTIALS + message);
 		}
 
+		loggerUser.verbose(
+			req.uuid,
+			'controllers/user/loginPost password passed'
+		);
+
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
 
 		const geo = geoip.lookup(ip);
 		const country = geo?.country || '';
 
+		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		let suspiciousLogin = false;
-		if (
-			isArray(lastLogins) &&
-			lastLogins.length > 0 &&
-			!successfulRecords?.find((login) => login.country === country)
-		) {
-			loggerUser.verbose(
-				req.uuid,
-				'controllers/user/loginPost suspicious login detected',
-				'user id',
-				user.id,
-				'country',
-				country,
-				'login records length',
-				lastLogins.length,
-				'successful records length',
-				successfulRecords.length
-			);
-			suspiciousLogin = true;
+		// Only compute/log suspicious login detection when the feature is enabled (and actionable).
+		if (suspiciousLoginEnabled && SMTP_SERVER()?.length > 0) {
+			if (
+				isArray(lastLogins) &&
+				lastLogins.length > 0 &&
+				!successfulRecords?.find((login) => login.country === country)
+			) {
+				loggerUser.verbose(
+					req.uuid,
+					'controllers/user/loginPost suspicious login detected',
+					'user id',
+					user.id,
+					'country',
+					country,
+					'login records length',
+					lastLogins.length,
+					'successful records length',
+					successfulRecords.length
+				);
+				suspiciousLogin = true;
+			}
 		}
 
-		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
 			let verification_code;
 			if (version === 'v3') {
@@ -603,6 +632,13 @@ const loginPost = async (req, res) => {
 			const roles = toolsLib.getRoles();
 			userRole = roles.find((role) => role.role_name === user.role);
 		}
+		loggerUser.verbose(
+			req.uuid,
+			'controllers/user/loginPost user role',
+			user.role,
+			'user role name',
+			userRole?.role_name
+		);
 
 		const token = await toolsLib.security.issueToken(
 			user.id,
@@ -615,10 +651,10 @@ const loginPost = async (req, res) => {
 			userRole?.configs,
 			user.role
 		);
-
-		if (!ip) {
-			throw new Error(NO_IP_FOUND);
-		}
+		loggerUser.verbose(
+			req.uuid,
+			'controllers/user/loginPost token issues successfully'
+		);
 
 		await toolsLib.user.createUserLogin(
 			user,
