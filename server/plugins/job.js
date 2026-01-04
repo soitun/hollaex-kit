@@ -52,6 +52,17 @@ const unstakingCheckRunner = () => {
 				await toolsLib.sleep(1000);
 				const user = await toolsLib.user.getUserByKitId(staker.user_id);
 				const stakePool = await stakePoolModel.findOne({ where: { id: staker.stake_id } });
+				// If automatic calculations/settlement are disabled for this pool, skip auto-settlement
+				if (stakePool?.is_automatic === false) {
+					loggerPlugin.verbose(
+						'/plugins unstakingCheckRunner skip auto settlement (is_automatic=false)',
+						'stake_id',
+						staker.stake_id,
+						'staker_id',
+						staker.id
+					);
+					continue;
+				}
 
 				const balance = await toolsLib.wallet.getUserBalanceByKitId(stakePool.account_id);
 				let symbols = {};
@@ -247,6 +258,11 @@ const updateRewardsCheckRunner = () => {
 			const stakePools = await stakePoolModel.findAll({ where: { status: 'active' } });
 
 			for (const stakePool of stakePools) {
+				// If automatic calculations are disabled for this pool, skip reward updates
+				if (stakePool.is_automatic === false) {
+					continue;
+				}
+
 				const stakers = await stakerModel.findAll({ where: { stake_id: stakePool.id, status: 'staking' } });
 
 				for (const staker of stakers) {

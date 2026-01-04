@@ -4105,10 +4105,51 @@ const messages = {
 		'vi': 'Tài khoản phụ không thể tạo địa chỉ nạp tiền',
 		'zh': '子账户无法生成充值地址'
 	},
+	'Reset password request is sent if the user exists.': {
+		'en': 'Reset password request is sent if the user exists.',
+		'de': 'Reset password request is sent if the user exists.',
+		'es': 'Reset password request is sent if the user exists.',
+		'fa': 'Reset password request is sent if the user exists.',
+		'fr': 'Reset password request is sent if the user exists.',
+		'id': 'Reset password request is sent if the user exists.',
+		'it': 'Reset password request is sent if the user exists.',
+		'ja': 'Reset password request is sent if the user exists.',
+		'ko': 'Reset password request is sent if the user exists.',
+		'mn': 'Reset password request is sent if the user exists.',
+		'nl': 'Reset password request is sent if the user exists.',
+		'pt': 'Reset password request is sent if the user exists.',
+		'ru': 'Reset password request is sent if the user exists.',
+		'tr': 'Reset password request is sent if the user exists.',
+		'ur': 'Reset password request is sent if the user exists.',
+		'vi': 'Reset password request is sent if the user exists.',
+		'zh': 'Reset password request is sent if the user exists.'
+	}
 };
 
 
 const functionMessages = {
+	'Invalid OTP Code': (msg) => {
+		const suffix = Array.isArray(msg) ? msg.join(' ') : msg;
+		return {
+			'en': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'de': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'es': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'fa': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'fr': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'id': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'it': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ja': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ko': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'mn': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'nl': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'pt': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ru': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'tr': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'ur': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'vi': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+			'zh': `Invalid OTP Code${suffix ? ` ${suffix}` : ''}`,
+		};
+	},
 	'Access denied': (msg) => {
 		return {
 			'en': `Access denied: ${msg}`,

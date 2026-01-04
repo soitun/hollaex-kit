@@ -224,7 +224,7 @@
 		"INPUT_TEXT": "Input the 6-digit code from your phone's Google Authenticator app:"
 	},
 	"EMAIL_CODE_FORM": {
-		"TITLE": "Input you security codes",
+		"TITLE": "Input your security codes",
 		"LABEL": "Input code (please check your email)",
 		"PLACEHOLDER": "Input the code sent to your email",
 		"FORM_TITLE_TEXT": "A unique code was sent to your email that is required to finish the process. Please input the code sent to your email below{0}.",
@@ -2908,7 +2908,7 @@
 		"PASSWORD_PLACEHOLDER": "Type a password",
 		"CONFIRM_PASSWORD_PLACEHOLDER": "Retype the password",
 		"ACCOUNT_CONFIRMATION_TITLE": "Confirmation Email Sent",
-		"ACCOUNT_CONFIRMATION_DESC": "To finalize the creation of your sub account, a confiamation email has been sent to {0}.",
+		"ACCOUNT_CONFIRMATION_DESC": "To finalize the creation of your sub account, a confirmation email has been sent to {0}.",
 		"ACCOUNT_CREATED_TITLE": "Sub Account Created",
 		"ACCOUNT_CREATED_DESC": "To finalize the creation of your sub account, a confirmation email has been sent to {0}.",
 		"ACCOUNT_CREATED_DESC_VIRTUAL": "You've successfully created the sub account. You can now transfer funds to this account.",
@@ -2977,7 +2977,7 @@
 		"DESCRIPTION": "By sharing your account, others will be able to trade and view the assets you hold. This feature is useful for family offices, businesses, or trusted family and friends.",
 		"DESCRIPTION_1": "People you share your account with can initiate withdrawals, but only you can give the final confirmation before any funds are released.",
 		"WARINNG_DESC": "Please only share your account with individuals you fully trust!",
-		"CONFORMATION_MESSAGE": "I understand and I accepts the risks of sharing my account.",
+		"CONFORMATION_MESSAGE": "I understand and I accept the risks of sharing my account.",
 		"REMOVE_USER": "Remove User",
 		"REMOVE_USER_DESCRIPTION": "Remove this user from your account sharing list:",
 		"REMOVE_USER_DESCRIPTION_1": "This user will not be able to login, trade or view your assets after removal",
