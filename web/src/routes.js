@@ -459,6 +459,7 @@ const checkLanding = (nextState, replace) => {
 
 const logOutUser = () => {
 	if (getToken()) {
+		// Only log out this tab so we don't affect other active tabs.
 		removeToken();
 	}
 };
