@@ -278,3 +278,4 @@ exports.P2P_DEAL_NOT_FOUND = 'P2P Deal not found!';
 exports.INVALID_NUMBER = 'Value is not a number';
 exports.INVALID_AUTOTRADE_CONFIG = 'This pair does not exist';
 exports.SUBACCOUNT_CANNOT_GENERATE_ADDRESS = 'Subaccounts cannot generate deposit addresses';
+exports.WITHDRAWAL_LIMIT_ERROR = 'You have reached your withdrawal limit for your tier';

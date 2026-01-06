@@ -4339,6 +4339,25 @@ const functionMessages = {
 			'zh': `通讯运算符无法更新值：${value}`,
 		};
 	},
+	'You have reached your withdrawal limit for your tier': {
+		'en': 'You have reached your withdrawal limit for your tier',
+		'de': 'Sie haben das Auszahlungslimit für Ihre Stufe erreicht',
+		'es': 'Has alcanzado el límite de retiro de tu nivel',
+		'fa': 'شما به سقف برداشت مجاز سطح خود رسیده‌اید',
+		'fr': 'Vous avez atteint la limite de retrait de votre niveau',
+		'id': 'Anda telah mencapai batas penarikan untuk tingkat Anda',
+		'it': 'Hai raggiunto il limite di prelievo per il tuo livello',
+		'ja': 'あなたのティアの出金上限に達しました',
+		'ko': '현재 등급의 출금 한도에 도달했습니다',
+		'mn': 'Та өөрийн түвшний мөнгө татах хязгаарт хүрсэн байна',
+		'nl': 'Je hebt de opnamelimiet voor jouw niveau bereikt',
+		'pt': 'Você atingiu o limite de saque do seu nível',
+		'ru': 'Вы достигли лимита вывода средств для вашего уровня',
+		'tr': 'Seviyeniz için belirlenen çekim limitine ulaştınız',
+		'ur': 'آپ اپنے درجے کے لیے مقرر کردہ نکاسی کی حد تک پہنچ چکے ہیں',
+		'vi': 'Bạn đã đạt đến giới hạn rút tiền cho cấp của mình',
+		'zh': '您已达到当前等级的提现限额'
+	}
 };
 
 exports.getMessage = (message_type, lang = 'en') => {
