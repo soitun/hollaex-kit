@@ -21,7 +21,8 @@ const {
 	INVALID_NETWORK,
 	NETWORK_REQUIRED,
 	WITHDRAWAL_DISABLED,
-	WITHDRAWAL_OTP_REQUIRED
+	WITHDRAWAL_OTP_REQUIRED,
+	WITHDRAWAL_LIMIT_ERROR
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
@@ -333,6 +334,7 @@ const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
 
 	if (transactionLimit.amount === -1) throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
 	if (transactionLimit?.monthly_amount === -1) throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
+	const decimalPoint = new BigNumber(increment_unit).dp();
 
 	if (transactionLimit.amount > 0) {
 
@@ -381,13 +383,16 @@ const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
 		}
 
 		amount = BigNumber.minimum(dailyAmount, amount).toNumber();
+		if (new BigNumber(amount).decimalPlaces(decimalPoint, BigNumber.ROUND_DOWN).toNumber() <= 0) {
+			throw new Error(WITHDRAWAL_LIMIT_ERROR);
+		}
+		
 	}
 
 	if (amount < 0) {
 		amount = 0;
 	}
 
-	const decimalPoint = new BigNumber(increment_unit).dp();
 	amount = new BigNumber(amount).decimalPlaces(decimalPoint, BigNumber.ROUND_DOWN).toNumber();
 	return { amount };
 };
