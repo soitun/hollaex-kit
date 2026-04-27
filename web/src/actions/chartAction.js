@@ -77,23 +77,63 @@ export const getSparklines = async () => {
 	return chartData;
 };
 
-export const getMiniCharts = async (pairs, quote='usdt') => {
+export const getMiniChartQuote = (coins = {}, nativeCurrency = '') => {
+	const configuredCoins = new Set();
+
+	Object.entries(coins || {}).forEach(([key, data = {}]) => {
+		if (key) configuredCoins.add(key.toLowerCase());
+		if (data.code) configuredCoins.add(data.code.toLowerCase());
+		if (data.symbol) configuredCoins.add(data.symbol.toLowerCase());
+	});
+
+	return (
+		['usdt', 'usd', 'usdc'].find((quote) => configuredCoins.has(quote)) ||
+		nativeCurrency?.toLowerCase()
+	);
+};
+
+export const getMiniChartKey = (chartValues = {}, symbol = '', quote = '') => {
+	const normalizedSymbol = symbol?.toLowerCase();
+	const normalizedQuote = quote?.toLowerCase();
+	const exactKey =
+		normalizedSymbol && normalizedQuote
+			? `${normalizedSymbol}-${normalizedQuote}`
+			: '';
+
+	if (exactKey && chartValues[exactKey]) return exactKey;
+
+	return Object.keys(chartValues || {}).find((key) => {
+		const [base] = key?.split('-') || [];
+		return base === normalizedSymbol;
+	});
+};
+
+export const getMiniChartData = (chartValues = {}, symbol = '', quote = '') => {
+	const key = getMiniChartKey(chartValues, symbol, quote);
+	return {
+		key,
+		data: key ? chartValues[key] : undefined,
+	};
+};
+
+export const getMiniCharts = async (pairs, quote) => {
+	const quoteQuery = quote ? `&quote=${encodeURIComponent(quote)}` : '';
 
 	const { data = {} } = await axios({
-		url: `/minicharts?assets=${pairs}&quote=${quote}`,
+		url: `/minicharts?assets=${pairs}${quoteQuery}`,
 		method: 'GET',
 	});
 
 	const result = {};
-	
+
 	Object.keys(data).forEach((keyVal) => {
 		data[keyVal].forEach(({ price, quote, symbol, time }) => {
-			let symbolKey = symbol + '-' + quote; 
+			let symbolKey = `${symbol}-${quote}`.toLowerCase();
 
-			if(!result[symbolKey]) {
+			if (!result[symbolKey]) {
 				result[symbolKey] = {
-					price:[],
-					time:[]
+					price: [],
+					time: [],
 				};
 			}
 
@@ -103,5 +143,4 @@ export const getMiniCharts = async (pairs, quote='usdt') => {
 	});
 
 	return result;
-}
-			
+};
