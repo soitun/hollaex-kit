@@ -212,9 +212,7 @@ const Form = ({
 								<div className="pl-4">
 									{STRINGS.formatString(
 										STRINGS['AMOUNT_FORMAT'],
-										customFee !== null || customFee !== undefined
-											? customFee
-											: fee,
+										customFee ?? fee,
 										display_name
 									)}
 								</div>
