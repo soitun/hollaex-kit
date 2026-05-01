@@ -882,7 +882,6 @@ const ReferralList = ({
 															let newEarningRate = earningRate;
 															if (earningRate >= 10) {
 																newEarningRate -= 10;
-																if (newEarningRate === 0) return;
 																setEarningRate(newEarningRate);
 															}
 															if (
@@ -911,7 +910,6 @@ const ReferralList = ({
 																referral_history_config?.earning_rate
 														) {
 															const newEarningRate = earningRate - 10;
-															if (newEarningRate === 0) return;
 															if (earningRate >= 10)
 																setEarningRate(newEarningRate);
 															if (
