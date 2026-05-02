@@ -1,5 +1,8 @@
 'use strict';
 
+// we should not change the code of the messages
+// only add new ones to the end of the file and
+// make sure there is a correspnding entry in the lang-messages.js file
 const messages = {
 	'Missing order': {
 		'code': 10,
@@ -4376,6 +4379,26 @@ const messages = {
 		'ur': 'پاس ورڈ پہلے ہی تنظیم کر دیا گیا ہے',
 		'vi': 'Mật khẩu đã được thiết lập',
 		'zh': '密码已设置'
+	},
+	'Unable to connect referral code': {
+		'code': 226,
+		'en': 'Unable to connect referral code',
+		'de': 'Referralcode kann nicht verbunden werden',
+		'es': 'No se pudo conectar el código de referido',
+		'fa': 'امکان اتصال کد معرف وجود ندارد',
+		'fr': 'Impossible de connecter le code de parrainage',
+		'id': 'Tidak dapat menghubungkan kode referral',
+		'it': 'Impossibile collegare il codice referral',
+		'ja': '紹介コードを接続できません',
+		'ko': '추천 코드를 연결할 수 없습니다',
+		'mn': 'Урилгын кодыг холбох боломжгүй',
+		'nl': 'Kan verwijzingscode niet koppelen',
+		'pt': 'Não foi possível conectar o código de indicação',
+		'ru': 'Не удалось подключить реферальный код',
+		'tr': 'Referans kodu bağlanamadı',
+		'ur': 'ریفرل کوڈ منسلک نہیں کیا جا سکا',
+		'vi': 'Không thể kết nối mã giới thiệu',
+		'zh': '无法连接推荐码'
 	},
 	'Referral code is required': {
 		'code': 227,

@@ -40,7 +40,8 @@ const {
 	USER_REGISTERED_EMAIL_CODE,
 	USER_REGISTERED_SMS_CODE,
 	SIGNUP_EMAIL_OR_PHONE_NOT_BOTH,
-	PROVIDE_VALID_PHONE
+	PROVIDE_VALID_PHONE,
+	REFERRAL_CONNECT_FAILED
 } = require('../../messages');
 const { DEFAULT_ORDER_RISK_PERCENTAGE, EVENTS_CHANNEL, API_HOST, DOMAIN, TOKEN_TIME_NORMAL, TOKEN_TIME_LONG, HOLLAEX_NETWORK_BASE_URL, NUMBER_OF_ALLOWED_ATTEMPTS, GET_KIT_SECRETS } = require('../../constants');
 const { all } = require('bluebird');
@@ -1588,6 +1589,21 @@ const affiliationCount = (req, res) => {
 		});
 };
 
+const connectReferral = (req, res) => {
+	loggerUser.debug(req.uuid, 'controllers/user/connectReferral auth', req.auth.sub);
+
+	const user_id = req.auth.sub.id;
+	const { code } = req.swagger.params.data.value;
+
+	toolsLib.user.connectUserReferral(code, user_id)
+		.then(() => res.json({ message: 'success' }))
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/connectReferral', err.message);
+			const messageObj = errorMessageConverter({ message: REFERRAL_CONNECT_FAILED }, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 const getUserBalance = (req, res) => {
 	loggerUser.debug(req.uuid, 'controllers/user/getUserBalance auth', req.auth.sub);
 	const user_id = req.auth.sub.id;
@@ -3108,6 +3124,7 @@ module.exports = {
 	setUsername,
 	getUserLogins,
 	affiliationCount,
+	connectReferral,
 	getUserBalance,
 	deactivateUser,
 	createCryptoAddress,

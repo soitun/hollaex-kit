@@ -60,6 +60,7 @@ const {
 	CANNOT_CHANGE_ADMIN_EMAIL,
 	EMAIL_IS_SAME,
 	EMAIL_EXISTS,
+	REFERRAL_CODE_REQUIRED,
 	REFERRAL_HISTORY_NOT_ACTIVE,
 	REFERRAL_UNSUPPORTED_EXCHANGE_PLAN,
 	CANNOT_CHANGE_DELETED_EMAIL,
@@ -822,6 +823,78 @@ const checkAffiliation = (affiliationCode, user_id) => {
 			}
 			return;
 		});
+};
+
+const connectUserReferral = async (affiliationCode, userId, hoursThreshold = 24) => {
+	const referralConfig = getKitConfig()?.referral_history_config;
+	if (!referralConfig || !referralConfig.active) {
+		throw new Error(REFERRAL_HISTORY_NOT_ACTIVE);
+	}
+
+	if (!isString(affiliationCode) || !affiliationCode.trim()) {
+		throw new Error(REFERRAL_CODE_REQUIRED);
+	}
+
+	const code = affiliationCode.trim();
+
+	return getModel('sequelize').transaction(async (transaction) => {
+		const user = await getModel('user').findOne({
+			where: { id: userId },
+			transaction,
+			lock: transaction.LOCK.UPDATE
+		});
+
+		if (!user) {
+			throw new Error(USER_NOT_FOUND);
+		}
+
+		const hoursSinceCreation = moment().diff(moment(user.created_at), 'hours');
+		if (hoursSinceCreation > hoursThreshold) {
+			throw new Error('Referral connection window has expired');
+		}
+
+		const existingAffiliation = await dbQuery.findOne('affiliation', {
+			where: { user_id: userId },
+			transaction
+		});
+		if (existingAffiliation) {
+			throw new Error('User already has a connected referral');
+		}
+
+		const referrer = await dbQuery.findOne('referralCode', {
+			where: { code },
+			attributes: ['id', 'user_id', 'discount', 'earning_rate'],
+			transaction
+		});
+		if (!referrer) {
+			throw new Error('Referral code not found');
+		}
+
+		if (Number(referrer.user_id) === Number(userId)) {
+			throw new Error('Self referral is not allowed');
+		}
+
+		await getModel('affiliation').create({
+			user_id: userId,
+			referer_id: referrer.user_id,
+			earning_rate: referrer.earning_rate,
+			code
+		}, { transaction });
+
+		await getModel('referralCode').increment('referral_count', {
+			by: 1,
+			where: { id: referrer.id },
+			transaction
+		});
+
+		return user.update(
+			{ discount: referrer.discount },
+			{
+				fields: ['discount'],
+				transaction
+			}
+		);
+	});
 };
 
 const getAffiliationCount = (userId, opts = {
@@ -5558,6 +5631,7 @@ module.exports = {
 	getUserStatsByNetworkId,
 	getUserByAffiliationCode,
 	checkAffiliation,
+	connectUserReferral,
 	verifyUserEmailByKitId,
 	verifyUserPhoneByKitId,
 	generateAffiliationCode,
