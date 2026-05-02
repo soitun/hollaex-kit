@@ -11,6 +11,24 @@ const { checkStatus } = require('./init');
 const { API_HOST, CUSTOM_CSS } = require('./constants');
 const swaggerTools = require('swagger-tools');
 const cors = require('cors');
+const bodyParser = require('body-parser');
+
+const ADMIN_LARGE_BODY_LIMIT = '6mb';
+const adminJsonBodyParser = bodyParser.json({ limit: ADMIN_LARGE_BODY_LIMIT });
+const adminUrlEncodedBodyParser = bodyParser.urlencoded({
+	extended: false,
+	limit: ADMIN_LARGE_BODY_LIMIT
+});
+
+const adminLargeBodyParser = (req, res, next) => {
+	if (req.is('application/json')) {
+		return adminJsonBodyParser(req, res, next);
+	}
+	if (req.is('application/x-www-form-urlencoded')) {
+		return adminUrlEncodedBodyParser(req, res, next);
+	}
+	return next();
+};
 
 checkStatus()
 	.then(() => {
@@ -47,6 +65,8 @@ checkStatus()
 		app.get('/', (req, res) => {
 			res.redirect('/v2/health');
 		});
+
+		app.use(`${swaggerDoc.basePath}/admin`, adminLargeBodyParser);
 
 		const initializeSwaggerSecurity = (middleware) => {
 			return middleware.swaggerSecurity({

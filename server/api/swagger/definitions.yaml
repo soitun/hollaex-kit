@@ -25,6 +25,10 @@ definitions:
       otp_code:
         type: string
         maxLength: 256
+      captcha:
+        type: string
+        description: Cloudflare Turnstile token (required when Turnstile is configured on the kit)
+        maxLength: 2048
       referral:
         type: string
         maxLength: 256
@@ -96,6 +100,14 @@ definitions:
       google_token:
         type: string
         maxLength: 2048
+      otp_code:
+        type: string
+        description: Required when the user has TOTP enabled on this exchange
+        maxLength: 256
+      captcha:
+        type: string
+        description: Cloudflare Turnstile token (required when Turnstile is configured on the kit)
+        maxLength: 2048
       service:
         type: string
         maxLength: 256
@@ -104,6 +116,7 @@ definitions:
         enum:
           - v2
           - v3
+          - v4
       long_term:
         type: boolean
   GoogleSignup:
@@ -491,6 +504,16 @@ definitions:
         type: string
         description: Base64URL challenge from passkey-auth-options
         maxLength: 512
+      version:
+        type: string
+        description: Verification-code format used by the suspicious-login email branch
+        enum:
+          - v2
+          - v3
+          - v4
+      service:
+        type: string
+        maxLength: 256
       credential:
         type: object
         description: Credential from navigator.credentials.get()

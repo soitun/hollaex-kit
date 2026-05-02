@@ -4756,6 +4756,26 @@ const messages = {
 		'ur': 'تفصیلات نکاسی نہیں ملا',
 		'vi': 'Chi tiết thanh toán không tìm thấy',
 		'zh': '支付详情未找到'
+	},
+	'Invalid Google token audience': {
+		'code': 246,
+		'en': 'Invalid Google token audience',
+		'de': 'Ungültige Zielgruppe des Google-Tokens',
+		'es': 'Audiencia del token de Google no válida',
+		'fa': 'مخاطب توکن گوگل نامعتبر است',
+		'fr': 'Audience du jeton Google invalide',
+		'id': 'Audiens token Google tidak valid',
+		'it': 'Destinatario del token Google non valido',
+		'ja': 'Google トークンの対象者が無効です',
+		'ko': '유효하지 않은 Google 토큰 대상',
+		'mn': 'Google токены хүлээн авагч буруу байна',
+		'nl': 'Ongeldige doelgroep van Google-token',
+		'pt': 'Público do token do Google inválido',
+		'ru': 'Недопустимая аудитория токена Google',
+		'tr': 'Geçersiz Google belirteç hedef kitlesi',
+		'ur': 'غلط گوگل ٹوکن سامعین',
+		'vi': 'Đối tượng token Google không hợp lệ',
+		'zh': '无效的 Google 令牌受众'
 	}
 	// add new ones above here
 }

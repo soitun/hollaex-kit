@@ -71,7 +71,9 @@ const {
 	UNAUTHORIZED_UPDATE_METHOD,
 	INVALID_AUTOTRADE_CONFIG,
 	GOOGLE_TOKEN_INVALID_ISSUER,
+	GOOGLE_TOKEN_INVALID_AUDIENCE,
 	GOOGLE_TOKEN_EXPIRED,
+	SERVICE_NOT_AVAILABLE,
 	NOT_AUTHORIZED,
 	PROVIDE_VALID_PHONE,
 	SIGNUP_EMAIL_OR_PHONE_NOT_BOTH,
@@ -107,6 +109,7 @@ const {
 	ROLE_PERMISSIONS,
 	KIT_CONFIG_KEYS,
 	KIT_SECRETS_KEYS,
+	NUMBER_OF_ALLOWED_ATTEMPTS,
 } = require(`${SERVER_PATH}/constants`);
 const { sendEmail } = require(`${SERVER_PATH}/mail`);
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
@@ -613,8 +616,22 @@ const registerUserLogin = (
 		.catch(err => reject(err));
 };
 
+// Atomic conditional increment: only bump `attempt` if the row is still
+// below the lockout cap. This prevents racing concurrent failed logins from
+// inflating the counter past `NUMBER_OF_ALLOWED_ATTEMPTS`, which used to
+// combine with a strict-equality lockout check (`attempt === N`) to silently
+// bypass the lockout entirely. With this single-statement UPDATE the counter
+// can never exceed the cap, regardless of how many requests race.
 const updateLoginAttempt = (loginId) => {
-	return getModel('login').increment('attempt', { by: 1, where: { id: loginId } });
+	return getModel('login').update(
+		{ attempt: literal('attempt + 1') },
+		{
+			where: {
+				id: loginId,
+				attempt: { [Op.lt]: NUMBER_OF_ALLOWED_ATTEMPTS }
+			}
+		}
+	);
 };
 
 const updateLoginStatus = (loginId) => {
@@ -4903,47 +4920,65 @@ const deleteExchangeUserRole = async (id, user_id, otp_code) => {
 	return { message: 'Role deleted successfully' };
 };
 
-// Verify Google OAuth id_token (JWT) using Google's tokeninfo endpoint and return user info
+// Verify Google OAuth id_token (JWT) using Google's tokeninfo endpoint and return user info.
+// Validates iss, aud, exp, and email_verified per Google's OIDC verification guidance:
+// https://developers.google.com/identity/sign-in/web/backend-auth#verify-the-integrity-of-the-id-token
 const verifyGoogleToken = async (token) => {
+	let response;
 	try {
-		const response = await request({
+		response = await request({
 			url: 'https://oauth2.googleapis.com/tokeninfo',
 			method: 'GET',
 			qs: { id_token: token },
 			json: true
 		});
-
-		// Validate issuer is Google
-		const issuer = String(response.iss || '').toLowerCase();
-		const validIssuer = issuer === 'https://accounts.google.com' || issuer === 'accounts.google.com';
-		if (!validIssuer) {
-			throw new Error(GOOGLE_TOKEN_INVALID_ISSUER);
-		}
-
-		// Validate token not expired
-		const now = Math.floor(Date.now() / 1000);
-		const exp = Number(response.exp || 0);
-		if (!exp || exp <= now) {
-			throw new Error(GOOGLE_TOKEN_EXPIRED);
-		}
-
-		const emailVerified =
-            response.email_verified === true || response.email_verified === 'true';
-
-		if (response.email && emailVerified) {
-			const name = response.name || [response.given_name, response.family_name].filter(Boolean).join(' ').trim();
-			return {
-				email: response.email,
-				name,
-				picture: response.picture,
-				google_id: response.sub
-			};
-		} else {
-			throw new Error('Invalid Google token or email not verified');
-		}
 	} catch (error) {
 		throw new Error('Failed to verify Google token');
 	}
+
+	// Validate issuer is Google
+	const issuer = String(response.iss || '').toLowerCase();
+	const validIssuer = issuer === 'https://accounts.google.com' || issuer === 'accounts.google.com';
+	if (!validIssuer) {
+		throw new Error(GOOGLE_TOKEN_INVALID_ISSUER);
+	}
+
+	// Validate audience matches the kit's configured Google OAuth client_id.
+	// Without this check, an id_token issued by Google for any other client
+	// (i.e. any other Google OAuth integration anywhere) would pass iss/exp
+	// and could be replayed against this exchange.
+	const configuredClientId = getKitConfig()?.google_oauth?.client_id;
+	if (!configuredClientId) {
+		throw new Error(SERVICE_NOT_AVAILABLE);
+	}
+	const allowedAudiences = Array.isArray(configuredClientId)
+		? configuredClientId
+		: [configuredClientId];
+	if (!response.aud || !allowedAudiences.includes(response.aud)) {
+		throw new Error(GOOGLE_TOKEN_INVALID_AUDIENCE);
+	}
+
+	// Validate token not expired
+	const now = Math.floor(Date.now() / 1000);
+	const exp = Number(response.exp || 0);
+	if (!exp || exp <= now) {
+		throw new Error(GOOGLE_TOKEN_EXPIRED);
+	}
+
+	const emailVerified =
+		response.email_verified === true || response.email_verified === 'true';
+
+	if (response.email && emailVerified) {
+		const name = response.name || [response.given_name, response.family_name].filter(Boolean).join(' ').trim();
+		return {
+			email: response.email,
+			name,
+			picture: response.picture,
+			google_id: response.sub
+		};
+	}
+
+	throw new Error('Invalid Google token or email not verified');
 };
 
 /**
@@ -5145,6 +5180,12 @@ const deactivateSubaccount = async (masterKitId, subKitId) => {
 	return true;
 };
 
+// Cap user-agent strings written to the `login` table; the column has a
+// length limit and `loginPost` truncates similarly. Keeping this consistent
+// across all token-issuing paths avoids INSERT failures that would orphan a
+// JWT (issued + returned) without a matching login row.
+const truncateDevice = (s) => String(s || '').slice(0, 1000);
+
 /**
  * Issue a JWT for a subaccount owned by a master user and register login
  */
@@ -5178,7 +5219,7 @@ const issueSubaccountToken = async ({ masterKitId, subKitId, ip, headers = {} })
 		sub.id,
 		ip,
 		{
-			device: headers['user-agent'],
+			device: truncateDevice(headers['user-agent']),
 			domain: headers['x-real-origin'],
 			origin: headers.origin,
 			referer: headers.referer,
@@ -5357,7 +5398,7 @@ const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, heade
 		main.id,
 		ip,
 		{
-			device: headers['user-agent'],
+			device: truncateDevice(headers['user-agent']),
 			domain: headers['x-real-origin'],
 			origin: headers.origin,
 			referer: headers.referer,

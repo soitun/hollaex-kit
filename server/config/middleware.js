@@ -104,12 +104,16 @@ const pickLoginAccount = (req) => {
 	return null;
 };
 
-const pickPasswordEmail = (req) => {
-	const swaggerEmail = req.swagger && req.swagger.params && req.swagger.params.data
-		&& req.swagger.params.data.value && req.swagger.params.data.value.email;
-	const email = (swaggerEmail || (req.body && req.body.email) || '')
+const pickPasswordAccount = (req) => {
+	const swaggerVal = req.swagger && req.swagger.params && req.swagger.params.data
+		&& req.swagger.params.data.value;
+	const email = ((swaggerVal && swaggerVal.email) || (req.body && req.body.email) || '')
 		.toString().trim().toLowerCase();
-	return email ? `email:${email}` : null;
+	const phone = ((swaggerVal && swaggerVal.phone_number) || (req.body && req.body.phone_number) || '')
+		.toString().trim();
+	if (email) return `email:${email}`;
+	if (phone) return `phone:${phone}`;
+	return null;
 };
 
 // Hashes the raw Google OAuth id_token into a short bucket key. We can't
@@ -378,17 +382,16 @@ const rateLimitMiddleware = (app) => {
 		}
 	});
 
-	// Per-email limiter for /v2/password (password-reset request). Requests
-	// with no email fall into an IP-scoped 'unknown' bucket rather than a
-	// single global one.
+	// Per-account limiter for /v2/password keyed by email or phone_number.
+	// Requests with neither fall into an IP-scoped 'unknown' bucket.
 	limiter({
 		path: '/v2/password',
 		method: 'post',
 		total: 4,
 		expire: 1000 * 60 * 2,
-		lookup: accountOrIpUnknownLookup(pickPasswordEmail),
+		lookup: accountOrIpUnknownLookup(pickPasswordAccount),
 		onRateLimited: function (req, res, next) {
-			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'post password email');
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'post password account');
 			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
 		}
 	});
@@ -551,6 +554,69 @@ const rateLimitMiddleware = (app) => {
 		lookup: 'headers.x-forwarded-for',
 		onRateLimited: function (req, res, next) {
 			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'confirm-login');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
+	// /login/passkey-auth-options is unauthenticated, takes an email, runs
+	// a DB lookup, and writes a Redis challenge per call. Without a cap
+	// an attacker can spam Redis, enumerate emails by timing/response
+	// shape, and freely cycle the challenge keyspace. Per-IP only — there
+	// is no stable principal we can key on for unauthenticated callers.
+	limiter({
+		path: '/v2/login/passkey-auth-options',
+		method: 'get',
+		total: 10,
+		expire: 1000 * 60 * 2,
+		lookup: 'headers.x-forwarded-for',
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'passkey-auth-options');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
+	// /login/verify-passkey issues a session JWT on success and, when the
+	// suspicious-login feature is on, sends a verification email per call.
+	// Without a cap that branch is an outbound-email amplifier. Per-IP cap
+	// matches the unauthenticated nature of the route.
+	limiter({
+		path: '/v2/login/verify-passkey',
+		method: 'post',
+		total: 10,
+		expire: 1000 * 60 * 2,
+		lookup: 'headers.x-forwarded-for',
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'verify-passkey');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
+	// /subaccount/auth and /sharedaccount/auth mint full bearer JWTs that
+	// are equivalent in power to a /login token, with no second factor and
+	// no captcha. They require a master/shared bearer to call, so we key
+	// by authenticated user id (with IP fallback). Without this cap, a
+	// leaked master token can be expanded into independent JWTs for every
+	// linked account at line speed.
+	limiter({
+		path: '/v2/subaccount/auth',
+		method: 'post',
+		total: 10,
+		expire: 1000 * 60 * 2,
+		lookup: authOrIpLookup,
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'subaccount-auth');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
+	limiter({
+		path: '/v2/sharedaccount/auth',
+		method: 'post',
+		total: 10,
+		expire: 1000 * 60 * 2,
+		lookup: authOrIpLookup,
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'sharedaccount-auth');
 			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
 		}
 	});

@@ -33,6 +33,7 @@ exports.USER_VERIFIED = 'User is now verified';
 // Google OAuth messages
 exports.GOOGLE_TOKEN_EXPIRED = 'Google token expired';
 exports.GOOGLE_TOKEN_INVALID_ISSUER = 'Invalid Google token issuer';
+exports.GOOGLE_TOKEN_INVALID_AUDIENCE = 'Invalid Google token audience';
 exports.GOOGLE_ACCOUNT_MISMATCH = 'Google account mismatch';
 exports.INVALID_PASSWORD =
 	'Invalid password. It has to contain at least 8 characters, at least one digit and one character.';
@@ -192,6 +193,8 @@ exports.INVALID_COIN = (coin) => `Invalid coin: ${coin}`;
 exports.INVALID_AMOUNT = (amount) => `Invalid amount: ${amount}`;
 exports.DEPOSIT_DISABLED_FOR_COIN = (coin) => `Deposits are disabled for coin: ${coin}`;
 exports.WITHDRAWAL_DISABLED_FOR_COIN = (coin) => `Withdrawals are disabled for coin: ${coin}`;
+exports.WITHDRAWAL_DAILY_LIMIT_REACHED = 'You have reached your daily withdrawal limit';
+exports.WITHDRAWAL_MONTHLY_LIMIT_REACHED = 'You have reached your monthly withdrawal limit';
 exports.UPGRADE_VERIFICATION_LEVEL = (level) => `Verification level must be at or above ${level}`;
 exports.INVALID_VERIFICATION_LEVEL = (level) => `Invalid verification level: ${level}`;
 exports.NO_NEW_DATA = 'No new data given';
