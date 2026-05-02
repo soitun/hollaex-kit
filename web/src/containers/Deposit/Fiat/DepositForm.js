@@ -51,8 +51,7 @@ const generateFormValues = (
 	const MIN = math.max(fee, min);
 	const MAX = limit && math.larger(limit, 0) ? math.min(limit, max) : max;
 
-	fee = customFee !== null || customFee !== undefined ? customFee : fee;
-
+	fee = customFee ?? fee;
 	const amountValidate = [required];
 	if (MIN) {
 		amountValidate.push(
@@ -190,11 +189,7 @@ export const generateInitialValues = (
 ) => {
 	const initialValues = {};
 	let { rate } = getFiatDepositFee(currency, 0, '', getDepositCurrency);
-	rate =
-		fiat_fees?.[currency]?.deposit_fee !== null ||
-		fiat_fees?.[currency]?.deposit_fee !== undefined
-			? fiat_fees?.[currency]?.deposit_fee
-			: fiat_fees?.[currency]?.deposit_fee || rate;
+	rate = fiat_fees?.[currency]?.deposit_fee ?? rate;
 	initialValues.fee = rate;
 	return initialValues;
 };

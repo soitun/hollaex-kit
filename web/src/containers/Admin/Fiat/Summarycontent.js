@@ -653,7 +653,9 @@ const Summarycontent = ({
 							{offRampData.length ? (
 								<div>
 									{Object.keys(offramp).map((key, ind) => {
-										return Object.keys(offramp[key]).length ? (
+										return Object.keys(offramp[key])?.length &&
+											key &&
+											key !== 'undefined' ? (
 											<div className="d-flex" key={ind}>
 												<div>Fiat {key && key.toUpperCase()}:</div>
 												<div className="ml-3 text-left">

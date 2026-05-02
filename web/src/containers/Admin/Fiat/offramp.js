@@ -190,7 +190,9 @@ const Offramp = ({
 					IndexNum = index;
 				}
 			});
-			setSelectedCoin(fiatCoins[IndexNum]);
+			setSelectedCoin(
+				fiatCoins[IndexNum] ?? allCoins?.find((c) => c?.symbol === coinSymb)
+			);
 		} else {
 			setSelectedCoin(fiatCoins && fiatCoins[0]);
 		}
@@ -442,6 +444,7 @@ const Offramp = ({
 								disabled={
 									!user_payments ||
 									!Object.keys(user_payments).length ||
+									(fiatCoins && fiatCoins?.length === 0) ||
 									isDisable
 								}
 							>
@@ -730,6 +733,7 @@ const Offramp = ({
 					currentIndex={currentOfframpIndex}
 					setCurrentOfframpIndex={setCurrentOfframpIndex}
 					paymentSelectData={selectedPaymentType}
+					isVisible={isVisible}
 				/>
 			</Modal>
 		</div>
