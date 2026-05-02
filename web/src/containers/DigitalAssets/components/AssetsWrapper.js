@@ -15,7 +15,11 @@ import { formatPercentage } from 'utils/currency';
 import { SearchBox } from 'components';
 import { setCoinsData, setIsRefreshAssets } from 'actions/appActions';
 import { quicktradePairSelector } from 'containers/QuickTrade/components/utils';
-import { getMiniCharts } from 'actions/chartAction';
+import {
+	getMiniChartData,
+	getMiniChartQuote,
+	getMiniCharts,
+} from 'actions/chartAction';
 
 function onHandleInitialLoading(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -148,8 +152,10 @@ class AssetsWrapper extends Component {
 			quicktradePairs,
 			setCoinsData,
 			wsPriceData = {},
+			constants,
 		} = this.props;
 		const { selectedButton } = this.state;
+		const miniChartQuote = getMiniChartQuote(coins, constants?.native_currency);
 		// const topAssets = [];
 		// const remainingAssets = [];
 		let coinsData = coinsList
@@ -158,13 +164,18 @@ class AssetsWrapper extends Component {
 					name
 				];
 
-				const key = `${code}-usdt`;
+				const fallbackKey = miniChartQuote ? `${code}-${miniChartQuote}` : code;
+				const { key = fallbackKey, data: chartData } = getMiniChartData(
+					chartValues,
+					code,
+					miniChartQuote
+				);
 				const wsPrice = wsPriceData[symbol] || null;
-				const pricingData = this.getPricingData(chartValues[key], wsPrice);
+				const pricingData = this.getPricingData(chartData, wsPrice);
 
 				return {
 					...pricingData,
-					chartData: chartValues[key],
+					chartData,
 					code,
 					icon_id,
 					symbol,
@@ -205,8 +216,9 @@ class AssetsWrapper extends Component {
 	};
 
 	getMinicharData = async () => {
-		const { coins, searchValue } = this.props;
+		const { coins, searchValue, constants } = this.props;
 		const coinsList = Object.keys(coins).map((val) => coins[val].code);
+		const miniChartQuote = getMiniChartQuote(coins, constants?.native_currency);
 		if (searchValue !== '') {
 			const FORM_NAME = 'SearchForm';
 			this.setState({ searchValue: '' });
@@ -215,13 +227,16 @@ class AssetsWrapper extends Component {
 		}
 		try {
 			this.setState({ isLoading: true });
-			await getMiniCharts(coinsList.toLocaleString()).then((chartValues) => {
-				this.setState({ chartData: chartValues });
-				this.getCoinsData(coinsList, chartValues);
-			});
-			this.setState({ isLoading: false });
+			await getMiniCharts(coinsList.toLocaleString(), miniChartQuote).then(
+				(chartValues) => {
+					this.setState({ chartData: chartValues });
+					this.getCoinsData(coinsList, chartValues);
+				}
+			);
 		} catch (error) {
 			console.error(error);
+		} finally {
+			this.setState({ isLoading: false });
 		}
 	};
 

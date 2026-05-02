@@ -39,7 +39,9 @@ const {
 	NO_AUTH_TOKEN,
 	WHITELIST_DISABLE_ADMIN,
 	WHITELIST_NOT_PROVIDED,
-	SESSION_NOT_FOUND
+	SESSION_NOT_FOUND,
+	USER_EMAIL_NOT_VERIFIED,
+	USER_PHONE_NOT_VERIFIED
 } = require(`${SERVER_PATH}/messages`);
 const {
 	NODE_ENV,
@@ -158,18 +160,12 @@ const checkIp = async (remoteip = '') => {
 };
 
 const checkCaptcha = (captcha = '', remoteip = '', headers = {}) => {
-	// Backward-compatible bypass for legacy mobile clients:
-	// if they send the custom header `custom-device`, skip captcha verification.
-	// Note: Node lower-cases incoming header keys.
-	try {
-		const headerObj = headers?.headers ? headers.headers : headers;
-		if (headerObj && headerObj['custom-device']) {
-			loggerAuth.info('helpers/auth/checkCaptcha skipped due to custom-device header', remoteip);
-			return;
-		}
-	} catch (err) {
-		loggerAuth.error('helpers/auth/checkCaptcha cutom-header catch ALERT', err.message);
-	}
+	// `headers` is accepted for backward compatibility; previously it was
+	// used to honour a `custom-device` bypass header, which has been removed
+	// because any client (including non-browser callers reaching the API
+	// through the open CORS surface) could trivially set it and skip
+	// Turnstile entirely. The parameter is intentionally ignored.
+	void headers;
 
 	// Cloudflare Turnstile verification (server-side).
 	const turnstileSecret = getKitSecrets()?.cloudflare_turnstile?.secret_key;
@@ -369,6 +365,14 @@ const setInitialUserPassword = (email, password) => {
 			}
 			if (user.password !== 'notset') {
 				throw new Error(PASSWORD_ALREADY_SET);
+			}
+			if (getKitConfig().email_verification_required) {
+				const isPhoneUser = user.meta && user.meta.phone_signup === true;
+				if (isPhoneUser && !user.phone_number_verified) {
+					throw new Error(USER_PHONE_NOT_VERIFIED);
+				} else if (!isPhoneUser && !user.email_verified) {
+					throw new Error(USER_EMAIL_NOT_VERIFIED);
+				}
 			}
 			return user.update({ password: password }, { fields: ['password'] });
 		});

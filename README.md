@@ -3,6 +3,13 @@ HollaEx Kit is an open source white label crypto software suite with a range of 
 
 ## Get Started
 
+>## ⚠️ Outbound IP Registration Warning
+>
+>Starting June 1, 2026, HollaEx Kit servers must have their outbound server IP address registered with HollaEx to operate correctly.
+>
+>Please contact support@hollaex.com and provide your server's outbound IP address before continuing with the setup.
+
+
 HollaEx Kit provides simple (but powerful) CLI tool to help exchange operators setup and operate the exchange. Get started by install HollaEx CLI and following the [documentation](https://docs.hollaex.com) to start your own exchange.
 
 ```

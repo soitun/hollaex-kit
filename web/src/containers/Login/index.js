@@ -53,6 +53,10 @@ const BottomLink = () => (
 class Login extends Component {
 	state = {
 		values: {},
+		// 'password' or 'google'. Determines which API the OTP dialog
+		// resubmits to when the user has TOTP enabled. The OTP dialog UI is
+		// shared between both flows.
+		loginMode: 'password',
 		otpDialogIsOpen: false,
 		logoutDialogIsOpen: false,
 		termsDialogIsOpen: false,
@@ -171,7 +175,11 @@ class Login extends Component {
 					this.props.reset('OtpForm');
 					this.props.stopSubmit('OtpForm', {});
 					const { captcha, ...rest } = values || {};
-					this.setState({ values: rest, otpDialogIsOpen: true });
+					this.setState({
+						values: rest,
+						loginMode: 'password',
+						otpDialogIsOpen: true,
+					});
 					error._error = STRINGS['VALIDATIONS.OTP_LOGIN'];
 				} else {
 					// For any non-OTP error, force a fresh Turnstile token for the next attempt
@@ -194,7 +202,13 @@ class Login extends Component {
 	};
 
 	onSubmitLoginOtp = (values) => {
-		return performLogin(
+		// Route the OTP submission to the same login API the user started
+		// with. Google ID tokens are valid for ~1 hour, so reusing the
+		// stashed `google_token` for the follow-up is safe.
+		const submit =
+			this.state.loginMode === 'google' ? performGoogleLogin : performLogin;
+
+		return submit(
 			Object.assign(
 				{ otp_code: values.otp_code, captcha: this.state.captchaToken },
 				this.state.values
@@ -204,6 +218,9 @@ class Login extends Component {
 				this.setState({ otpDialogIsOpen: false });
 				if (res.data.token) this.setState({ token: res.data.token });
 				this.props.setPricesAndAssetPending();
+				if (this.state.loginMode === 'google' && res?.data?.token) {
+					storeLoginResult(res.data.token);
+				}
 				// if ((!Object.keys(this.props.info).length) || (!this.props.info.active)
 				// 	|| (this.props.info.is_trial && this.props.info.active
 				// 		&& moment().diff(this.props.info.created_at, 'seconds') > EXCHANGE_EXPIRY_SECONDS))
@@ -238,7 +255,11 @@ class Login extends Component {
 					_error.toLowerCase().includes('captcha');
 
 				if (credentialErrorCodes.has(Number(code)) || isCaptchaError) {
-					this.setState({ otpDialogIsOpen: false, values: {} });
+					this.setState({
+						otpDialogIsOpen: false,
+						values: {},
+						loginMode: 'password',
+					});
 					// Clear OTP inputs + login password field so user can re-enter safely
 					this.props.reset('OtpForm');
 					this.props.stopSubmit('OtpForm', {});
@@ -271,7 +292,11 @@ class Login extends Component {
 	};
 
 	onCloseDialog = () => {
-		this.setState({ otpDialogIsOpen: false });
+		this.setState({
+			otpDialogIsOpen: false,
+			loginMode: 'password',
+			values: {},
+		});
 		this.props.reset('OtpForm');
 		this.props.stopSubmit('OtpForm', {});
 	};
@@ -288,8 +313,25 @@ class Login extends Component {
 	};
 
 	handleGoogleLogin = async (token) => {
+		const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
+			?.site_key;
+		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
+
+		// Mirror the email login flow: when Turnstile is configured we must
+		// send a fresh token with every Google submission too. Without this,
+		// the server-side captcha gate would reject the request.
+		if (turnstileEnabled && !this.state.captchaToken) {
+			message.error(STRINGS['INVALID_CAPTCHA']);
+			return;
+		}
+
+		const service = this.getServiceParam();
+		const payload = { google_token: token };
+		if (this.state.captchaToken) payload.captcha = this.state.captchaToken;
+		if (service) payload.service = service;
+
 		try {
-			const res = await performGoogleLogin({ google_token: token });
+			const res = await performGoogleLogin(payload);
 			if (res?.data?.token) this.setState({ token: res?.data?.token });
 			this.props.setPricesAndAssetPending();
 			storeLoginResult(res?.data?.token);
@@ -303,9 +345,34 @@ class Login extends Component {
 				err.response && err.response.data
 					? err.response.data.message
 					: err.message;
+			const code = err?.response?.data?.code;
+
+			// OTP required: open the shared OTP dialog and remember that the
+			// follow-up submission must use `performGoogleLogin` (not the
+			// password endpoint). Stash the google_token so the OTP submit
+			// can resend it.
+			if (
+				Number(code) === 52 ||
+				(typeof _error === 'string' && _error.toLowerCase().indexOf('otp') > -1)
+			) {
+				this.resetCaptcha();
+				this.props.reset('OtpForm');
+				this.props.stopSubmit('OtpForm', {});
+				const values = { google_token: token };
+				if (service) values.service = service;
+				this.setState({
+					values,
+					loginMode: 'google',
+					otpDialogIsOpen: true,
+				});
+				return;
+			}
+
+			// Any other server error: the Turnstile token is effectively
+			// single-use, so force a fresh one for the next attempt.
+			if (turnstileEnabled) this.resetCaptcha();
 
 			let error = {};
-
 			if (_error === 'User is not activated') {
 				error._error = STRINGS['VALIDATIONS.FROZEN_ACCOUNT'];
 			} else {

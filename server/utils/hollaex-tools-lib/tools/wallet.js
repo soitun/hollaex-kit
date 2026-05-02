@@ -22,7 +22,9 @@ const {
 	NETWORK_REQUIRED,
 	WITHDRAWAL_DISABLED,
 	WITHDRAWAL_OTP_REQUIRED,
-	WITHDRAWAL_LIMIT_ERROR
+	WITHDRAWAL_LIMIT_ERROR,
+	WITHDRAWAL_DAILY_LIMIT_REACHED,
+	WITHDRAWAL_MONTHLY_LIMIT_REACHED
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
@@ -535,9 +537,9 @@ const withdrawalBelowLimit = async (userId, currency, amount = 0, transactionLim
 	const last24HoursLimit = transactionLimit.amount;
 	const lastMonthLimit = transactionLimit.monthly_amount;
 
-	// if limit is -1 it means it's disabled
-	if (last24HoursLimit === -1) throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
-	if (lastMonthLimit === -1) throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
+	// if limit is -1 it means the user has hit the limit for that period at their tier
+	if (last24HoursLimit === -1) throw new Error(WITHDRAWAL_DAILY_LIMIT_REACHED);
+	if (lastMonthLimit === -1) throw new Error(WITHDRAWAL_MONTHLY_LIMIT_REACHED);
 	// if limit is 0 it means it's limitless
 	if (last24HoursLimit === 0 && lastMonthLimit === 0) return;
 

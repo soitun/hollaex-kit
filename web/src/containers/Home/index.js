@@ -34,7 +34,11 @@ import icons from 'config/icons/dark';
 import { generateDynamicIconKey } from 'utils/id';
 import { MarketsSelector } from 'containers/Trade/utils';
 import { isLoggedIn } from 'utils/token';
-import { getMiniCharts } from 'actions/chartAction';
+import {
+	getMiniChartData,
+	getMiniChartQuote,
+	getMiniCharts,
+} from 'actions/chartAction';
 import {
 	countDecimals,
 	formatByLastPrice,
@@ -204,20 +208,27 @@ class Home extends Component {
 			quicktradePairs,
 			setCoinsData,
 			wsPriceData = {},
+			constants,
 		} = this.props;
+		const miniChartQuote = getMiniChartQuote(coins, constants?.native_currency);
 		const coinsData = coinsList
 			.map((name) => {
 				const { code, icon_id, symbol, fullname, type, created_at } = coins[
 					name
 				];
 
-				const key = `${code}-usdt`;
+				const fallbackKey = miniChartQuote ? `${code}-${miniChartQuote}` : code;
+				const { key = fallbackKey, data: chartData } = getMiniChartData(
+					chartValues,
+					code,
+					miniChartQuote
+				);
 				const wsPrice = wsPriceData[symbol] || null;
-				const pricingData = this.getPricingData(chartValues[key], wsPrice);
+				const pricingData = this.getPricingData(chartData, wsPrice);
 
 				return {
 					...pricingData,
-					chartData: chartValues[key],
+					chartData,
 					code,
 					icon_id,
 					symbol,
@@ -240,17 +251,21 @@ class Home extends Component {
 	};
 
 	getMinicharData = async () => {
-		const { coins } = this.props;
+		const { coins, constants } = this.props;
 		const coinsList = Object.keys(coins)?.map((val) => coins[val]?.code);
+		const miniChartQuote = getMiniChartQuote(coins, constants?.native_currency);
 		try {
 			this.setState({ isLoading: true });
-			await getMiniCharts(coinsList.toLocaleString()).then((chartValues) => {
-				this.setState({ chartData: chartValues });
-				this.getCoinsData(coinsList, chartValues);
-			});
-			this.setState({ isLoading: false });
+			await getMiniCharts(coinsList.toLocaleString(), miniChartQuote).then(
+				(chartValues) => {
+					this.setState({ chartData: chartValues });
+					this.getCoinsData(coinsList, chartValues);
+				}
+			);
 		} catch (error) {
 			console.error(error);
+		} finally {
+			this.setState({ isLoading: false });
 		}
 	};
 

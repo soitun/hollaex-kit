@@ -370,7 +370,7 @@ const Referrals = ({
 						<Button
 							onClick={async () => {
 								try {
-									if (!referralPayload.earning_rate) {
+									if (referralPayload.earning_rate == null) {
 										message.error('Please select earning rate');
 										return;
 									}

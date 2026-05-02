@@ -1,5 +1,8 @@
 'use strict';
 
+// we should not change the code of the messages
+// only add new ones to the end of the file and
+// make sure there is a correspnding entry in the lang-messages.js file
 const messages = {
 	'Missing order': {
 		'code': 10,
@@ -4377,6 +4380,26 @@ const messages = {
 		'vi': 'Mật khẩu đã được thiết lập',
 		'zh': '密码已设置'
 	},
+	'Unable to connect referral code': {
+		'code': 226,
+		'en': 'Unable to connect referral code',
+		'de': 'Referralcode kann nicht verbunden werden',
+		'es': 'No se pudo conectar el código de referido',
+		'fa': 'امکان اتصال کد معرف وجود ندارد',
+		'fr': 'Impossible de connecter le code de parrainage',
+		'id': 'Tidak dapat menghubungkan kode referral',
+		'it': 'Impossibile collegare il codice referral',
+		'ja': '紹介コードを接続できません',
+		'ko': '추천 코드를 연결할 수 없습니다',
+		'mn': 'Урилгын кодыг холбох боломжгүй',
+		'nl': 'Kan verwijzingscode niet koppelen',
+		'pt': 'Não foi possível conectar o código de indicação',
+		'ru': 'Не удалось подключить реферальный код',
+		'tr': 'Referans kodu bağlanamadı',
+		'ur': 'ریفرل کوڈ منسلک نہیں کیا جا سکا',
+		'vi': 'Không thể kết nối mã giới thiệu',
+		'zh': '无法连接推荐码'
+	},
 	'Referral code is required': {
 		'code': 227,
 		'en': 'Referral code is required',
@@ -4756,6 +4779,26 @@ const messages = {
 		'ur': 'تفصیلات نکاسی نہیں ملا',
 		'vi': 'Chi tiết thanh toán không tìm thấy',
 		'zh': '支付详情未找到'
+	},
+	'Invalid Google token audience': {
+		'code': 246,
+		'en': 'Invalid Google token audience',
+		'de': 'Ungültige Zielgruppe des Google-Tokens',
+		'es': 'Audiencia del token de Google no válida',
+		'fa': 'مخاطب توکن گوگل نامعتبر است',
+		'fr': 'Audience du jeton Google invalide',
+		'id': 'Audiens token Google tidak valid',
+		'it': 'Destinatario del token Google non valido',
+		'ja': 'Google トークンの対象者が無効です',
+		'ko': '유효하지 않은 Google 토큰 대상',
+		'mn': 'Google токены хүлээн авагч буруу байна',
+		'nl': 'Ongeldige doelgroep van Google-token',
+		'pt': 'Público do token do Google inválido',
+		'ru': 'Недопустимая аудитория токена Google',
+		'tr': 'Geçersiz Google belirteç hedef kitlesi',
+		'ur': 'غلط گوگل ٹوکن سامعین',
+		'vi': 'Đối tượng token Google không hợp lệ',
+		'zh': '无效的 Google 令牌受众'
 	}
 	// add new ones above here
 }

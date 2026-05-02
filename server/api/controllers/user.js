@@ -40,7 +40,8 @@ const {
 	USER_REGISTERED_EMAIL_CODE,
 	USER_REGISTERED_SMS_CODE,
 	SIGNUP_EMAIL_OR_PHONE_NOT_BOTH,
-	PROVIDE_VALID_PHONE
+	PROVIDE_VALID_PHONE,
+	REFERRAL_CONNECT_FAILED
 } = require('../../messages');
 const { DEFAULT_ORDER_RISK_PERCENTAGE, EVENTS_CHANNEL, API_HOST, DOMAIN, TOKEN_TIME_NORMAL, TOKEN_TIME_LONG, HOLLAEX_NETWORK_BASE_URL, NUMBER_OF_ALLOWED_ATTEMPTS, GET_KIT_SECRETS } = require('../../constants');
 const { all } = require('bluebird');
@@ -530,6 +531,16 @@ const loginPost = async (req, res) => {
 	const referer = req.headers.referer;
 	const time = new Date();
 
+	// Mask short-lived secrets in the access log: keep just the last 10 chars
+	// of the captcha token so we can correlate Cloudflare audit logs without
+	// exposing a still-valid Turnstile token via log shipping/aggregation.
+	// `otp_code` is logged as a presence flag for the same reason.
+	const maskTail = (s, n = 10) => {
+		const v = String(s || '');
+		if (!v) return '';
+		return v.length <= n ? v : `…${v.slice(-n)}`;
+	};
+
 	loggerUser.verbose(
 		req.uuid,
 		'controllers/user/loginPost',
@@ -538,9 +549,9 @@ const loginPost = async (req, res) => {
 		'phone_number',
 		phone_number,
 		'otp_code',
-		otp_code,
+		!!otp_code,
 		'captcha',
-		captcha,
+		maskTail(captcha),
 		'service',
 		service,
 		'long_term',
@@ -598,6 +609,17 @@ const loginPost = async (req, res) => {
 			ip
 		);
 
+		// Captcha is the very first gate, before any account lookup. Without
+		// this, the subsequent USER_NOT_FOUND / USER_NOT_VERIFIED /
+		// USER_NOT_ACTIVATED / LOGIN_NOT_ALLOW branches let an unauthenticated
+		// attacker enumerate accounts and account states without solving a
+		// single Turnstile challenge.
+		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
+		loggerUser.verbose(
+			req.uuid,
+			'controllers/user/loginPost checkCaptcha passed'
+		);
+
 		const isPhoneLogin = !email && !!phone_number;
 		const user = email
 			? await toolsLib.user.getUserByEmail(email)
@@ -625,53 +647,27 @@ const loginPost = async (req, res) => {
 		}
 
 		const latestLogin = await toolsLib.user.findUserLatestLogin(user, false);
+		// Use `>=` (not `===`). Combined with the atomic capped increment in
+		// `updateLoginAttempt`, this is robust against concurrent requests
+		// that would previously race past the cap and bypass the lockout.
 		if (
 			latestLogin &&
-			latestLogin.attempt === NUMBER_OF_ALLOWED_ATTEMPTS &&
+			latestLogin.attempt >= NUMBER_OF_ALLOWED_ATTEMPTS &&
 			latestLogin.status == false
 		) {
 			throw new Error(LOGIN_NOT_ALLOW);
 		}
 
-		// If OTP is enabled, require OTP code before consuming Turnstile tokens.
-		if (user.otp_enabled && !otp_code) {
-			throw new Error(INVALID_OTP_CODE);
-		}
+		// Captcha was already validated above (before any account lookup).
+		// The remaining gates run in this order: password -> OTP. We
+		// deliberately surface "incorrect credentials" before asking for the
+		// OTP code so users who mistyped their password don't get pushed
+		// into a 2FA dialog that can never succeed. The trade-off (an
+		// attacker with a correct password but no OTP learns the password
+		// is right) is acceptable because Turnstile, the per-account rate
+		// limit, and the failed-attempt lockout all still gate the request.
 
-		// Validate captcha early (before password check) to reduce brute-force attempts.
-		// Note: Turnstile tokens are short-lived and typically single-use.
-		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
-		loggerUser.verbose(
-			req.uuid,
-			'controllers/user/loginPost checkCaptcha passed'
-		);
-
-		if (user.otp_enabled) {
-			try {
-				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
-				loggerUser.verbose(
-					req.uuid,
-					'controllers/user/loginPost otp passed'
-				);
-			} catch (err) {
-				// Mirror previous behavior: log a failed login attempt and include attempt message.
-				await toolsLib.user.createUserLogin(
-					user,
-					ip,
-					device,
-					domain,
-					origin,
-					referer,
-					null,
-					long_term,
-					false
-				);
-				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
-				const message = createAttemptMessage(loginData, user, domain);
-				throw new Error((err?.message || INVALID_OTP_CODE) + message);
-			}
-		}
-
+		// Password.
 		if (user.password === 'notset') {
 			throw new Error(PASSWORD_NOT_SET);
 		}
@@ -680,7 +676,6 @@ const loginPost = async (req, res) => {
 			user.password,
 			password
 		);
-
 
 		if (!passwordIsValid) {
 			loggerUser.verbose(
@@ -707,6 +702,39 @@ const loginPost = async (req, res) => {
 			req.uuid,
 			'controllers/user/loginPost password passed'
 		);
+
+		// OTP. A missing OTP code is *not* counted as a failed login (the
+		// credentials were correct, the user just hasn't typed their code
+		// yet); the frontend opens the OTP dialog on this error and
+		// re-submits with a fresh captcha token + the OTP code. A wrong OTP
+		// IS counted toward the failed-attempt lockout.
+		if (user.otp_enabled) {
+			if (!otp_code) {
+				throw new Error(INVALID_OTP_CODE);
+			}
+			try {
+				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
+				loggerUser.verbose(
+					req.uuid,
+					'controllers/user/loginPost otp passed'
+				);
+			} catch (err) {
+				await toolsLib.user.createUserLogin(
+					user,
+					ip,
+					device,
+					domain,
+					origin,
+					referer,
+					null,
+					long_term,
+					false
+				);
+				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
+				const message = createAttemptMessage(loginData, user, domain);
+				throw new Error((err?.message || INVALID_OTP_CODE) + message);
+			}
+		}
 
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
@@ -861,9 +889,19 @@ const loginPost = async (req, res) => {
 	}
 };
 
-// Google OAuth login function
+// Google OAuth login function. Mirrors `loginPost` in terms of security
+// gates: captcha first, OTP if the user has it enabled, suspicious-login
+// geo confirmation if configured, and the same `>=` lockout check. The
+// only thing we don't run is the password check (Google id_token replaces it).
 const loginWithGoogle = async (req, res) => {
-	const { google_token, service, long_term, version } = req.swagger.params.authentication.value;
+	const {
+		google_token,
+		service,
+		long_term,
+		version,
+		captcha,
+		otp_code
+	} = req.swagger.params.authentication.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
 	const origin = req.headers.origin;
@@ -905,6 +943,10 @@ const loginWithGoogle = async (req, res) => {
 		'controllers/user/loginPostWithGoogle',
 		'google_token',
 		!!google_token,
+		'otp_code',
+		!!otp_code,
+		'captcha',
+		captcha ? `…${String(captcha).slice(-10)}` : '',
 		'service',
 		service,
 		'long_term',
@@ -931,7 +973,12 @@ const loginWithGoogle = async (req, res) => {
 		// Enforce geo/IP restrictions the same as email login
 		await toolsLib.security.checkIp(ip);
 
-		// Verify Google token and get user data
+		// Captcha is the very first gate, before any account lookup or
+		// outbound Google verification call, for the same reason it runs
+		// first in `loginPost`.
+		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
+
+		// Verify Google token (validates iss/aud/exp/email_verified inside).
 		const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
 		const email = googleUserData.email.toLowerCase().trim();
 		const tokenGoogleId = googleUserData.google_id || googleUserData.sub;
@@ -962,6 +1009,9 @@ const loginWithGoogle = async (req, res) => {
 			await user.update({ google_id: tokenGoogleId }, { fields: ['google_id'], returning: true });
 		}
 
+		if (!ip) {
+			throw new Error(NO_IP_FOUND);
+		}
 		if (user.verification_level === 0) {
 			throw new Error(USER_NOT_VERIFIED);
 		} else if (toolsLib.getKitConfig().email_verification_required && !user.email_verified) {
@@ -970,14 +1020,93 @@ const loginWithGoogle = async (req, res) => {
 			throw new Error(USER_NOT_ACTIVATED);
 		}
 
-		const loginData = await toolsLib.user.findUserLatestLogin(user, false);
-		if (loginData && loginData.attempt === NUMBER_OF_ALLOWED_ATTEMPTS && loginData.status == false) {
+		const latestLogin = await toolsLib.user.findUserLatestLogin(user, false);
+		if (latestLogin && latestLogin.attempt >= NUMBER_OF_ALLOWED_ATTEMPTS && latestLogin.status == false) {
 			throw new Error(LOGIN_NOT_ALLOW);
+		}
+
+		// OTP gate. If the user has TOTP enabled we require an `otp_code`
+		// even though Google has already authenticated the email, because
+		// 2FA is an exchange-side control and must not be bypassable by
+		// switching login methods. A missing code is *not* counted as a
+		// failed login (the credentials were correct, the user just hasn't
+		// typed their second factor); a wrong code IS.
+		if (user.otp_enabled) {
+			if (!otp_code) {
+				throw new Error(INVALID_OTP_CODE);
+			}
+			try {
+				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
+			} catch (err) {
+				await toolsLib.user.createUserLogin(
+					user, ip, device, domain, origin, referer, null, long_term, false
+				);
+				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
+				const message = createAttemptMessage(loginData, user, domain);
+				throw new Error((err?.message || INVALID_OTP_CODE) + message);
+			}
+		}
+
+		// Suspicious-login geo confirmation. Identical to `loginPost`: if
+		// this user has previous successful logins but never from this
+		// country, we don't issue a token; instead we mail a confirmation
+		// code and require the user to confirm before the next attempt.
+		const lastLogins = await toolsLib.user.findUserLastLogins(user);
+		const successfulRecords = (lastLogins || []).filter((login) => login.status);
+		const geo = geoip.lookup(ip);
+		const country = geo?.country || '';
+		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
+		let suspiciousLogin = false;
+		if (suspiciousLoginEnabled && SMTP_SERVER()?.length > 0) {
+			if (
+				isArray(lastLogins) &&
+				lastLogins.length > 0 &&
+				!successfulRecords?.find((login) => login.country === country)
+			) {
+				suspiciousLogin = true;
+			}
+		}
+
+		if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
+			const verification_code = generateAuthCode(version, { fallback: 'token' });
+			const susLogin = await toolsLib.user.createSuspiciousLogin(
+				user, ip, device, country, domain, origin, referer, null, long_term
+			);
+			const data = {
+				id: susLogin.id,
+				email: user.email,
+				verification_code,
+				ip,
+				time,
+				device,
+				country,
+				user_id: user.id
+			};
+			await toolsLib.database.client.setexAsync(
+				`user:confirm-login:${verification_code}`,
+				5 * 60,
+				JSON.stringify(data)
+			);
+			await toolsLib.database.client.setexAsync(
+				`user:freeze-account:${verification_code}`,
+				60 * 60 * 6,
+				JSON.stringify(data)
+			);
+			await toolsLib.verification.sendVerificationCode(user, {
+				action_type: 'login_verification',
+				verification_code,
+				emailType: version === 'v3' || version === 'v4'
+					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
+					: MAILTYPE.SUSPICIOUS_LOGIN,
+				emailData: data,
+				domain
+			});
+			throw new Error('Suspicious login detected, please check your email.');
 		}
 
 		// Send login email notification if not a service login
 		if (!service && isEmail(user.email)) {
-			const data = { ip, time, device, country: '' };
+			const data = { ip, time, device, country };
 			sendEmail(MAILTYPE.LOGIN, user.email, data, user.settings, domain);
 		}
 
@@ -1001,10 +1130,6 @@ const loginWithGoogle = async (req, res) => {
 			user.role
 		);
 
-		// Create login record
-		if (!ip) {
-			throw new Error(NO_IP_FOUND);
-		}
 		await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true);
 
 		// Publish login event
@@ -1460,6 +1585,21 @@ const affiliationCount = (req, res) => {
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/affiliationCount', err.message);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const connectReferral = (req, res) => {
+	loggerUser.debug(req.uuid, 'controllers/user/connectReferral auth', req.auth.sub);
+
+	const user_id = req.auth.sub.id;
+	const { code } = req.swagger.params.data.value;
+
+	toolsLib.user.connectUserReferral(code, user_id)
+		.then(() => res.json({ message: 'success' }))
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/connectReferral', err.message);
+			const messageObj = errorMessageConverter({ message: REFERRAL_CONNECT_FAILED }, req?.auth?.sub?.lang);
 			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		});
 };
@@ -2733,7 +2873,17 @@ const verifyPasskeyLogin = async (req, res) => {
 		const ip = req.headers['x-real-ip'];
 		const device = req.headers['custom-device'] ? req.headers['user-agent'] : (req.headers['user-agent'] || '').substring(0, 1000);
 		const domain = req.headers['x-real-origin'] || req.headers.origin;
-		const { challenge, credential } = req.swagger.params.data.value;
+		// Read all fields from the validated swagger payload, not from
+		// `req.body` directly. The previous code read `req.body?.data?.version`
+		// / `req.body?.data?.service`, which never matched the swagger 2.0
+		// shape — so `version` always silently fell through to the default
+		// and `service` was treated as absent.
+		const {
+			challenge,
+			credential,
+			version = 'v4',
+			service
+		} = req.swagger.params.data.value;
 
 		if (!challenge || !credential) {
 			throw new Error('challenge and credential are required');
@@ -2812,7 +2962,6 @@ const verifyPasskeyLogin = async (req, res) => {
 		}
 
 		if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
-			const version = req.body?.data?.version || 'v3';
 			const verification_code = generateAuthCode(version, { fallback: 'token' });
 
 			const loginData = await toolsLib.user.createSuspiciousLogin(
@@ -2880,7 +3029,7 @@ const verifyPasskeyLogin = async (req, res) => {
 			data: { action: 'login', user_id: user.id },
 		}));
 
-		if (!req.body?.data?.service && isEmail(user.email)) {
+		if (!service && isEmail(user.email)) {
 			sendEmail(MAILTYPE.LOGIN, user.email, { ip, time: new Date(), device, country }, user.settings, domain);
 		}
 
@@ -2975,6 +3124,7 @@ module.exports = {
 	setUsername,
 	getUserLogins,
 	affiliationCount,
+	connectReferral,
 	getUserBalance,
 	deactivateUser,
 	createCryptoAddress,
