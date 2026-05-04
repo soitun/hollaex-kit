@@ -436,6 +436,93 @@ class Verification extends Component {
 		}
 	};
 
+	renderEmailVerificationContent = (user = this.state.user) => {
+		const { email, email_verified } = user || {};
+		const isPhoneSignupEmail = this.isPhoneSignupEmail(email);
+		const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
+			?.site_key;
+		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
+		const activeTheme = this.props.activeTheme;
+
+		return (
+			<div>
+				<PanelInformationRow
+					label={STRINGS['USER_VERIFICATION.MY_EMAIL']}
+					information={isPhoneSignupEmail ? '-' : email}
+					className={'title-font'}
+					disable
+				/>
+				{!email_verified && isPhoneSignupEmail ? (
+					<div className="mt-4">
+						<EditWrapper stringId="USER_VERIFICATION.EMAIL_VERIFICATION" />
+						<div className="mb-3">
+							{STRINGS['VERIFICATION_EMAIL.SET_REAL_EMAIL_DESCRIPTION']}
+						</div>
+						<Input
+							value={this.state.setEmailValue}
+							placeholder={STRINGS['FORM_FIELDS.EMAIL_PLACEHOLDER']}
+							onChange={(e) => this.setState({ setEmailValue: e.target.value })}
+							disabled={this.state.setEmailCodeSent}
+						/>
+						<Button
+							className="caps mt-3"
+							label={
+								this.state.setEmailCodeSent
+									? STRINGS['VERIFICATION_EMAIL.CODE_SENT']
+									: STRINGS['VERIFICATION_EMAIL_REQUEST.BUTTON']
+							}
+							onClick={this.requestSetEmailCode}
+							disabled={
+								this.state.setEmailLoading || this.state.setEmailCodeSent
+							}
+						/>
+						{this.state.setEmailCodeSent && (
+							<div className="mt-3">
+								<Input
+									value={this.state.setEmailCode}
+									placeholder={STRINGS['VERIFICATION_EMAIL.CODE_PLACEHOLDER']}
+									onChange={(e) =>
+										this.setState({ setEmailCode: e.target.value })
+									}
+								/>
+								<Button
+									className="caps mt-3"
+									label={STRINGS['VERIFICATION_EMAIL.CONFIRM_BUTTON']}
+									onClick={this.confirmSetEmailCode}
+									disabled={this.state.setEmailConfirmLoading}
+								/>
+							</div>
+						)}
+					</div>
+				) : !email_verified ? (
+					<div className="mt-4">
+						<EditWrapper stringId="USER_VERIFICATION.EMAIL_VERIFICATION" />
+						<Button
+							className="caps"
+							label={STRINGS['USER_VERIFICATION.EMAIL_VERIFICATION']}
+							onClick={this.sendVerificationEmail}
+							disabled={
+								turnstileEnabled && !this.state.verificationEmailCaptcha
+							}
+						/>
+						{turnstileEnabled && (
+							<div className="mt-3">
+								<CloudflareTurnstile
+									key={`verification-email-turnstile-${this.state.verificationEmailCaptchaKey}`}
+									siteKey={turnstileSiteKey}
+									theme={activeTheme}
+									onToken={(token) =>
+										this.setState({ verificationEmailCaptcha: token })
+									}
+								/>
+							</div>
+						)}
+					</div>
+				) : null}
+			</div>
+		);
+	};
+
 	updateTabs = (
 		user = {},
 		activeLanguage = this.props.activeLanguage,
@@ -447,13 +534,11 @@ class Verification extends Component {
 		}
 		const { icons: ICONS } = this.props;
 		const {
-			email,
 			bank_account = [],
 			id_data = {},
 			phone_number,
 			email_verified,
 		} = user;
-		const isPhoneSignupEmail = this.isPhoneSignupEmail(email);
 		let bank_status = 0;
 		if (bank_account.length) {
 			if (bank_account.filter((data) => data.status === 3).length) {
@@ -474,10 +559,6 @@ class Verification extends Component {
 			}
 		}
 		const identity_status = id_data.status || 0;
-		const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
-			?.site_key;
-		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
-		const activeTheme = this.props.activeTheme;
 
 		const tabUtils = {
 			email: {
@@ -496,87 +577,7 @@ class Verification extends Component {
 						statusCode={email_verified ? 3 : 0}
 					/>
 				),
-				content: activeTab === 0 && (
-					<div>
-						<PanelInformationRow
-							label={STRINGS['USER_VERIFICATION.MY_EMAIL']}
-							information={isPhoneSignupEmail ? '-' : email}
-							className={'title-font'}
-							disable
-						/>
-						{!email_verified && isPhoneSignupEmail ? (
-							<div className="mt-4">
-								<EditWrapper stringId="USER_VERIFICATION.EMAIL_VERIFICATION" />
-								<div className="mb-3">
-									{STRINGS['VERIFICATION_EMAIL.SET_REAL_EMAIL_DESCRIPTION']}
-								</div>
-								<Input
-									value={this.state.setEmailValue}
-									placeholder={STRINGS['FORM_FIELDS.EMAIL_PLACEHOLDER']}
-									onChange={(e) =>
-										this.setState({ setEmailValue: e.target.value })
-									}
-									disabled={this.state.setEmailCodeSent}
-								/>
-								<Button
-									className="caps mt-3"
-									label={
-										this.state.setEmailCodeSent
-											? STRINGS['VERIFICATION_EMAIL.CODE_SENT']
-											: STRINGS['VERIFICATION_EMAIL_REQUEST.BUTTON']
-									}
-									onClick={this.requestSetEmailCode}
-									disabled={
-										this.state.setEmailLoading || this.state.setEmailCodeSent
-									}
-								/>
-								{this.state.setEmailCodeSent && (
-									<div className="mt-3">
-										<Input
-											value={this.state.setEmailCode}
-											placeholder={
-												STRINGS['VERIFICATION_EMAIL.CODE_PLACEHOLDER']
-											}
-											onChange={(e) =>
-												this.setState({ setEmailCode: e.target.value })
-											}
-										/>
-										<Button
-											className="caps mt-3"
-											label={STRINGS['VERIFICATION_EMAIL.CONFIRM_BUTTON']}
-											onClick={this.confirmSetEmailCode}
-											disabled={this.state.setEmailConfirmLoading}
-										/>
-									</div>
-								)}
-							</div>
-						) : !email_verified ? (
-							<div className="mt-4">
-								<EditWrapper stringId="USER_VERIFICATION.EMAIL_VERIFICATION" />
-								<Button
-									className="caps"
-									label={STRINGS['USER_VERIFICATION.EMAIL_VERIFICATION']}
-									onClick={this.sendVerificationEmail}
-									disabled={
-										turnstileEnabled && !this.state.verificationEmailCaptcha
-									}
-								/>
-								{turnstileEnabled && (
-									<div className="mt-3">
-										<CloudflareTurnstile
-											key={`verification-email-turnstile-${this.state.verificationEmailCaptchaKey}`}
-											siteKey={turnstileSiteKey}
-											theme={activeTheme}
-											onToken={(token) =>
-												this.setState({ verificationEmailCaptcha: token })
-											}
-										/>
-									</div>
-								)}
-							</div>
-						) : null}
-					</div>
-				),
+				content: activeTab === 0 && this.renderEmailVerificationContent(user),
 			},
 			bank: {
 				title: isMobile ? (
@@ -745,6 +746,10 @@ class Verification extends Component {
 	};
 
 	renderContent = (tabs, activeTab) => {
+		if (this.state.currentTabs[activeTab] === 'email') {
+			return this.renderEmailVerificationContent();
+		}
+
 		return tabs[activeTab]?.content || <div>c</div>;
 	};
 

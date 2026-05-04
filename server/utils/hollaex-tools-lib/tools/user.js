@@ -1768,17 +1768,6 @@ const confirmUserSetEmail = async (kitUserId, code) => {
 		},
 		{ fields: ['email', 'email_verified', 'meta', 'username'], returning: true }
 	);
-	// Revoke sessions only after the DB update succeeds, so a failed update
-	// doesn't log the user out for nothing. Failures here are logged but not
-	// surfaced — the email change has already been committed.
-	try {
-		await revokeAllUserSessions(user.id);
-	} catch (err) {
-		loggerUser.error(
-			'tools/user/confirmUserSetEmail revokeAllUserSessions failed',
-			err.message
-		);
-	}
 	await client.delAsync(key);
 
 	publisher.publish(EVENTS_CHANNEL, JSON.stringify({

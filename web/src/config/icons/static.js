@@ -92,6 +92,9 @@ const icons = {
 	USER_EMAIL: '/assets/images/user-email.svg',
 	USER_EMAIL_VERIFIED: '/assets/images/user-email-verified.svg',
 	USER_EMAIL_UNVERIFIED: '/assets/images/user-email-unverified.svg',
+	USER_PHONE: '/assets/images/user-phone.svg',
+	USER_PHONE_VERIFIED: '/assets/images/user-phone-verified.svg',
+	USER_PHONE_UNVERIFIED: '/assets/images/user-phone-unverified.svg',
 	SPINNER: '/assets/images/spinner.gif',
 
 	// Notification Icons
