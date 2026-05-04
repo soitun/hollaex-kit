@@ -762,7 +762,7 @@ const AboutData = ({
 									</div>
 									<div className={'about-icon-active'}>
 										<ReactSVG
-											src={STATIC_ICONS.USER_EMAIL_VERIFIED}
+											src={STATIC_ICONS.USER_PHONE_VERIFIED}
 											className={'about-icon'}
 										/>
 									</div>
@@ -777,7 +777,7 @@ const AboutData = ({
 									</div>
 									<div>
 										<ReactSVG
-											src={STATIC_ICONS.USER_EMAIL_UNVERIFIED}
+											src={STATIC_ICONS.USER_PHONE_UNVERIFIED}
 											className={'about-icon'}
 										/>
 									</div>

@@ -8,7 +8,7 @@ const VerifyPhoneConfirmation = ({ userData = {}, onConfirm, ...rest }) => (
 		<div>
 			<div className="d-flex mb-2">
 				<div>
-					<ReactSVG src={STATIC_ICONS.USER_EMAIL} className={'about-icon'} />
+					<ReactSVG src={STATIC_ICONS.USER_PHONE} className={'about-icon'} />
 				</div>
 				<h3 className="ml-3 pt-2" style={{ color: '#ffffff' }}>
 					Phone verification
