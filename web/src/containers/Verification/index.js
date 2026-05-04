@@ -3,7 +3,8 @@ import classnames from 'classnames';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import _get from 'lodash/get';
-import { message } from 'antd';
+import { Input, message } from 'antd';
+import { isEmail } from 'validator';
 import {
 	CustomTabs,
 	CustomMobileTabs,
@@ -40,7 +41,11 @@ import {
 import { setMe, updateDocuments, updateUser } from 'actions/userAction';
 import MobileVerificationHome from './MobileVerificationHome';
 // import MobileTabs from './MobileTabs';
-import { verifyBankData } from 'actions/verificationActions';
+import {
+	confirmSetEmail,
+	requestSetEmail,
+	verifyBankData,
+} from 'actions/verificationActions';
 import { getErrorLocalized } from 'utils/errors';
 import { required, maxLength } from 'components/Form/validations';
 import { getCountry } from 'containers/Verification/utils';
@@ -63,6 +68,11 @@ class Verification extends Component {
 		showVerificationSentModal: false,
 		verificationEmailCaptcha: '',
 		verificationEmailCaptchaKey: 0,
+		setEmailValue: '',
+		setEmailCode: '',
+		setEmailCodeSent: false,
+		setEmailLoading: false,
+		setEmailConfirmLoading: false,
 	};
 
 	componentDidMount() {
@@ -317,6 +327,55 @@ class Verification extends Component {
 			});
 	};
 
+	isPhoneSignupEmail = (email = '') => {
+		return typeof email === 'string' && email.endsWith('_sms');
+	};
+
+	requestSetEmailCode = () => {
+		const email = this.state.setEmailValue.trim().toLowerCase();
+		if (!isEmail(email)) {
+			message.error(STRINGS['VALIDATIONS.TYPE_EMAIL']);
+			return;
+		}
+		this.setState({ setEmailLoading: true });
+		return requestSetEmail(email)
+			.then(() => {
+				this.setState({
+					setEmailCodeSent: true,
+					setEmailLoading: false,
+				});
+				message.success(STRINGS['VERIFICATION_EMAIL.CODE_SENT']);
+			})
+			.catch((error) => {
+				this.setState({ setEmailLoading: false });
+				message.error(error?.response?.data?.message || error.message);
+			});
+	};
+
+	confirmSetEmailCode = () => {
+		const code = this.state.setEmailCode.trim();
+		if (!code) {
+			message.error(STRINGS['VALIDATIONS.REQUIRED']);
+			return;
+		}
+		this.setState({ setEmailConfirmLoading: true });
+		return confirmSetEmail(code)
+			.then(({ data }) => {
+				this.props.setMe(data);
+				this.setState({
+					setEmailValue: '',
+					setEmailCode: '',
+					setEmailCodeSent: false,
+					setEmailConfirmLoading: false,
+				});
+				message.success(STRINGS['VERIFICATION_EMAIL.TEXT_1']);
+			})
+			.catch((error) => {
+				this.setState({ setEmailConfirmLoading: false });
+				message.error(error?.response?.data?.message || error.message);
+			});
+	};
+
 	getRemoteTabUtils = () => {
 		const { remoteTabs, icons: ICONS } = this.props;
 		const tabUtils = {};
@@ -394,6 +453,7 @@ class Verification extends Component {
 			phone_number,
 			email_verified,
 		} = user;
+		const isPhoneSignupEmail = this.isPhoneSignupEmail(email);
 		let bank_status = 0;
 		if (bank_account.length) {
 			if (bank_account.filter((data) => data.status === 3).length) {
@@ -440,11 +500,57 @@ class Verification extends Component {
 					<div>
 						<PanelInformationRow
 							label={STRINGS['USER_VERIFICATION.MY_EMAIL']}
-							information={email}
+							information={isPhoneSignupEmail ? '-' : email}
 							className={'title-font'}
 							disable
 						/>
-						{!email_verified && (
+						{!email_verified && isPhoneSignupEmail ? (
+							<div className="mt-4">
+								<EditWrapper stringId="USER_VERIFICATION.EMAIL_VERIFICATION" />
+								<div className="mb-3">
+									{STRINGS['VERIFICATION_EMAIL.SET_REAL_EMAIL_DESCRIPTION']}
+								</div>
+								<Input
+									value={this.state.setEmailValue}
+									placeholder={STRINGS['FORM_FIELDS.EMAIL_PLACEHOLDER']}
+									onChange={(e) =>
+										this.setState({ setEmailValue: e.target.value })
+									}
+									disabled={this.state.setEmailCodeSent}
+								/>
+								<Button
+									className="caps mt-3"
+									label={
+										this.state.setEmailCodeSent
+											? STRINGS['VERIFICATION_EMAIL.CODE_SENT']
+											: STRINGS['VERIFICATION_EMAIL_REQUEST.BUTTON']
+									}
+									onClick={this.requestSetEmailCode}
+									disabled={
+										this.state.setEmailLoading || this.state.setEmailCodeSent
+									}
+								/>
+								{this.state.setEmailCodeSent && (
+									<div className="mt-3">
+										<Input
+											value={this.state.setEmailCode}
+											placeholder={
+												STRINGS['VERIFICATION_EMAIL.CODE_PLACEHOLDER']
+											}
+											onChange={(e) =>
+												this.setState({ setEmailCode: e.target.value })
+											}
+										/>
+										<Button
+											className="caps mt-3"
+											label={STRINGS['VERIFICATION_EMAIL.CONFIRM_BUTTON']}
+											onClick={this.confirmSetEmailCode}
+											disabled={this.state.setEmailConfirmLoading}
+										/>
+									</div>
+								)}
+							</div>
+						) : !email_verified ? (
 							<div className="mt-4">
 								<EditWrapper stringId="USER_VERIFICATION.EMAIL_VERIFICATION" />
 								<Button
@@ -468,7 +574,7 @@ class Verification extends Component {
 									</div>
 								)}
 							</div>
-						)}
+						) : null}
 					</div>
 				),
 			},
