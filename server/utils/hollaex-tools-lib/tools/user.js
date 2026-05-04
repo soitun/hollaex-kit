@@ -976,7 +976,30 @@ const isValidUsername = (username) => {
  * @return {object}
  */
 const omitUserFields = (user) => {
-	return omit(user, OMITTED_USER_FIELDS);
+	const filteredUser = omit(user, OMITTED_USER_FIELDS);
+	if (has(filteredUser, 'settings')) {
+		const initialSettings = INITIAL_SETTINGS();
+		filteredUser.settings = isPlainObject(filteredUser.settings) ? filteredUser.settings : {};
+		filteredUser.settings.notification = {
+			...initialSettings.notification,
+			...filteredUser.settings.notification
+		};
+		Object.keys(initialSettings.notification).forEach((key) => {
+			if (isNil(filteredUser.settings.notification[key])) {
+				filteredUser.settings.notification[key] = initialSettings.notification[key];
+			}
+		});
+		filteredUser.settings.risk = {
+			...initialSettings.risk,
+			...filteredUser.settings.risk
+		};
+		Object.keys(initialSettings.risk).forEach((key) => {
+			if (isNil(filteredUser.settings.risk[key])) {
+				filteredUser.settings.risk[key] = initialSettings.risk[key];
+			}
+		});
+	}
+	return filteredUser;
 };
 
 const getAllUsers = () => {
@@ -1503,6 +1526,29 @@ const DEFAULT_SETTINGS = {
 
 const joinSettings = (userSettings = {}, newSettings = {}) => {
 	const joinedSettings = {};
+	const initialSettings = INITIAL_SETTINGS();
+	userSettings = isPlainObject(userSettings) ? userSettings : {};
+	userSettings = {
+		...userSettings,
+		notification: {
+			...initialSettings.notification,
+			...userSettings.notification
+		},
+		risk: {
+			...initialSettings.risk,
+			...userSettings.risk
+		}
+	};
+	Object.keys(initialSettings.notification).forEach((key) => {
+		if (isNil(userSettings.notification[key])) {
+			userSettings.notification[key] = initialSettings.notification[key];
+		}
+	});
+	Object.keys(initialSettings.risk).forEach((key) => {
+		if (isNil(userSettings.risk[key])) {
+			userSettings.risk[key] = initialSettings.risk[key];
+		}
+	});
 	SETTING_KEYS.forEach((key) => {
 		if (has(newSettings, key)) {
 			if (
@@ -1521,7 +1567,18 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 			) {
 				throw new Error(`verification_method must be one of: ${VERIFICATION_METHODS.join(', ')}`);
 			}
-			joinedSettings[key] = newSettings[key];
+			if (isPlainObject(userSettings[key]) && isPlainObject(newSettings[key])) {
+				joinedSettings[key] = { ...userSettings[key], ...newSettings[key] };
+				if (key === 'notification' || key === 'risk') {
+					Object.keys(initialSettings[key]).forEach((settingKey) => {
+						if (isNil(joinedSettings[key][settingKey])) {
+							joinedSettings[key][settingKey] = initialSettings[key][settingKey];
+						}
+					});
+				}
+			} else {
+				joinedSettings[key] = newSettings[key];
+			}
 		} else if (has(userSettings, key)) {
 			joinedSettings[key] = userSettings[key];
 		} else {

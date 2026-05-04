@@ -5,6 +5,7 @@ const {
     getAdminUser
 } = require('../helpers');
 const tools = require('hollaex-tools-lib');
+const { DEFAULT_ORDER_RISK_PERCENTAGE } = require('../../constants');
 
 
 describe('tests for /user/settings', function () {
@@ -56,6 +57,68 @@ describe('tests for /user/settings', function () {
         response.should.have.status(200);
         response.should.be.json;
         response.body.settings.verification_method.should.equal('email');
+    });
+
+    it('Integration Test - should fill legacy settings with missing nested fields', async () => {
+        const User = tools.database.getModel('user');
+        const originalUser = await tools.user.getUserByEmail(user.email);
+        const legacySettings = {
+            chat: {
+                set_username: true
+            },
+            audio: {
+                all: false,
+                order_placed: true,
+                public_trade: false,
+                click_amounts: true,
+                order_canceled: true,
+                order_completed: true,
+                quick_trade_success: true,
+                quick_trade_timeout: true,
+                get_quote_quick_trade: true,
+                order_partially_completed: true
+            },
+            language: 'fa',
+            interface: {
+                theme: 'dark',
+                order_book_levels: 20
+            }
+        };
+
+        try {
+            await User.update({ settings: legacySettings }, { where: { id: user.id } });
+
+            const getResponse = await request()
+                .get('/v2/user')
+                .set('Authorization', `Bearer ${bearerToken}`);
+
+            getResponse.should.have.status(200);
+            getResponse.body.settings.notification.popup_order_confirmation.should.equal(true);
+            getResponse.body.settings.notification.popup_order_completed.should.equal(true);
+            getResponse.body.settings.notification.popup_order_partially_filled.should.equal(true);
+            getResponse.body.settings.risk.order_portfolio_percentage.should.equal(DEFAULT_ORDER_RISK_PERCENTAGE);
+
+            const updateResponse = await request()
+                .put('/v2/user/settings')
+                .set('Authorization', `Bearer ${bearerToken}`)
+                .send({
+                    notification: {
+                        popup_order_completed: false
+                    },
+                    risk: {
+                        popup_warning: false
+                    }
+                });
+
+            updateResponse.should.have.status(200);
+            updateResponse.body.settings.notification.popup_order_completed.should.equal(false);
+            updateResponse.body.settings.notification.popup_order_confirmation.should.equal(true);
+            updateResponse.body.settings.notification.popup_order_partially_filled.should.equal(true);
+            updateResponse.body.settings.risk.popup_warning.should.equal(false);
+            updateResponse.body.settings.risk.order_portfolio_percentage.should.equal(DEFAULT_ORDER_RISK_PERCENTAGE);
+        } finally {
+            await User.update({ settings: originalUser.settings }, { where: { id: user.id } });
+        }
     });
 
     it('Integration Test - should reject invalid verification_method', async () => {
