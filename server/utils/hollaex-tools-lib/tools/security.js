@@ -27,7 +27,6 @@ const {
 	API_KEY_INACTIVE,
 	API_KEY_INVALID,
 	API_KEY_EXPIRED,
-	API_KEY_OUT_OF_SCOPE,
 	API_KEY_NOT_PERMITTED,
 	API_KEY_NOT_WHITELISTED,
 	API_SIGNATURE_INVALID,
@@ -40,7 +39,9 @@ const {
 	NO_AUTH_TOKEN,
 	WHITELIST_DISABLE_ADMIN,
 	WHITELIST_NOT_PROVIDED,
-	SESSION_NOT_FOUND
+	SESSION_NOT_FOUND,
+	USER_EMAIL_NOT_VERIFIED,
+	USER_PHONE_NOT_VERIFIED
 } = require(`${SERVER_PATH}/messages`);
 const {
 	NODE_ENV,
@@ -62,6 +63,7 @@ const bcrypt = require('bcryptjs');
 const { all } = require('bluebird');
 const { sendEmail } = require(`${SERVER_PATH}/mail`);
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
+const { sendVerificationCode } = require('./verification');
 const { getModel } = require('./database/model');
 const dbQuery = require('./database/query');
 const otp = require('otp');
@@ -158,18 +160,12 @@ const checkIp = async (remoteip = '') => {
 };
 
 const checkCaptcha = (captcha = '', remoteip = '', headers = {}) => {
-	// Backward-compatible bypass for legacy mobile clients:
-	// if they send the custom header `custom-device`, skip captcha verification.
-	// Note: Node lower-cases incoming header keys.
-	try {
-		const headerObj = headers?.headers ? headers.headers : headers;
-		if (headerObj && headerObj['custom-device']) {
-			loggerAuth.info('helpers/auth/checkCaptcha skipped due to custom-device header', remoteip);
-			return;
-		}
-	} catch (err) {
-		loggerAuth.error('helpers/auth/checkCaptcha cutom-header catch ALERT', err.message);
-	}
+	// `headers` is accepted for backward compatibility; previously it was
+	// used to honour a `custom-device` bypass header, which has been removed
+	// because any client (including non-browser callers reaching the API
+	// through the open CORS surface) could trivially set it and skip
+	// Turnstile entirely. The parameter is intentionally ignored.
+	void headers;
 
 	// Cloudflare Turnstile verification (server-side).
 	const turnstileSecret = getKitSecrets()?.cloudflare_turnstile?.secret_key;
@@ -254,12 +250,13 @@ async function sendConfirmationEmail(userId, domain) {
 	// the previous one is invalidated by overwrite
 	await client.setexAsync(`ConfirmationEmail:${userId}`, 60 * 5, code);
 
-	sendEmail(
-		MAILTYPE.CONFIRM_EMAIL,
-		user.email,
-		{ code },
-		user.settings,
-		domain);
+	await sendVerificationCode(user, {
+		action_type: 'confirm_email',
+		verification_code: code,
+		emailType: MAILTYPE.CONFIRM_EMAIL,
+		emailData: { code },
+		domain
+	});
 }
 
 async function confirmByEmail(userId, givenCode) {
@@ -328,7 +325,8 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 			return all([createChangePasswordCode(user.id, newPassword, version), user]);
 		})
 		.then(async ([code, user]) => {
-			if (version === 'v3') {
+			const isShortCodeVersion = version === 'v3' || version === 'v4';
+			if (isShortCodeVersion) {
 				await client.setexAsync(
 					`user:freeze-account:${code}`,
 					60 * 60 * 6,
@@ -342,15 +340,17 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 					})
 				);
 			}
-			sendEmail(
-				version === 'v3' ? MAILTYPE.CHANGE_PASSWORD_CODE : MAILTYPE.CHANGE_PASSWORD,
-				email,
-				version === 'v3'
+			await sendVerificationCode(user, {
+				action_type: 'change_password',
+				verification_code: code,
+				emailType: isShortCodeVersion
+					? MAILTYPE.CHANGE_PASSWORD_CODE
+					: MAILTYPE.CHANGE_PASSWORD,
+				emailData: isShortCodeVersion
 					? { code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` }
 					: { code, ip },
-				user.settings,
 				domain
-			);
+			});
 			return;
 		});
 };
@@ -366,6 +366,14 @@ const setInitialUserPassword = (email, password) => {
 			}
 			if (user.password !== 'notset') {
 				throw new Error(PASSWORD_ALREADY_SET);
+			}
+			if (getKitConfig().email_verification_required) {
+				const isPhoneUser = user.meta && user.meta.phone_signup === true;
+				if (isPhoneUser && !user.phone_number_verified) {
+					throw new Error(USER_PHONE_NOT_VERIFIED);
+				} else if (!isPhoneUser && !user.email_verified) {
+					throw new Error(USER_EMAIL_NOT_VERIFIED);
+				}
 			}
 			return user.update({ password: password }, { fields: ['password'] });
 		});
@@ -386,11 +394,13 @@ const getChangePasswordCode = (code) => {
 const createChangePasswordCode = (userId, newPassword, version) => {
 	//Generate new random code
 	let code;
-	if (version === 'v3') {
+	if (version === 'v4') {
+		code = crypto.randomInt(100000, 1000000).toString();
+	} else if (version === 'v3') {
 		const letters = Array.from({ length: 2 }, () =>
 			String.fromCharCode(65 + crypto.randomInt(0, 26))
 		).join('');
-		const numbers = Math.floor(10000 + Math.random() * 90000);
+		const numbers = crypto.randomInt(10000, 100000);
 		code = `${letters}-${numbers}`;
 	} else {
 		code = crypto.randomBytes(20).toString('hex');
@@ -425,12 +435,12 @@ const createResetPasswordCode = (userId, version) => {
 	let code;
 	//Generate new random code
 	if (version === 'v4') {
-		code = Math.floor(100000 + Math.random() * 900000).toString();
+		code = crypto.randomInt(100000, 1000000).toString();
 	} else if (version === 'v3') {
 		const letters = Array.from({ length: 2 }, () =>
 			String.fromCharCode(65 + crypto.randomInt(0, 26))
 		).join('');
-		const numbers = Math.floor(10000 + Math.random() * 90000);
+		const numbers = crypto.randomInt(10000, 100000);
 		code = `${letters}-${numbers}`;
 	} else {
 		code = crypto.randomBytes(20).toString('hex');
@@ -473,14 +483,19 @@ const sendResetPasswordCode = (email, captcha, ip, domain, version, headers = {}
 					time: new Date().toISOString()
 				})
 			).then(() => {
-				sendEmail(
-					version === 'v3' || version === 'v4' ? MAILTYPE.RESET_PASSWORD_CODE : MAILTYPE.RESET_PASSWORD,
-					email,
-					{ code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` },
-					user.settings,
+				return sendVerificationCode(user, {
+					action_type: 'reset_password',
+					verification_code: code,
+					emailType: version === 'v3' || version === 'v4'
+						? MAILTYPE.RESET_PASSWORD_CODE
+						: MAILTYPE.RESET_PASSWORD,
+					emailData: {
+						code,
+						ip,
+						freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true`
+					},
 					domain
-				);
-				return;
+				});
 			});
 		});
 };
@@ -676,6 +691,21 @@ const checkUserOtpActive = (userId, otpCode) => {
 	});
 };
 
+const isAuthorizationError = (msg = '') => {
+	const messageText = String(msg);
+	const authorizationMessages = [
+		NOT_AUTHORIZED,
+		API_KEY_NOT_PERMITTED,
+		'No permission configured'
+	];
+
+	return authorizationMessages
+		.filter(Boolean)
+		.some((message) => messageText.indexOf(message) > -1);
+};
+
+const getAccessDeniedStatusCode = (msg) => isAuthorizationError(msg) ? 403 : 401;
+
 const verifyAuthTokenMiddleware = (req, authOrSecDef, token, cb, isSocket = false) => {
 
 	if (req.swagger && req.swagger.operation['security'].length > 0 && req.swagger.operation['security'][0].Token) {
@@ -712,11 +742,7 @@ const verifyBearerTokenMiddleware = (req, authOrSecDef, token, cb, isSocket = fa
 		if (isSocket) {
 			return cb(new Error(ACCESS_DENIED(msg)));
 		} else {
-			let statusCode = 401;
-			if (msg.indexOf(NOT_AUTHORIZED) > -1) {
-				statusCode = 403;
-			}
-			return req.res.status(statusCode).json({ message: ACCESS_DENIED(msg) });
+			return req.res.status(getAccessDeniedStatusCode(msg)).json({ message: ACCESS_DENIED(msg) });
 		}
 	};
 
@@ -802,11 +828,7 @@ const verifyHmacTokenMiddleware = (req, definition, apiKey, cb, isSocket = false
 		if (isSocket) {
 			return cb(new Error(ACCESS_DENIED(msg)));
 		} else {
-			let statusCode = 401;
-			if (msg.indexOf(NOT_AUTHORIZED) > -1) {
-				statusCode = 403;
-			}
-			return req.res.status(statusCode).json({ message: ACCESS_DENIED(msg) });
+			return req.res.status(getAccessDeniedStatusCode(msg)).json({ message: ACCESS_DENIED(msg) });
 		}
 	};
 	// Swagger endpoint scopes
@@ -875,11 +897,7 @@ const verifyNetworkHmacToken = (req) => {
 
 const verifyBearerTokenExpressMiddleware = (scopes = BASE_SCOPES) => (req, res, next) => {
 	const sendError = (msg) => {
-		let statusCode = 401;
-		if (msg.indexOf(NOT_AUTHORIZED) > -1) {
-			statusCode = 403;
-		}
-		return req.res.status(statusCode).json({ message: ACCESS_DENIED(msg) });
+		return req.res.status(getAccessDeniedStatusCode(msg)).json({ message: ACCESS_DENIED(msg) });
 	};
 
 	const token = req.headers['authorization'];
@@ -1557,7 +1575,7 @@ const checkUserPermission = (user, requiredPermission) => {
 	const roles = getRoles();
 	const userRole = roles.find(role => role.role_name === (user?.role || user?.sub?.role));
 	if (!userRole) {
-		throw new Error('User role not found');
+		throw new Error(`${NOT_AUTHORIZED} User role not found`);
 	}
 
 	return userRole.permissions.includes(requiredPermission);

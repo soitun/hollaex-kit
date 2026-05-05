@@ -82,6 +82,7 @@ const InterfaceForm = ({
 				ultimate_fiat: !!values.ultimate_fiat,
 				apps: !!values.apps,
 				announcement: !!values.announcement,
+				sms_verification: !!values.sms_verification,
 			};
 			const balance_history_config = {
 				currency: balanceHistoryCurrency.currency || 'usdt',
@@ -1077,6 +1078,27 @@ const InterfaceForm = ({
 							</div>
 						)}
 					</div>
+					<Item name="sms_verification" valuePropName="checked">
+						<Checkbox className="mt-3">
+							<div className="d-flex align-items-center">
+								<div className="feature-trade-box mr-1">
+									<ReactSVG
+										src={icons['VERIFICATION_PHONE_NEW']}
+										className="feature-sms-icon"
+									/>
+								</div>
+								<div className="ml-2 checkbox-txt">
+									<div id="sms_verification">SMS verification</div>
+									<div className="d-flex justify-content-between">
+										<div className="small-text">
+											(Allow users to receive action verification codes via SMS
+											instead of Email)
+										</div>
+									</div>
+								</div>
+							</div>
+						</Checkbox>
+					</Item>
 				</div>
 				<div className="confirm-button-wrapper">
 					<FormButton

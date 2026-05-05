@@ -14,6 +14,7 @@ const {
 	USER_REGISTERED,
 	USER_NOT_FOUND,
 	USER_EMAIL_NOT_VERIFIED,
+	USER_PHONE_NOT_VERIFIED,
 	VERIFICATION_EMAIL_MESSAGE,
 	TOKEN_REMOVED,
 	INVALID_CREDENTIALS,
@@ -36,7 +37,11 @@ const {
 	SUBACCOUNT_CANNOT_GENERATE_ADDRESS,
 	PASSWORD_SET,
 	PASSWORD_NOT_SET,
-	USER_REGISTERED_EMAIL_CODE
+	USER_REGISTERED_EMAIL_CODE,
+	USER_REGISTERED_SMS_CODE,
+	SIGNUP_EMAIL_OR_PHONE_NOT_BOTH,
+	PROVIDE_VALID_PHONE,
+	REFERRAL_CONNECT_FAILED
 } = require('../../messages');
 const { DEFAULT_ORDER_RISK_PERCENTAGE, EVENTS_CHANNEL, API_HOST, DOMAIN, TOKEN_TIME_NORMAL, TOKEN_TIME_LONG, HOLLAEX_NETWORK_BASE_URL, NUMBER_OF_ALLOWED_ATTEMPTS, GET_KIT_SECRETS } = require('../../constants');
 const { all } = require('bluebird');
@@ -92,12 +97,39 @@ const INITIAL_SETTINGS = () => {
 	};
 };
 
+// Shared verification/auth code generator. Keeps email/SMS/passkey flows
+// consistent so that v3/v4 always produce a short human-friendly code
+// (the SUSPICIOUS_LOGIN_CODE / SIGNUP_CODE templates render the value
+// directly to the user). For older clients we fall back to a UUID for
+// signup/verify flows and a base64 token for suspicious-login flows.
+const generateAuthCode = (version, { fallback = 'uuid' } = {}) => {
+	if (version === 'v4') {
+		return crypto.randomInt(100000, 1000000).toString();
+	}
+	if (version === 'v3') {
+		const letters = Array.from({ length: 2 }, () =>
+			String.fromCharCode(65 + crypto.randomInt(0, 26))
+		).join('');
+		const numbers = crypto.randomInt(10000, 100000);
+		return `${letters}-${numbers}`;
+	}
+	if (fallback === 'token') {
+		return crypto
+			.randomBytes(9)
+			.toString('base64')
+			.replace(/[^a-zA-Z0-9]/g, '')
+			.substring(0, 12);
+	}
+	return uuid();
+};
+
 
 const signUpUser = (req, res) => {
 	const {
 		password,
 		captcha,
-		referral
+		referral,
+		phone_number: phoneNumberRaw
 	} = req.swagger.params.signup.value;
 
 	let { email, version } = req.swagger.params.signup.value;
@@ -109,16 +141,55 @@ const signUpUser = (req, res) => {
 		ip
 	);
 
-	email = email.toLowerCase().trim();
+	const phone_number =
+		phoneNumberRaw != null && String(phoneNumberRaw).trim().length > 0
+			? String(phoneNumberRaw).trim()
+			: undefined;
+	const emailTrim =
+		email != null && String(email).trim().length > 0
+			? String(email).trim().toLowerCase()
+			: undefined;
+
+	if (phone_number && emailTrim) {
+		const messageObj = errorMessageConverter(
+			{ message: SIGNUP_EMAIL_OR_PHONE_NOT_BOTH },
+			req?.auth?.sub?.lang
+		);
+		return res.status(400).json({
+			message: messageObj?.message,
+			lang: messageObj?.lang,
+			code: messageObj?.code
+		});
+	}
+	if (!phone_number && !emailTrim) {
+		const messageObj = errorMessageConverter(
+			{ message: PROVIDE_VALID_EMAIL },
+			req?.auth?.sub?.lang
+		);
+		return res.status(400).json({
+			message: messageObj?.message,
+			lang: messageObj?.lang,
+			code: messageObj?.code
+		});
+	}
+
+	const signupEmail = emailTrim || null;
 
 	toolsLib.security.checkIp(ip)
 		.then(() => {
 			return toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 		})
-		.then(() => toolsLib.user.signUpUser(email, password, { referral }, version))
+		.then(() =>
+			toolsLib.user.signUpUser(signupEmail, password, { referral, phone_number }, version)
+		)
 		.then(() => {
 			const requiresVerification = toolsLib.getKitConfig().email_verification_required;
-			const successMessage = requiresVerification ? USER_REGISTERED_EMAIL_CODE : USER_REGISTERED;
+			let successMessage = USER_REGISTERED;
+			if (requiresVerification) {
+				successMessage = phone_number
+					? USER_REGISTERED_SMS_CODE
+					: USER_REGISTERED_EMAIL_CODE;
+			}
 			const messageObj = errorMessageConverter({ message: successMessage }, req?.auth?.sub?.lang);
 			return res.status(201).json({
 				message: messageObj?.message,
@@ -199,6 +270,7 @@ const signUpUserWithGoogle = async (req, res) => {
 
 const getVerifyUser = (req, res) => {
 	let email = req.swagger.params.email.value;
+	const phoneNumberRaw = req.swagger.params.phone_number && req.swagger.params.phone_number.value;
 	const resendEmail = req.swagger.params.resend.value;
 	const version = req.swagger.params.version && req.swagger.params.version.value;
 	const domain = req.headers['x-real-origin'];
@@ -206,39 +278,70 @@ const getVerifyUser = (req, res) => {
 	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
 	let promiseQuery;
 
-	if (email && typeof email === 'string' && isEmail(email)) {
+	const generateCode = () => generateAuthCode(version);
+
+	if (phoneNumberRaw && typeof phoneNumberRaw === 'string' && isMobilePhone(phoneNumberRaw.trim(), 'any', { strictMode: true })) {
+		promiseQuery = toolsLib.user.getUserByPhoneNumber(phoneNumberRaw.trim(), false)
+			.then(async (user) => {
+				if (!user) {
+					throw new Error(USER_NOT_FOUND);
+				}
+				if (user.phone_number_verified) {
+					throw new Error(USER_VERIFIED);
+				}
+				if (resendEmail) {
+					await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
+					const verificationCode = generateCode();
+					toolsLib.user.storeVerificationCode(user, verificationCode);
+					await toolsLib.user.validateSmsVerificationEligibility(user);
+					await toolsLib.verification.sendVerificationCode(user, {
+						action_type: 'signup',
+						verification_code: verificationCode,
+						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+						domain
+					});
+				}
+				return res.json({
+					phone_number: user.phone_number,
+					message: VERIFICATION_EMAIL_MESSAGE
+				});
+			});
+	} else if (email && typeof email === 'string' && isEmail(email)) {
 		email = email.toLowerCase();
 		promiseQuery = toolsLib.database.findOne('user', {
 			where: { email },
-			attributes: ['id', 'email', 'email_verified']
+			attributes: ['id', 'email', 'email_verified', 'phone_number', 'settings', 'meta']
 		}).then(async (user) => {
+			if (!user) {
+				throw new Error(USER_NOT_FOUND);
+			}
 			if (user.email_verified) {
 				throw new Error(USER_VERIFIED);
 			}
 			if (resendEmail) {
 				// Validate captcha before resending verification email to reduce spam/bot abuse.
 				await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
-				let verificationCode;
-				if (version === 'v4') {
-					verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-				} else if (version === 'v3') {
-					const letters = Array.from({ length: 2 }, () =>
-						String.fromCharCode(65 + crypto.randomInt(0, 26))
-					).join('');
-					const numbers = Math.floor(10000 + Math.random() * 90000);
-					verificationCode = `${letters}-${numbers}`;
-				} else {
-					verificationCode = uuid();
-				}
+				const verificationCode = generateCode();
 				toolsLib.user.storeVerificationCode(user, verificationCode);
 
-				sendEmail(
-					version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
-					email,
-					verificationCode,
-					{},
-					domain
-				);
+				const phoneSignup = toolsLib.user.isPhoneSignupSyntheticUser(user);
+				if (phoneSignup && user.phone_number) {
+					await toolsLib.user.validateSmsVerificationEligibility(user);
+					await toolsLib.verification.sendVerificationCode(user, {
+						action_type: 'signup',
+						verification_code: verificationCode,
+						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+						domain
+					});
+				} else {
+					sendEmail(
+						version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+						email,
+						verificationCode,
+						{},
+						domain
+					);
+				}
 			}
 			return res.json({
 				email,
@@ -274,18 +377,81 @@ const getVerifyUser = (req, res) => {
 		});
 };
 
+const requestUserSetEmail = (req, res) => {
+	const { email } = req.swagger.params.data.value;
+	const domain = req.headers['x-real-origin'];
+	const userId = req.auth.sub.id;
+
+	toolsLib.user.requestUserSetEmail(userId, email, domain)
+		.then((result) => {
+			const messageObj = errorMessageConverter(
+				{ message: result.message },
+				req?.auth?.sub?.lang
+			);
+			return res.json({
+				message: messageObj?.message,
+				lang: messageObj?.lang,
+				code: messageObj?.code
+			});
+		})
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/requestUserSetEmail', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({
+				message: messageObj?.message,
+				lang: messageObj?.lang,
+				code: messageObj?.code
+			});
+		});
+};
+
+const confirmUserSetEmail = (req, res) => {
+	const { code } = req.swagger.params.data.value;
+	const userId = req.auth.sub.id;
+
+	toolsLib.user.confirmUserSetEmail(userId, code)
+		.then((user) => {
+			return res.json(user);
+		})
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/confirmUserSetEmail', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({
+				message: messageObj?.message,
+				lang: messageObj?.lang,
+				code: messageObj?.code
+			});
+		});
+};
+
 const verifyUser = (req, res) => {
-	const { verification_code, email } = req.swagger.params.data.value;
+	const { verification_code, email, phone_number: phoneNumberRaw } = req.swagger.params.data.value;
 	const domain = req.headers['x-real-origin'];
 	const ip = req.headers['x-real-ip'];
 	loggerUser.verbose(
 		req.uuid,
 		'controllers/user/verifyUser',
-		{ verification_code, email },
+		{ verification_code, email, phone_number: phoneNumberRaw },
 		ip
 	);
 
-	toolsLib.user.verifyUser(email, verification_code, domain)
+	let resolveEmail;
+	if (phoneNumberRaw && typeof phoneNumberRaw === 'string' && isMobilePhone(phoneNumberRaw.trim(), 'any', { strictMode: true })) {
+		// Phone-signup users don't know their synthetic email — look it up by phone number.
+		resolveEmail = toolsLib.user.getUserByPhoneNumber(phoneNumberRaw.trim())
+			.then((user) => {
+				if (!user) throw new Error(USER_NOT_FOUND);
+				return user.email;
+			});
+	} else if (email) {
+		resolveEmail = Promise.resolve(email);
+	} else {
+		const messageObj = errorMessageConverter({ message: PROVIDE_VALID_EMAIL_CODE }, req?.auth?.sub?.lang);
+		return res.status(400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+	}
+
+	resolveEmail
+		.then((resolvedEmail) => toolsLib.user.verifyUser(resolvedEmail, verification_code, domain))
 		.then(() => {
 			return res.json({ message: USER_VERIFIED });
 		})
@@ -365,6 +531,16 @@ const loginPost = async (req, res) => {
 	const referer = req.headers.referer;
 	const time = new Date();
 
+	// Mask short-lived secrets in the access log: keep just the last 10 chars
+	// of the captcha token so we can correlate Cloudflare audit logs without
+	// exposing a still-valid Turnstile token via log shipping/aggregation.
+	// `otp_code` is logged as a presence flag for the same reason.
+	const maskTail = (s, n = 10) => {
+		const v = String(s || '');
+		if (!v) return '';
+		return v.length <= n ? v : `…${v.slice(-n)}`;
+	};
+
 	loggerUser.verbose(
 		req.uuid,
 		'controllers/user/loginPost',
@@ -373,9 +549,9 @@ const loginPost = async (req, res) => {
 		'phone_number',
 		phone_number,
 		'otp_code',
-		otp_code,
+		!!otp_code,
 		'captcha',
-		captcha,
+		maskTail(captcha),
 		'service',
 		service,
 		'long_term',
@@ -409,7 +585,7 @@ const loginPost = async (req, res) => {
 		return res.status(400).json({ message: 'Invalid Email' });
 	}
 
-	if (phone_number && (typeof phone_number !== 'string' || !isMobilePhone(phone_number, 'any'))) {
+	if (phone_number && (typeof phone_number !== 'string' || !isMobilePhone(phone_number, 'any', { strictMode: true }))) {
 		loggerUser.error(
 			req.uuid,
 			'controllers/user/loginPost invalid phone_number',
@@ -433,6 +609,18 @@ const loginPost = async (req, res) => {
 			ip
 		);
 
+		// Captcha is the very first gate, before any account lookup. Without
+		// this, the subsequent USER_NOT_FOUND / USER_NOT_VERIFIED /
+		// USER_NOT_ACTIVATED / LOGIN_NOT_ALLOW branches let an unauthenticated
+		// attacker enumerate accounts and account states without solving a
+		// single Turnstile challenge.
+		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
+		loggerUser.verbose(
+			req.uuid,
+			'controllers/user/loginPost checkCaptcha passed'
+		);
+
+		const isPhoneLogin = !email && !!phone_number;
 		const user = email
 			? await toolsLib.user.getUserByEmail(email)
 			: await toolsLib.user.getUserByPhoneNumber(phone_number);
@@ -445,63 +633,41 @@ const loginPost = async (req, res) => {
 		}
 		if (user.verification_level === 0) {
 			throw new Error(USER_NOT_VERIFIED);
-		} else if (
-			toolsLib.getKitConfig().email_verification_required &&
-			!user.email_verified
-		) {
-			throw new Error(USER_EMAIL_NOT_VERIFIED);
-		} else if (!user.activated) {
+		} else if (toolsLib.getKitConfig().email_verification_required) {
+			if (isPhoneLogin) {
+				if (!user.phone_number_verified) {
+					throw new Error(USER_PHONE_NOT_VERIFIED);
+				}
+			} else if (!user.email_verified) {
+				throw new Error(USER_EMAIL_NOT_VERIFIED);
+			}
+		}
+		if (!user.activated) {
 			throw new Error(USER_NOT_ACTIVATED);
 		}
 
 		const latestLogin = await toolsLib.user.findUserLatestLogin(user, false);
+		// Use `>=` (not `===`). Combined with the atomic capped increment in
+		// `updateLoginAttempt`, this is robust against concurrent requests
+		// that would previously race past the cap and bypass the lockout.
 		if (
 			latestLogin &&
-			latestLogin.attempt === NUMBER_OF_ALLOWED_ATTEMPTS &&
+			latestLogin.attempt >= NUMBER_OF_ALLOWED_ATTEMPTS &&
 			latestLogin.status == false
 		) {
 			throw new Error(LOGIN_NOT_ALLOW);
 		}
 
-		// If OTP is enabled, require OTP code before consuming Turnstile tokens.
-		if (user.otp_enabled && !otp_code) {
-			throw new Error(INVALID_OTP_CODE);
-		}
+		// Captcha was already validated above (before any account lookup).
+		// The remaining gates run in this order: password -> OTP. We
+		// deliberately surface "incorrect credentials" before asking for the
+		// OTP code so users who mistyped their password don't get pushed
+		// into a 2FA dialog that can never succeed. The trade-off (an
+		// attacker with a correct password but no OTP learns the password
+		// is right) is acceptable because Turnstile, the per-account rate
+		// limit, and the failed-attempt lockout all still gate the request.
 
-		// Validate captcha early (before password check) to reduce brute-force attempts.
-		// Note: Turnstile tokens are short-lived and typically single-use.
-		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
-		loggerUser.verbose(
-			req.uuid,
-			'controllers/user/loginPost checkCaptcha passed'
-		);
-
-		if (user.otp_enabled) {
-			try {
-				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
-				loggerUser.verbose(
-					req.uuid,
-					'controllers/user/loginPost otp passed'
-				);
-			} catch (err) {
-				// Mirror previous behavior: log a failed login attempt and include attempt message.
-				await toolsLib.user.createUserLogin(
-					user,
-					ip,
-					device,
-					domain,
-					origin,
-					referer,
-					null,
-					long_term,
-					false
-				);
-				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
-				const message = createAttemptMessage(loginData, user, domain);
-				throw new Error((err?.message || INVALID_OTP_CODE) + message);
-			}
-		}
-
+		// Password.
 		if (user.password === 'notset') {
 			throw new Error(PASSWORD_NOT_SET);
 		}
@@ -510,7 +676,6 @@ const loginPost = async (req, res) => {
 			user.password,
 			password
 		);
-
 
 		if (!passwordIsValid) {
 			loggerUser.verbose(
@@ -537,6 +702,39 @@ const loginPost = async (req, res) => {
 			req.uuid,
 			'controllers/user/loginPost password passed'
 		);
+
+		// OTP. A missing OTP code is *not* counted as a failed login (the
+		// credentials were correct, the user just hasn't typed their code
+		// yet); the frontend opens the OTP dialog on this error and
+		// re-submits with a fresh captcha token + the OTP code. A wrong OTP
+		// IS counted toward the failed-attempt lockout.
+		if (user.otp_enabled) {
+			if (!otp_code) {
+				throw new Error(INVALID_OTP_CODE);
+			}
+			try {
+				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
+				loggerUser.verbose(
+					req.uuid,
+					'controllers/user/loginPost otp passed'
+				);
+			} catch (err) {
+				await toolsLib.user.createUserLogin(
+					user,
+					ip,
+					device,
+					domain,
+					origin,
+					referer,
+					null,
+					long_term,
+					false
+				);
+				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
+				const message = createAttemptMessage(loginData, user, domain);
+				throw new Error((err?.message || INVALID_OTP_CODE) + message);
+			}
+		}
 
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
@@ -570,20 +768,7 @@ const loginPost = async (req, res) => {
 		}
 
 		if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
-			let verification_code;
-			if (version === 'v3') {
-				const letters = Array.from({ length: 2 }, () =>
-					String.fromCharCode(65 + crypto.randomInt(0, 26))
-				).join('');
-				const numbers = Math.floor(10000 + Math.random() * 90000);
-				verification_code = `${letters}-${numbers}`;
-			} else {
-				verification_code = crypto
-					.randomBytes(9)
-					.toString('base64')
-					.replace(/[^a-zA-Z0-9]/g, '')
-					.substring(0, 12);
-			}
+			const verification_code = generateAuthCode(version, { fallback: 'token' });
 
 			const loginData = await toolsLib.user.createSuspiciousLogin(
 				user,
@@ -619,15 +804,15 @@ const loginPost = async (req, res) => {
 				JSON.stringify(data)
 			);
 
-			sendEmail(
-				version === 'v3'
+			await toolsLib.verification.sendVerificationCode(user, {
+				action_type: 'login_verification',
+				verification_code,
+				emailType: version === 'v3' || version === 'v4'
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
-				user.email,
-				data,
-				user.settings,
+				emailData: data,
 				domain
-			);
+			});
 			throw new Error('Suspicious login detected, please check your email.');
 		}
 
@@ -649,7 +834,7 @@ const loginPost = async (req, res) => {
 			})
 		);
 
-		if (!service) {
+		if (!service && isEmail(user.email)) {
 			sendEmail(MAILTYPE.LOGIN, user.email, emailData, user.settings, domain);
 		}
 
@@ -704,9 +889,19 @@ const loginPost = async (req, res) => {
 	}
 };
 
-// Google OAuth login function
+// Google OAuth login function. Mirrors `loginPost` in terms of security
+// gates: captcha first, OTP if the user has it enabled, suspicious-login
+// geo confirmation if configured, and the same `>=` lockout check. The
+// only thing we don't run is the password check (Google id_token replaces it).
 const loginWithGoogle = async (req, res) => {
-	const { google_token, service, long_term, version } = req.swagger.params.authentication.value;
+	const {
+		google_token,
+		service,
+		long_term,
+		version,
+		captcha,
+		otp_code
+	} = req.swagger.params.authentication.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
 	const origin = req.headers.origin;
@@ -748,6 +943,10 @@ const loginWithGoogle = async (req, res) => {
 		'controllers/user/loginPostWithGoogle',
 		'google_token',
 		!!google_token,
+		'otp_code',
+		!!otp_code,
+		'captcha',
+		captcha ? `…${String(captcha).slice(-10)}` : '',
 		'service',
 		service,
 		'long_term',
@@ -774,15 +973,22 @@ const loginWithGoogle = async (req, res) => {
 		// Enforce geo/IP restrictions the same as email login
 		await toolsLib.security.checkIp(ip);
 
-		// Verify Google token and get user data
+		// Captcha is the very first gate, before any account lookup or
+		// outbound Google verification call, for the same reason it runs
+		// first in `loginPost`.
+		await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
+
+		// Verify Google token (validates iss/aud/exp/email_verified inside).
 		const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
 		const email = googleUserData.email.toLowerCase().trim();
 		const tokenGoogleId = googleUserData.google_id || googleUserData.sub;
 
+		// Generate a random password for Google OAuth users
+		const randomPassword = crypto.randomBytes(16).toString('hex');
+
 		// Check if user exists, otherwise create it
 		let user = await toolsLib.user.getUserByEmail(email, false);
 		if (!user) {
-			const randomPassword = 'thirdparty';
 			await toolsLib.user.signUpUser(email, randomPassword, {
 				google_id: tokenGoogleId,
 				email_verified: true,
@@ -803,6 +1009,9 @@ const loginWithGoogle = async (req, res) => {
 			await user.update({ google_id: tokenGoogleId }, { fields: ['google_id'], returning: true });
 		}
 
+		if (!ip) {
+			throw new Error(NO_IP_FOUND);
+		}
 		if (user.verification_level === 0) {
 			throw new Error(USER_NOT_VERIFIED);
 		} else if (toolsLib.getKitConfig().email_verification_required && !user.email_verified) {
@@ -811,14 +1020,93 @@ const loginWithGoogle = async (req, res) => {
 			throw new Error(USER_NOT_ACTIVATED);
 		}
 
-		const loginData = await toolsLib.user.findUserLatestLogin(user, false);
-		if (loginData && loginData.attempt === NUMBER_OF_ALLOWED_ATTEMPTS && loginData.status == false) {
+		const latestLogin = await toolsLib.user.findUserLatestLogin(user, false);
+		if (latestLogin && latestLogin.attempt >= NUMBER_OF_ALLOWED_ATTEMPTS && latestLogin.status == false) {
 			throw new Error(LOGIN_NOT_ALLOW);
 		}
 
+		// OTP gate. If the user has TOTP enabled we require an `otp_code`
+		// even though Google has already authenticated the email, because
+		// 2FA is an exchange-side control and must not be bypassable by
+		// switching login methods. A missing code is *not* counted as a
+		// failed login (the credentials were correct, the user just hasn't
+		// typed their second factor); a wrong code IS.
+		if (user.otp_enabled) {
+			if (!otp_code) {
+				throw new Error(INVALID_OTP_CODE);
+			}
+			try {
+				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
+			} catch (err) {
+				await toolsLib.user.createUserLogin(
+					user, ip, device, domain, origin, referer, null, long_term, false
+				);
+				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
+				const message = createAttemptMessage(loginData, user, domain);
+				throw new Error((err?.message || INVALID_OTP_CODE) + message);
+			}
+		}
+
+		// Suspicious-login geo confirmation. Identical to `loginPost`: if
+		// this user has previous successful logins but never from this
+		// country, we don't issue a token; instead we mail a confirmation
+		// code and require the user to confirm before the next attempt.
+		const lastLogins = await toolsLib.user.findUserLastLogins(user);
+		const successfulRecords = (lastLogins || []).filter((login) => login.status);
+		const geo = geoip.lookup(ip);
+		const country = geo?.country || '';
+		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
+		let suspiciousLogin = false;
+		if (suspiciousLoginEnabled && SMTP_SERVER()?.length > 0) {
+			if (
+				isArray(lastLogins) &&
+				lastLogins.length > 0 &&
+				!successfulRecords?.find((login) => login.country === country)
+			) {
+				suspiciousLogin = true;
+			}
+		}
+
+		if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
+			const verification_code = generateAuthCode(version, { fallback: 'token' });
+			const susLogin = await toolsLib.user.createSuspiciousLogin(
+				user, ip, device, country, domain, origin, referer, null, long_term
+			);
+			const data = {
+				id: susLogin.id,
+				email: user.email,
+				verification_code,
+				ip,
+				time,
+				device,
+				country,
+				user_id: user.id
+			};
+			await toolsLib.database.client.setexAsync(
+				`user:confirm-login:${verification_code}`,
+				5 * 60,
+				JSON.stringify(data)
+			);
+			await toolsLib.database.client.setexAsync(
+				`user:freeze-account:${verification_code}`,
+				60 * 60 * 6,
+				JSON.stringify(data)
+			);
+			await toolsLib.verification.sendVerificationCode(user, {
+				action_type: 'login_verification',
+				verification_code,
+				emailType: version === 'v3' || version === 'v4'
+					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
+					: MAILTYPE.SUSPICIOUS_LOGIN,
+				emailData: data,
+				domain
+			});
+			throw new Error('Suspicious login detected, please check your email.');
+		}
+
 		// Send login email notification if not a service login
-		if (!service) {
-			const data = { ip, time, device, country: '' };
+		if (!service && isEmail(user.email)) {
+			const data = { ip, time, device, country };
 			sendEmail(MAILTYPE.LOGIN, user.email, data, user.settings, domain);
 		}
 
@@ -842,10 +1130,6 @@ const loginWithGoogle = async (req, res) => {
 			user.role
 		);
 
-		// Create login record
-		if (!ip) {
-			throw new Error(NO_IP_FOUND);
-		}
 		await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true);
 
 		// Publish login event
@@ -1104,15 +1388,28 @@ const changePassword = (req, res) => {
 };
 
 const setInitialPassword = async (req, res) => {
-	let { email } = req.swagger.params.data.value;
+	let { email, phone_number } = req.swagger.params.data.value;
 	const { password } = req.swagger.params.data.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
 	const origin = req.headers.origin;
 	const referer = req.headers.referer;
 
-	if (typeof email !== 'string' || !isEmail(email)) {
-		loggerUser.error(req.uuid, 'controllers/user/setInitialPassword invalid email', email, ip, domain, origin, referer);
+	const hasEmail = typeof email === 'string' && email.trim().length > 0;
+	const hasPhone = typeof phone_number === 'string' && phone_number.trim().length > 0;
+
+	if (hasEmail && hasPhone) {
+		loggerUser.error(req.uuid, 'controllers/user/setInitialPassword both email and phone provided', ip, domain, origin, referer);
+		const messageObj = errorMessageConverter({ message: SIGNUP_EMAIL_OR_PHONE_NOT_BOTH }, req?.auth?.sub?.lang);
+		return res.status(400).json({
+			message: messageObj?.message,
+			lang: messageObj?.lang,
+			code: messageObj?.code
+		});
+	}
+
+	if (!hasEmail && !hasPhone) {
+		loggerUser.error(req.uuid, 'controllers/user/setInitialPassword missing email and phone', ip, domain, origin, referer);
 		const messageObj = errorMessageConverter({ message: PROVIDE_VALID_EMAIL }, req?.auth?.sub?.lang);
 		return res.status(400).json({
 			message: messageObj?.message,
@@ -1121,11 +1418,40 @@ const setInitialPassword = async (req, res) => {
 		});
 	}
 
-	email = email.toLowerCase().trim();
-	loggerUser.verbose(req.uuid, 'controllers/user/setInitialPassword', email);
-
 	try {
-		const user = await toolsLib.security.setInitialUserPassword(email, password);
+		let resolvedEmail;
+		if (hasPhone) {
+			const phone = phone_number.trim();
+			if (!isMobilePhone(phone, 'any', { strictMode: true })) {
+				loggerUser.error(req.uuid, 'controllers/user/setInitialPassword invalid phone', phone, ip, domain, origin, referer);
+				const messageObj = errorMessageConverter({ message: PROVIDE_VALID_PHONE }, req?.auth?.sub?.lang);
+				return res.status(400).json({
+					message: messageObj?.message,
+					lang: messageObj?.lang,
+					code: messageObj?.code
+				});
+			}
+			loggerUser.verbose(req.uuid, 'controllers/user/setInitialPassword phone', phone);
+			const user = await toolsLib.user.getUserByPhoneNumber(phone, false);
+			if (!user) {
+				throw new Error(USER_NOT_FOUND);
+			}
+			resolvedEmail = user.email;
+		} else {
+			if (!isEmail(email)) {
+				loggerUser.error(req.uuid, 'controllers/user/setInitialPassword invalid email', email, ip, domain, origin, referer);
+				const messageObj = errorMessageConverter({ message: PROVIDE_VALID_EMAIL }, req?.auth?.sub?.lang);
+				return res.status(400).json({
+					message: messageObj?.message,
+					lang: messageObj?.lang,
+					code: messageObj?.code
+				});
+			}
+			resolvedEmail = email.toLowerCase().trim();
+			loggerUser.verbose(req.uuid, 'controllers/user/setInitialPassword', resolvedEmail);
+		}
+
+		await toolsLib.security.setInitialUserPassword(resolvedEmail, password);
 
 		return res.json({ message: PASSWORD_SET });
 	} catch (err) {
@@ -1149,7 +1475,7 @@ const confirmChangePassword = (req, res) => {
 
 	toolsLib.security.confirmChangeUserPassword(code)
 		.then(() => {
-			if (version && version === 'v3') {
+			if (version && (version === 'v3' || version === 'v4')) {
 				return res.json({ message: 'Password updated.' });
 			}
 			return res.redirect(301, `${DOMAIN}/change-password-confirm/${code}?isSuccess=true`);
@@ -1259,6 +1585,21 @@ const affiliationCount = (req, res) => {
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/affiliationCount', err.message);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const connectReferral = (req, res) => {
+	loggerUser.debug(req.uuid, 'controllers/user/connectReferral auth', req.auth.sub);
+
+	const user_id = req.auth.sub.id;
+	const { code } = req.swagger.params.data.value;
+
+	toolsLib.user.connectUserReferral(code, user_id)
+		.then(() => res.json({ message: 'success' }))
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/connectReferral', err.message);
+			const messageObj = errorMessageConverter({ message: REFERRAL_CONNECT_FAILED }, req?.auth?.sub?.lang);
 			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		});
 };
@@ -2532,7 +2873,17 @@ const verifyPasskeyLogin = async (req, res) => {
 		const ip = req.headers['x-real-ip'];
 		const device = req.headers['custom-device'] ? req.headers['user-agent'] : (req.headers['user-agent'] || '').substring(0, 1000);
 		const domain = req.headers['x-real-origin'] || req.headers.origin;
-		const { challenge, credential } = req.swagger.params.data.value;
+		// Read all fields from the validated swagger payload, not from
+		// `req.body` directly. The previous code read `req.body?.data?.version`
+		// / `req.body?.data?.service`, which never matched the swagger 2.0
+		// shape — so `version` always silently fell through to the default
+		// and `service` was treated as absent.
+		const {
+			challenge,
+			credential,
+			version = 'v4',
+			service
+		} = req.swagger.params.data.value;
 
 		if (!challenge || !credential) {
 			throw new Error('challenge and credential are required');
@@ -2587,9 +2938,16 @@ const verifyPasskeyLogin = async (req, res) => {
 
 		if (user.verification_level === 0) {
 			throw new Error(USER_NOT_VERIFIED);
-		} else if (toolsLib.getKitConfig().email_verification_required && !user.email_verified) {
-			throw new Error(USER_EMAIL_NOT_VERIFIED);
-		} else if (!user.activated) {
+		} else if (toolsLib.getKitConfig().email_verification_required) {
+			if (toolsLib.user.isPhoneSignupSyntheticUser(user.dataValues || user)) {
+				if (!user.phone_number_verified) {
+					throw new Error(USER_PHONE_NOT_VERIFIED);
+				}
+			} else if (!user.email_verified) {
+				throw new Error(USER_EMAIL_NOT_VERIFIED);
+			}
+		}
+		if (!user.activated) {
 			throw new Error(USER_NOT_ACTIVATED);
 		}
 
@@ -2604,8 +2962,8 @@ const verifyPasskeyLogin = async (req, res) => {
 		}
 
 		if (suspiciousLoginEnabled && suspiciousLogin && SMTP_SERVER()?.length > 0) {
-			const version = 'v2';
-			const verification_code = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 12);
+			const verification_code = generateAuthCode(version, { fallback: 'token' });
+
 			const loginData = await toolsLib.user.createSuspiciousLogin(
 				user,
 				ip,
@@ -2629,7 +2987,15 @@ const verifyPasskeyLogin = async (req, res) => {
 			};
 			await toolsLib.database.client.setexAsync(`user:confirm-login:${verification_code}`, 5 * 60, JSON.stringify(data));
 			await toolsLib.database.client.setexAsync(`user:freeze-account:${verification_code}`, 60 * 60 * 6, JSON.stringify(data));
-			sendEmail(MAILTYPE.SUSPICIOUS_LOGIN, user.email, data, user.settings, domain);
+			await toolsLib.verification.sendVerificationCode(user, {
+				action_type: 'login_verification',
+				verification_code,
+				emailType: version === 'v3' || version === 'v4'
+					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
+					: MAILTYPE.SUSPICIOUS_LOGIN,
+				emailData: data,
+				domain
+			});
 			throw new Error('Suspicious login detected, please check your email.');
 		}
 
@@ -2663,7 +3029,7 @@ const verifyPasskeyLogin = async (req, res) => {
 			data: { action: 'login', user_id: user.id },
 		}));
 
-		if (!req.body?.data?.service) {
+		if (!service && isEmail(user.email)) {
 			sendEmail(MAILTYPE.LOGIN, user.email, { ip, time: new Date(), device, country }, user.settings, domain);
 		}
 
@@ -2742,6 +3108,8 @@ module.exports = {
 	signUpUser,
 	signUpUserWithGoogle,
 	getVerifyUser,
+	requestUserSetEmail,
+	confirmUserSetEmail,
 	verifyUser,
 	loginPost,
 	loginWithGoogle,
@@ -2756,6 +3124,7 @@ module.exports = {
 	setUsername,
 	getUserLogins,
 	affiliationCount,
+	connectReferral,
 	getUserBalance,
 	deactivateUser,
 	createCryptoAddress,

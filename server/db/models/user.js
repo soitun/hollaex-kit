@@ -39,7 +39,8 @@ const SETTINGS_DATA_DEFAULT = {
 	chat: {
 		set_username: false
 	},
-	watchlist: []
+	watchlist: [],
+	verification_method: 'email'
 };
 
 const BANK_DATA_DEFAULT = [];
@@ -105,6 +106,10 @@ module.exports = function (sequelize, DataTypes) {
 				defaultValue: 1
 			},
 			email_verified: {
+				type: DataTypes.BOOLEAN,
+				defaultValue: false
+			},
+			phone_number_verified: {
 				type: DataTypes.BOOLEAN,
 				defaultValue: false
 			},
@@ -199,7 +204,6 @@ module.exports = function (sequelize, DataTypes) {
 
 	User.beforeCreate((user) => {
 		user.email = user.email.toLowerCase();
-		user.username = user.email.substr(0, user.email.indexOf('@'));
 		user.affiliation_code = generateAffiliationCode();
 		const isVirtualEmail = typeof user.email === 'string' && user.email.endsWith('_virtual');
 		if (!user.password) {

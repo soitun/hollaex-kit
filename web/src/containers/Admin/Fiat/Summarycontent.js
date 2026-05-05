@@ -195,10 +195,11 @@ const Summarycontent = ({
 	// 	</Button>
 	// );
 
-	const onOpenModal = (validateData, statusType) => {
+	const onOpenModal = (validateData, statusType, type) => {
 		setIsOpen(true);
 		setStatusType(statusType);
 		setValidateData(validateData);
+		setQueryType(type);
 	};
 
 	const onCancelModal = () => {
@@ -295,7 +296,7 @@ const Summarycontent = ({
 		);
 	};
 
-	const columns = [
+	const baseColumns = [
 		{
 			title: 'User Id',
 			dataIndex: 'user_id',
@@ -319,9 +320,25 @@ const Summarycontent = ({
 			render: renderStatus,
 		},
 		{ title: 'Amount', dataIndex: 'amount', key: 'amount' },
+	];
+	const depositColumns = [
+		...baseColumns,
 		{
 			title: 'Validate/dismiss',
-			render: (renderData) => renderContent(renderData, onOpenModal),
+			render: (renderData) =>
+				renderContent(renderData, (data, statusType) =>
+					onOpenModal(data, statusType, 'deposit')
+				),
+		},
+	];
+	const withdrawalColumns = [
+		...baseColumns,
+		{
+			title: 'Validate/dismiss',
+			render: (renderData) =>
+				renderContent(renderData, (data, statusType) =>
+					onOpenModal(data, statusType, 'withdrawal')
+				),
 		},
 	];
 
@@ -636,7 +653,9 @@ const Summarycontent = ({
 							{offRampData.length ? (
 								<div>
 									{Object.keys(offramp).map((key, ind) => {
-										return Object.keys(offramp[key]).length ? (
+										return Object.keys(offramp[key])?.length &&
+											key &&
+											key !== 'undefined' ? (
 											<div className="d-flex" key={ind}>
 												<div>Fiat {key && key.toUpperCase()}:</div>
 												<div className="ml-3 text-left">
@@ -719,7 +738,7 @@ const Summarycontent = ({
 							}
 						>
 							<Table
-								columns={columns}
+								columns={depositColumns}
 								locale={locale}
 								dataSource={deposits.map((deposit) => {
 									return { ...deposit };
@@ -779,7 +798,7 @@ const Summarycontent = ({
 								/>
 							)}
 							<Table
-								columns={columns}
+								columns={withdrawalColumns}
 								dataSource={withdrawal.map((item) => {
 									return { ...item };
 								})}

@@ -18,7 +18,11 @@ import {
 	Dialog,
 	ActionNotification,
 } from 'components';
-import { getMiniCharts } from 'actions/chartAction';
+import {
+	getMiniChartData,
+	getMiniChartQuote,
+	getMiniCharts,
+} from 'actions/chartAction';
 import withConfig from 'components/ConfigProvider/withConfig';
 import { addToFavourites, removeFromFavourites } from 'actions/appActions';
 import Details from 'containers/QuickTrade/components/Details';
@@ -43,6 +47,7 @@ const CoinPage = ({
 	removeFromFavourites,
 	quicktradePairs,
 	markets,
+	nativeCurrency,
 }) => {
 	const {
 		params: { token: currentCoin },
@@ -70,6 +75,10 @@ const CoinPage = ({
 	const [lineChartData, setLineChartData] = useState({});
 	const [isDiaplayMarketDetail, setIsDisplayMarketDetail] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
+	const miniChartQuote = getMiniChartQuote(coins, nativeCurrency);
+	const miniChartPair = miniChartQuote
+		? `${currentCoin}-${miniChartQuote}`
+		: currentCoin;
 
 	useEffect(() => {
 		handleMarket();
@@ -88,20 +97,25 @@ const CoinPage = ({
 			?.toLocaleString();
 		try {
 			setIsLoading(true);
-			await getMiniCharts(assetValues).then((chartValues) => {
+			await getMiniCharts(assetValues, miniChartQuote).then((chartValues) => {
 				setChartData(chartValues);
 			});
-			setIsLoading(false);
 		} catch (error) {
 			console.error(error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
 	const handleOptions = () => {
-		const selectedPair = currentCoin + '-usdt';
+		const { data: selectedChartData } = getMiniChartData(
+			chartData,
+			currentCoin,
+			miniChartQuote
+		);
 
 		const ChartData = {
-			...chartData[selectedPair],
+			...selectedChartData,
 			name: 'Line',
 			type: 'line',
 		};
@@ -358,7 +372,7 @@ const CoinPage = ({
 							<Details
 								isLoading={isLoading}
 								coinChartData={lineChartData}
-								pair={`${currentCoin}-usdt`}
+								pair={miniChartPair}
 								brokerUsed={isBroker}
 								networkName={market?.display_name}
 								isNetwork={isNetwork}
@@ -414,7 +428,7 @@ const CoinPage = ({
 							<Details
 								isLoading={isLoading}
 								coinChartData={lineChartData}
-								pair={`${currentCoin}-usdt`}
+								pair={miniChartPair}
 								brokerUsed={isBroker}
 								networkName={market?.display_name}
 								isNetwork={isNetwork}
@@ -438,6 +452,7 @@ const mapStateToProps = (store) => ({
 	available_balance: store.user.balance,
 	quicktradePairs: quicktradePairSelector(store),
 	markets: MarketsSelector(store),
+	nativeCurrency: store.app.constants.native_currency,
 });
 
 const mapDispatchToProps = (dispatch) => ({
