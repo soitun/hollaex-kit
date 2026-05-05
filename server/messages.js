@@ -1,5 +1,6 @@
 'use strict';
 
+// add new messages to the end of the file and make sure there is a correspnding entry in the lang-messages.js file
 exports.INSUFFICIENT_BALANCE_ORDER =
 	'Insufficient balance to perform the order';
 exports.MISSING_ORDER = 'Missing order';
@@ -14,11 +15,25 @@ exports.USER_NOT_ACTIVATED = 'User is not activated';
 exports.USER_EXISTS = 'User already exists';
 exports.USER_REGISTERED = 'User successfully registered';
 exports.USER_REGISTERED_EMAIL_CODE = 'Please confirm the verification code sent to your email';
+exports.USER_REGISTERED_SMS_CODE = 'Please confirm the verification code sent to your phone';
+exports.SIGNUP_EMAIL_OR_PHONE_NOT_BOTH =
+	'Provide either email or phone_number for sign up, not both';
+exports.SMS_SIGNUP_NOT_AVAILABLE =
+	'Phone sign up requires SMS verification to be enabled on this exchange';
+exports.NO_ACTIVE_SMS_PLUGIN_ON_EXCHANGE =
+	'No active SMS plugin is installed on this exchange';
+exports.PHONE_NUMBER_EXISTS =
+	'An account with this phone number already exists';
+exports.SET_EMAIL_NOT_ELIGIBLE =
+	'Adding a verified email this way is only available for phone sign-up accounts';
+exports.VERIFICATION_EMAIL_REQUIRES_REAL_EMAIL =
+	'Set a real email address on your account to enable email verification';
 exports.INVALID_CREDENTIALS = 'Incorrect credentials.';
 exports.USER_VERIFIED = 'User is now verified';
 // Google OAuth messages
 exports.GOOGLE_TOKEN_EXPIRED = 'Google token expired';
 exports.GOOGLE_TOKEN_INVALID_ISSUER = 'Invalid Google token issuer';
+exports.GOOGLE_TOKEN_INVALID_AUDIENCE = 'Invalid Google token audience';
 exports.GOOGLE_ACCOUNT_MISMATCH = 'Google account mismatch';
 exports.INVALID_PASSWORD =
 	'Invalid password. It has to contain at least 8 characters, at least one digit and one character.';
@@ -178,6 +193,8 @@ exports.INVALID_COIN = (coin) => `Invalid coin: ${coin}`;
 exports.INVALID_AMOUNT = (amount) => `Invalid amount: ${amount}`;
 exports.DEPOSIT_DISABLED_FOR_COIN = (coin) => `Deposits are disabled for coin: ${coin}`;
 exports.WITHDRAWAL_DISABLED_FOR_COIN = (coin) => `Withdrawals are disabled for coin: ${coin}`;
+exports.WITHDRAWAL_DAILY_LIMIT_REACHED = 'You have reached your daily withdrawal limit';
+exports.WITHDRAWAL_MONTHLY_LIMIT_REACHED = 'You have reached your monthly withdrawal limit';
 exports.UPGRADE_VERIFICATION_LEVEL = (level) => `Verification level must be at or above ${level}`;
 exports.INVALID_VERIFICATION_LEVEL = (level) => `Invalid verification level: ${level}`;
 exports.NO_NEW_DATA = 'No new data given';
@@ -213,6 +230,7 @@ exports.DYNAMIC_BROKER_UNSUPPORTED = 'Selected exchange is not supported by your
 exports.DYNAMIC_BROKER_EXCHANGE_PLAN_ERROR = 'Cannot create a dynamic broker with Basic plan';
 exports.REFERRAL_HISTORY_NOT_ACTIVE = 'Referral feature is not active on the exchange';
 exports.REFERRAL_CODE_REQUIRED = 'Referral code is required';
+exports.REFERRAL_CONNECT_FAILED = 'Unable to connect referral code';
 exports.SYMBOL_NOT_FOUND = 'Symbol not found';
 exports.INVALID_TOKEN_TYPE = 'invalid token type';
 exports.NO_AUTH_TOKEN = 'no auth token sent';
@@ -284,3 +302,6 @@ exports.INVALID_NUMBER = 'Value is not a number';
 exports.INVALID_AUTOTRADE_CONFIG = 'This pair does not exist';
 exports.SUBACCOUNT_CANNOT_GENERATE_ADDRESS = 'Subaccounts cannot generate deposit addresses';
 exports.WITHDRAWAL_LIMIT_ERROR = 'You have reached your withdrawal limit for your tier';
+exports.USER_PHONE_NOT_VERIFIED = 'User phone number is not verified';
+exports.USER_HAS_NO_PHONE = 'User has no phone number';
+exports.USER_PHONE_ALREADY_VERIFIED = 'User phone number already verified';

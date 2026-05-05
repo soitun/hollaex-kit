@@ -1,9 +1,9 @@
 'use strict';
 
 const { SERVER_PATH } = require('../constants');
-const { sendEmail } = require(`${SERVER_PATH}/mail`);
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { WITHDRAWALS_REQUEST_KEY } = require(`${SERVER_PATH}/constants`);
+const { sendVerificationCode } = require('./verification');
 const { verifyOtpBeforeAction } = require('./security');
 const { subscribedToCoin, getKitCoin, getKitSecrets, getKitConfig } = require('./common');
 const {
@@ -22,7 +22,9 @@ const {
 	NETWORK_REQUIRED,
 	WITHDRAWAL_DISABLED,
 	WITHDRAWAL_OTP_REQUIRED,
-	WITHDRAWAL_LIMIT_ERROR
+	WITHDRAWAL_LIMIT_ERROR,
+	WITHDRAWAL_DAILY_LIMIT_REACHED,
+	WITHDRAWAL_MONTHLY_LIMIT_REACHED
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
@@ -172,12 +174,12 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 	let token;
 
 	if (version === 'v4') {
-		token = Math.floor(100000 + Math.random() * 900000).toString();
+		token = crypto.randomInt(100000, 1000000).toString();
 	} else if (version === 'v3') {
 		const letters = Array.from({ length: 2 }, () =>
 			String.fromCharCode(65 + crypto.randomInt(0, 26))
 		).join('');
-		const numbers = Math.floor(10000 + Math.random() * 90000);
+		const numbers = crypto.randomInt(10000, 100000);
 		token = `${letters}-${numbers}`;
 	} else {
 		token = data.transaction_id || crypto.randomBytes(60).toString('hex');
@@ -198,11 +200,18 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 		})
 	);
 
-	const { email, amount, fee, fee_coin, fee_markup, currency, address, network } = data;
-	sendEmail(
-		version === 'v3' || version === 'v4' ? MAILTYPE.WITHDRAWAL_REQUEST_CODE : MAILTYPE.WITHDRAWAL_REQUEST,
-		email,
-		{
+	const { amount, fee, fee_coin, fee_markup, currency, address, network } = data;
+	// Fire-and-forget to avoid adding the isSmsPluginActive() / sendEmail round
+	// trip to the withdrawal request's HTTP response latency. The helper
+	// internally catches and logs all failures (email, publish, plugin lookup),
+	// so nothing can escape as an unhandled rejection.
+	sendVerificationCode(user, {
+		action_type: 'withdrawal',
+		verification_code: token,
+		emailType: version === 'v3' || version === 'v4'
+			? MAILTYPE.WITHDRAWAL_REQUEST_CODE
+			: MAILTYPE.WITHDRAWAL_REQUEST,
+		emailData: {
 			amount,
 			fee,
 			fee_markup,
@@ -214,9 +223,8 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 			network,
 			freeze_account_link: `${domain}/confirm-login?token=${token}&prompt=false&freeze_account=true`
 		},
-		user.settings,
 		domain
-	);
+	});
 	return data;
 };
 
@@ -529,9 +537,9 @@ const withdrawalBelowLimit = async (userId, currency, amount = 0, transactionLim
 	const last24HoursLimit = transactionLimit.amount;
 	const lastMonthLimit = transactionLimit.monthly_amount;
 
-	// if limit is -1 it means it's disabled
-	if (last24HoursLimit === -1) throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
-	if (lastMonthLimit === -1) throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
+	// if limit is -1 it means the user has hit the limit for that period at their tier
+	if (last24HoursLimit === -1) throw new Error(WITHDRAWAL_DAILY_LIMIT_REACHED);
+	if (lastMonthLimit === -1) throw new Error(WITHDRAWAL_MONTHLY_LIMIT_REACHED);
 	// if limit is 0 it means it's limitless
 	if (last24HoursLimit === 0 && lastMonthLimit === 0) return;
 

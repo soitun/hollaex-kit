@@ -11,6 +11,24 @@ const { checkStatus } = require('./init');
 const { API_HOST, CUSTOM_CSS } = require('./constants');
 const swaggerTools = require('swagger-tools');
 const cors = require('cors');
+const bodyParser = require('body-parser');
+
+const ADMIN_LARGE_BODY_LIMIT = '6mb';
+const adminJsonBodyParser = bodyParser.json({ limit: ADMIN_LARGE_BODY_LIMIT });
+const adminUrlEncodedBodyParser = bodyParser.urlencoded({
+	extended: false,
+	limit: ADMIN_LARGE_BODY_LIMIT
+});
+
+const adminLargeBodyParser = (req, res, next) => {
+	if (req.is('application/json')) {
+		return adminJsonBodyParser(req, res, next);
+	}
+	if (req.is('application/x-www-form-urlencoded')) {
+		return adminUrlEncodedBodyParser(req, res, next);
+	}
+	return next();
+};
 
 checkStatus()
 	.then(() => {
@@ -47,6 +65,8 @@ checkStatus()
 		app.get('/', (req, res) => {
 			res.redirect('/v2/health');
 		});
+
+		app.use(`${swaggerDoc.basePath}/admin`, adminLargeBodyParser);
 
 		const initializeSwaggerSecurity = (middleware) => {
 			return middleware.swaggerSecurity({
@@ -85,25 +105,26 @@ checkStatus()
 				});
 			}
 
-			// Custom error handler that returns JSON
+			// Custom error handler that logs full error server-side
+			// and returns only a sanitized message to the client.
 			app.use(function (err, req, res, next) {
-				const statusCode = (err && err.statusCode && Number.isInteger(err.statusCode)) ? err.statusCode : 500;
-				const response = {
-					message: (err && err.message) ? String(err.message) : 'Internal Server Error',
-					statusCode
-				};
+				logger.error(
+					'app/errorHandler',
+					req && req.uuid,
+					req && req.method,
+					req && req.originalUrl,
+					err
+				);
 
-				logger.error('app/errorHandler', {
-					message: response.message,
-					statusCode,
-					err: err && err.stack ? err.stack : err
-				});
-
-				if (process.env.NODE_ENV !== 'production') {
-					response.error = err;
+				let message = 'Internal server error';
+				if (err && typeof err.message === 'string' && err.message) {
+					message = err.message;
+				} else if (typeof err === 'string') {
+					message = err;
 				}
 
-				res.status(statusCode).json(response);
+				res.statusCode = 500;
+				res.json({ message });
 			});
 
 
