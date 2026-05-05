@@ -504,6 +504,7 @@ paths:
           in: query
           required: false
           type: string
+          enum: ['v2', 'v3', 'v4']
       responses:
         301:
           description: "301 redirect"

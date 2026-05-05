@@ -325,7 +325,8 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 			return all([createChangePasswordCode(user.id, newPassword, version), user]);
 		})
 		.then(async ([code, user]) => {
-			if (version === 'v3') {
+			const isShortCodeVersion = version === 'v3' || version === 'v4';
+			if (isShortCodeVersion) {
 				await client.setexAsync(
 					`user:freeze-account:${code}`,
 					60 * 60 * 6,
@@ -342,10 +343,10 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 			await sendVerificationCode(user, {
 				action_type: 'change_password',
 				verification_code: code,
-				emailType: version === 'v3'
+				emailType: isShortCodeVersion
 					? MAILTYPE.CHANGE_PASSWORD_CODE
 					: MAILTYPE.CHANGE_PASSWORD,
-				emailData: version === 'v3'
+				emailData: isShortCodeVersion
 					? { code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` }
 					: { code, ip },
 				domain
@@ -393,7 +394,9 @@ const getChangePasswordCode = (code) => {
 const createChangePasswordCode = (userId, newPassword, version) => {
 	//Generate new random code
 	let code;
-	if (version === 'v3') {
+	if (version === 'v4') {
+		code = crypto.randomInt(100000, 1000000).toString();
+	} else if (version === 'v3') {
 		const letters = Array.from({ length: 2 }, () =>
 			String.fromCharCode(65 + crypto.randomInt(0, 26))
 		).join('');
