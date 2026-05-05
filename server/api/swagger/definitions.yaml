@@ -359,6 +359,7 @@ definitions:
         maxLength: 6
       version:
         type: string
+        enum: ['v2', 'v3', 'v4']
   SetInitialPassword:
     type: object
     required:

@@ -1475,7 +1475,7 @@ const confirmChangePassword = (req, res) => {
 
 	toolsLib.security.confirmChangeUserPassword(code)
 		.then(() => {
-			if (version && version === 'v3') {
+			if (version && (version === 'v3' || version === 'v4')) {
 				return res.json({ message: 'Password updated.' });
 			}
 			return res.redirect(301, `${DOMAIN}/change-password-confirm/${code}?isSuccess=true`);
