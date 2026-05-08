@@ -387,6 +387,8 @@ exports.SETTING_KEYS = [
 
 exports.VERIFICATION_METHODS = ['email', 'sms'];
 exports.DEFAULT_VERIFICATION_METHOD = 'email';
+exports.USER_DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'MMM DD, YYYY', 'DD MMM YYYY'];
+exports.USER_TIME_FORMATS = ['12h', '24h'];
 
 exports.OMITTED_USER_FIELDS = [
 	'password',

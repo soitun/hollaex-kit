@@ -79,7 +79,9 @@ const INITIAL_SETTINGS = () => {
 		},
 		interface: {
 			order_book_levels: 10,
-			theme: toolsLib.getKitConfig().defaults.theme
+			theme: toolsLib.getKitConfig().defaults.theme,
+			date_format: 'MM/DD/YYYY',
+			time_format: '12h'
 		},
 		language: toolsLib.getKitConfig().defaults.language,
 		audio: {

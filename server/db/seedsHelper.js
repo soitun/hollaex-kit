@@ -27,7 +27,9 @@ const SETTINGS_DATA_DEFAULT = {
 	},
 	interface: {
 		order_book_levels: 10,
-		theme: process.env.DEFAULT_THEME || 'white'
+		theme: process.env.DEFAULT_THEME || 'white',
+		date_format: 'MM/DD/YYYY',
+		time_format: '12h'
 	},
 	language: process.env.DEFAULT_LANGUAGE || 'en',
 	audio: {
