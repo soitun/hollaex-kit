@@ -231,7 +231,8 @@ const resetUserPassword = (resetPasswordCode, newPassword) => {
 		})
 		.then(async ([user]) => {
 			const updated = await user.update({ password: newPassword }, { fields: ['password'] });
-			const { disableUserWithdrawal } = require('./user');
+			const { revokeAllUserSessions, disableUserWithdrawal } = require('./user');
+			await revokeAllUserSessions(user.id);
 			await disableUserWithdrawal(user.id, { expiry_date: moment().add(24, 'hours').toISOString() });
 			return updated;
 		});
