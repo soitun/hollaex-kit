@@ -588,6 +588,14 @@ const OperatorControlSearch = ({
 						'https://docs.hollaex.com/how-tos/operator-control-panel/general#:~:text=to%20your%20users.-,Apps,-%3A%20Enable%20additional%20functionality',
 					sectionId: 'apps',
 				},
+				{
+					subTitle: 'SMS verification',
+					isActive: features?.sms_verification,
+					description: 'SMS onboarding verification for Sign Up.',
+					path: '/admin/general?features',
+					searchContent: ['SMS', 'Phone'],
+					sectionId: 'sms_verification',
+				},
 			],
 		},
 		{
