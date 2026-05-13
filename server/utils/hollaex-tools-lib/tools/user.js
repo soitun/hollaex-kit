@@ -119,7 +119,7 @@ const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { getKitConfig, isValidTierLevel, getKitTier, isDatetime, getAssetsPrices, getRoles, getKitSecrets, sendCustomEmail, emailHtmlBoilerplate, updateKitConfigSecrets, sleep, getKitCoins, getKitCoin, subscribedToCoin, getQuickTrades } = require('./common');
 const { isSmsPluginActive } = require('./plugin');
 const { sendVerificationCode } = require('./verification');
-const { isValidPassword, createSession } = require('./security');
+const { isValidPassword, createSession, getCountryFromIp } = require('./security');
 const { getNodeLib } = require(`${SERVER_PATH}/init`);
 const { all, reject } = require('bluebird');
 const { Op, fn, col, literal } = require('sequelize');
@@ -128,7 +128,6 @@ const { parse } = require('json2csv');
 const flatten = require('flat');
 const uuid = require('uuid/v4');
 const { checkCaptcha, validatePassword, verifyOtpBeforeAction } = require('./security');
-const geoip = require('geoip-lite');
 const moment = require('moment');
 const mathjs = require('mathjs');
 const { loggerUser } = require('../../../config/logger');
@@ -607,8 +606,10 @@ const registerUserLogin = (
 		login.country = opts.country;
 	}
 
-	const geo = geoip.lookup(ip);
-	if (geo?.country && !opts?.country) login.country = geo.country;
+	if (!opts?.country) {
+		const country = getCountryFromIp(ip, opts?.headers);
+		if (country) login.country = country;
+	}
 	return getModel('login').create(login)
 		.then((loginData) => {
 			if (opts.token && opts.status) {
@@ -641,7 +642,7 @@ const updateLoginStatus = (loginId) => {
 	return getModel('login').update({ status: true }, { where: { id: loginId } });
 };
 
-const createUserLogin = async (user, ip, device, domain, origin, referer, token, long_term, status) => {
+const createUserLogin = async (user, ip, device, domain, origin, referer, token, long_term, status, headers) => {
 	const loginData = status == false && await findUserLatestLogin(user, status);
 
 	if (!loginData) {
@@ -652,7 +653,8 @@ const createUserLogin = async (user, ip, device, domain, origin, referer, token,
 			referer,
 			token,
 			status,
-			expiry: long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL
+			expiry: long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL,
+			headers
 		});
 	}
 	else if (loginData.status == false) {
@@ -2834,11 +2836,14 @@ const getAllBalancesAdmin = async (opts = {
 };
 
 // set all active sessions of the user to false and remove them from redis
-const revokeAllUserSessions = async (userId) => {
+const revokeAllUserSessions = async (userId, excludedSessionId = null) => {
 
 	const sessions = await getModel('session').findAll(
 		{
-			where: { status: true },
+			where: {
+				status: true,
+				...(excludedSessionId && { id: { [Op.ne]: excludedSessionId } })
+			},
 			include: [
 				{
 					model: getModel('login'),
@@ -5378,7 +5383,8 @@ const issueSubaccountToken = async ({ masterKitId, subKitId, ip, headers = {} })
 			origin: headers.origin,
 			referer: headers.referer,
 			token,
-			status: true
+			status: true,
+			headers
 		}
 	);
 
@@ -5558,6 +5564,7 @@ const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, heade
 			referer: headers.referer,
 			token,
 			status: true,
+			headers,
 			meta: {
 				is_sharedaccount: true,
 				sharedaccount_id: link.id,

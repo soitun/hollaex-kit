@@ -643,12 +643,10 @@ const updateP2pTransaction = async (data) => {
 	const p2pConfig = getKitConfig()?.p2p_config;
 	const user = await getUserByKitId(user_id);
 
-	// eslint-disable-next-line no-prototype-builtins
-	if (user_id === transaction.merchant_id && data.hasOwnProperty(user_status)) {
+	if (user_id === transaction.merchant_id && Object.prototype.hasOwnProperty.call(data, 'user_status')) {
 		throw new Error('merchant cannot update buyer status');
 	}
-	// eslint-disable-next-line no-prototype-builtins
-	if (user_id === transaction.user_id && data.hasOwnProperty(merchant_status)) {
+	if (user_id === transaction.user_id && Object.prototype.hasOwnProperty.call(data, 'merchant_status')) {
 		throw new Error('buyer cannot update merchant status');
 	}
 

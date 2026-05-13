@@ -141,18 +141,30 @@ const getPasskeyConfig = (req) => {
 	return { rpName, rpID, allowedOrigins };
 };
 
-const getCountryFromIp = (ip) => {
-	const geo = geoip.lookup(ip);
-	if (!geo) {
+// CF-IPCountry is only trusted when the operator explicitly enables it for
+// deployments whose origin is protected by Cloudflare/proxy rules.
+const getCountryFromHeaders = (headers = {}) => {
+	if (!getKitConfig()?.cloudflare_ipcountry?.active) {
 		return '';
 	}
-	return geo.country;
+	const cf = headers?.['cf-ipcountry'];
+	if (typeof cf === 'string' && cf && cf !== 'XX' && cf !== 'T1') {
+		return cf.toUpperCase();
+	}
+	return '';
 };
 
-const checkIp = async (remoteip = '') => {
+const getCountryFromIp = (ip, headers = {}) => {
+	const fromHeader = getCountryFromHeaders(headers);
+	if (fromHeader) return fromHeader;
+	const geo = geoip.lookup(ip);
+	return geo?.country || '';
+};
+
+const checkIp = async (remoteip = '', headers = {}) => {
 	const dataGeofence = getKitConfig().black_list_countries;
 	if (dataGeofence && dataGeofence.length > 0 && remoteip) {
-		if (dataGeofence.includes(getCountryFromIp(remoteip))) {
+		if (dataGeofence.includes(getCountryFromIp(remoteip, headers))) {
 			throw new Error('ERROR IP LOCATION');
 		}
 	}
@@ -1624,6 +1636,7 @@ module.exports = {
 	verifyBearerTokenExpressMiddleware,
 	getPasskeyConfig,
 	getCountryFromIp,
+	getCountryFromHeaders,
 	checkIp,
 	sendConfirmationEmail,
 	confirmByEmail,

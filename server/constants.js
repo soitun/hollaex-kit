@@ -36,7 +36,8 @@ let configuration = {
 		google_oauth: {},
 		auto_deposit: {},
 		auto_withdrawal: {},
-		force_two_factor_authentication_withdrawal: {}
+		force_two_factor_authentication_withdrawal: {},
+		cloudflare_ipcountry: { active: false }
 	},
 	email: {}
 };
@@ -130,7 +131,8 @@ const resetAllConfig = () => {
 			google_oauth: {},
 			auto_deposit: {},
 			auto_withdrawal: {},
-			force_two_factor_authentication_withdrawal: {}
+			force_two_factor_authentication_withdrawal: {},
+			cloudflare_ipcountry: { active: false }
 		},
 		email: {}
 	};
@@ -253,7 +255,8 @@ exports.KIT_CONFIG_KEYS = [
 	'google_oauth',
 	'auto_deposit',
 	'auto_withdrawal',
-	'force_two_factor_authentication_withdrawal'
+	'force_two_factor_authentication_withdrawal',
+	'cloudflare_ipcountry'
 ];
 
 exports.KIT_SECRETS_KEYS = [

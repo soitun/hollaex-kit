@@ -55,6 +55,7 @@ class Form extends Component {
 			icons: ICONS,
 			isEnableOtpForm,
 			isWithdraw,
+			isCaptchaPending,
 		} = this.props;
 		const { formValues } = this.state;
 		const errorMsg = isWithdraw ? '' : error;
@@ -105,7 +106,7 @@ class Form extends Component {
 				>
 					<div className="w-100 otp_form-fields">
 						{renderFields(formValues, {
-							isSubmitting: submitting,
+							isSubmitting: submitting || isCaptchaPending,
 							error: errorMsg,
 							handleSubmit,
 						})}

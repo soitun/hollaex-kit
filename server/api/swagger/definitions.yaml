@@ -857,6 +857,8 @@ definitions:
             type: object
           force_two_factor_authentication_withdrawal:
             type: object
+          cloudflare_ipcountry:
+            type: object
       secrets:
         type: object
         properties:

@@ -9,12 +9,13 @@ const { publisher } = require('../../db/pubsub');
 const { sendEmail } = require('../../mail');
 const { MAILTYPE } = require('../../mail/strings');
 
-const sendOtpEmailNotification = async (userId, status, ip, domain) => {
+const sendOtpEmailNotification = async (userId, status, ip, domain, headers) => {
 	const user = await toolsLib.user.getUserByKitId(userId);
 	const time = new Date();
 	const data = {
 		ip,
-		time
+		time,
+		headers
 	}
 
 	sendEmail(status ? MAILTYPE.OTP_ENABLED : MAILTYPE.OTP_DISABLED, user.email, data, user.settings, domain);
@@ -95,13 +96,14 @@ const activateOtp = (req, res) => {
 			}
 			return toolsLib.security.setActiveUserOtp(id);
 		})
-		.then((user) => {
+		.then(async (user) => {
 			loggerOtp.verbose(
 				req.uuid,
 				'controllers/otp/activateOtp',
 				user.dataValues
 			);
-			sendOtpEmailNotification(id, true, ip, domain);
+			await toolsLib.user.revokeAllUserSessions(id, req.session_id);
+			sendOtpEmailNotification(id, true, ip, domain, req.headers);
 			publisher.publish(EVENTS_CHANNEL, JSON.stringify({
 				type: 'user',
 				data: {
@@ -142,8 +144,9 @@ const deactivateOtp = (req, res) => {
 		.then(() => {
 			return toolsLib.security.updateUserOtpEnabled(id, false);
 		})
-		.then(() => {
-			sendOtpEmailNotification(id, false, ip, domain);
+		.then(async () => {
+			await toolsLib.user.revokeAllUserSessions(id, req.session_id);
+			sendOtpEmailNotification(id, false, ip, domain, req.headers);
 			publisher.publish(EVENTS_CHANNEL, JSON.stringify({
 				type: 'user',
 				data: {

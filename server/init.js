@@ -99,7 +99,8 @@ const checkStatus = () => {
 			google_oauth: {},
 			auto_deposit: {},
 			auto_withdrawal: {},
-			force_two_factor_authentication_withdrawal: {}
+			force_two_factor_authentication_withdrawal: {},
+			cloudflare_ipcountry: { active: false }
 		},
 		email: {}
 	};

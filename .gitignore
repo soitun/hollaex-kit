@@ -76,3 +76,4 @@ templates/kubernetes/config/*
 backups
 .vscode/settings.json
 web/public/.vscode/settings.json
+.claude/
