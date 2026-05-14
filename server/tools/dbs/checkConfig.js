@@ -81,7 +81,8 @@ Status.findOne()
 			google_oauth: existingKitConfigurations.google_oauth || {},
 			auto_deposit: existingKitConfigurations.auto_deposit || { active: true },
 			auto_withdrawal: existingKitConfigurations.auto_withdrawal || { active: true },
-			force_two_factor_authentication_withdrawal: existingKitConfigurations.force_two_factor_authentication_withdrawal || { active: false }
+			force_two_factor_authentication_withdrawal: existingKitConfigurations.force_two_factor_authentication_withdrawal || { active: false },
+			cloudflare_ipcountry: existingKitConfigurations.cloudflare_ipcountry || { active: false }
 		};
 
 		const existingPasskey = existingSecrets.passkey || {};

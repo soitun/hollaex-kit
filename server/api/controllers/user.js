@@ -51,7 +51,6 @@ const { isDate } = require('moment');
 const moment = require('moment');
 const DeviceDetector = require('node-device-detector');
 const uuid = require('uuid/v4');
-const geoip = require('geoip-lite');
 const SMTP_SERVER = () => GET_KIT_SECRETS()?.smtp?.server;
 
 const VERIFY_STATUS = {
@@ -79,7 +78,9 @@ const INITIAL_SETTINGS = () => {
 		},
 		interface: {
 			order_book_levels: 10,
-			theme: toolsLib.getKitConfig().defaults.theme
+			theme: toolsLib.getKitConfig().defaults.theme,
+			date_format: 'MM/DD/YYYY',
+			time_format: '12h'
 		},
 		language: toolsLib.getKitConfig().defaults.language,
 		audio: {
@@ -175,7 +176,7 @@ const signUpUser = (req, res) => {
 
 	const signupEmail = emailTrim || null;
 
-	toolsLib.security.checkIp(ip)
+	toolsLib.security.checkIp(ip, req.headers)
 		.then(() => {
 			return toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 		})
@@ -224,7 +225,7 @@ const signUpUserWithGoogle = async (req, res) => {
 		}
 
 		// Geo/IP check (enforce same blocking as email login)
-		await toolsLib.security.checkIp(ip);
+		await toolsLib.security.checkIp(ip, req.headers);
 
 		// Verify Google token and get user data
 		const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
@@ -602,7 +603,7 @@ const loginPost = async (req, res) => {
 	}
 
 	try {
-		await toolsLib.security.checkIp(ip);
+		await toolsLib.security.checkIp(ip, req.headers);
 		loggerUser.verbose(
 			req.uuid,
 			'controllers/user/loginPost checkIp passed',
@@ -691,7 +692,8 @@ const loginPost = async (req, res) => {
 				referer,
 				null,
 				long_term,
-				false
+				false,
+				req.headers
 			);
 			const loginData = await toolsLib.user.findUserLatestLogin(user, false);
 			const message = createAttemptMessage(loginData, user, domain);
@@ -728,7 +730,8 @@ const loginPost = async (req, res) => {
 					referer,
 					null,
 					long_term,
-					false
+					false,
+					req.headers
 				);
 				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
 				const message = createAttemptMessage(loginData, user, domain);
@@ -739,8 +742,7 @@ const loginPost = async (req, res) => {
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
 
-		const geo = geoip.lookup(ip);
-		const country = geo?.country || '';
+		const country = toolsLib.security.getCountryFromIp(ip, req.headers);
 
 		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		let suspiciousLogin = false;
@@ -876,7 +878,8 @@ const loginPost = async (req, res) => {
 			referer,
 			token,
 			long_term,
-			true
+			true,
+			req.headers
 		);
 
 		return res.status(201).json({ token });
@@ -971,7 +974,7 @@ const loginWithGoogle = async (req, res) => {
 		}
 
 		// Enforce geo/IP restrictions the same as email login
-		await toolsLib.security.checkIp(ip);
+		await toolsLib.security.checkIp(ip, req.headers);
 
 		// Captcha is the very first gate, before any account lookup or
 		// outbound Google verification call, for the same reason it runs
@@ -1039,7 +1042,7 @@ const loginWithGoogle = async (req, res) => {
 				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
 			} catch (err) {
 				await toolsLib.user.createUserLogin(
-					user, ip, device, domain, origin, referer, null, long_term, false
+					user, ip, device, domain, origin, referer, null, long_term, false, req.headers
 				);
 				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
 				const message = createAttemptMessage(loginData, user, domain);
@@ -1053,8 +1056,7 @@ const loginWithGoogle = async (req, res) => {
 		// code and require the user to confirm before the next attempt.
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
-		const geo = geoip.lookup(ip);
-		const country = geo?.country || '';
+		const country = toolsLib.security.getCountryFromIp(ip, req.headers);
 		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		let suspiciousLogin = false;
 		if (suspiciousLoginEnabled && SMTP_SERVER()?.length > 0) {
@@ -1130,7 +1132,7 @@ const loginWithGoogle = async (req, res) => {
 			user.role
 		);
 
-		await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true);
+		await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true, req.headers);
 
 		// Publish login event
 		publisher.publish(EVENTS_CHANNEL, JSON.stringify({
@@ -2953,8 +2955,7 @@ const verifyPasskeyLogin = async (req, res) => {
 
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
-		const geo = geoip.lookup(ip);
-		const country = geo?.country || '';
+		const country = toolsLib.security.getCountryFromIp(ip, req.headers);
 		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		let suspiciousLogin = false;
 		if (suspiciousLoginEnabled && SMTP_SERVER()?.length > 0 && isArray(lastLogins) && lastLogins.length > 0) {
@@ -3021,7 +3022,8 @@ const verifyPasskeyLogin = async (req, res) => {
 			req.headers.referer,
 			token,
 			false,
-			true
+			true,
+			req.headers
 		);
 
 		publisher.publish(EVENTS_CHANNEL, JSON.stringify({

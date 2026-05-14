@@ -36,7 +36,8 @@ let configuration = {
 		google_oauth: {},
 		auto_deposit: {},
 		auto_withdrawal: {},
-		force_two_factor_authentication_withdrawal: {}
+		force_two_factor_authentication_withdrawal: {},
+		cloudflare_ipcountry: { active: false }
 	},
 	email: {}
 };
@@ -130,7 +131,8 @@ const resetAllConfig = () => {
 			google_oauth: {},
 			auto_deposit: {},
 			auto_withdrawal: {},
-			force_two_factor_authentication_withdrawal: {}
+			force_two_factor_authentication_withdrawal: {},
+			cloudflare_ipcountry: { active: false }
 		},
 		email: {}
 	};
@@ -253,7 +255,8 @@ exports.KIT_CONFIG_KEYS = [
 	'google_oauth',
 	'auto_deposit',
 	'auto_withdrawal',
-	'force_two_factor_authentication_withdrawal'
+	'force_two_factor_authentication_withdrawal',
+	'cloudflare_ipcountry'
 ];
 
 exports.KIT_SECRETS_KEYS = [
@@ -387,6 +390,8 @@ exports.SETTING_KEYS = [
 
 exports.VERIFICATION_METHODS = ['email', 'sms'];
 exports.DEFAULT_VERIFICATION_METHOD = 'email';
+exports.USER_DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'MMM DD, YYYY', 'DD MMM YYYY'];
+exports.USER_TIME_FORMATS = ['12h', '24h'];
 
 exports.OMITTED_USER_FIELDS = [
 	'password',

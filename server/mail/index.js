@@ -66,7 +66,7 @@ const sendEmail = (
 		}
 		case MAILTYPE.LOGIN: {
 			if (data.time) data.time = formatDate(data.time, language);
-			if (data.ip && !data.country) data.country = getCountryFromIp(data.ip);
+			if (data.ip && !data.country) data.country = getCountryFromIp(data.ip, data.headers);
 			break;
 		}
 		case MAILTYPE.SIGNUP:
@@ -129,7 +129,7 @@ const sendEmail = (
 		case MAILTYPE.OTP_DISABLED:
 		case MAILTYPE.OTP_ENABLED: {
 			if (data.time) data.time = formatDate(data.time, language);
-			if (data.ip) data.country = getCountryFromIp(data.ip);
+			if (data.ip && !data.country) data.country = getCountryFromIp(data.ip, data.headers);
 			to.BccAddresses = BCC_ADDRESSES(type);
 			break;
 		}

@@ -56,7 +56,7 @@ class CloudflareTurnstile extends Component {
 
 	removeWidget = () => {
 		try {
-			if (window.turnstile && this.widgetId) {
+			if (window.turnstile && this.widgetId !== null) {
 				window.turnstile.remove(this.widgetId);
 			}
 		} catch (e) {
@@ -75,6 +75,7 @@ class CloudflareTurnstile extends Component {
 		await loadTurnstile();
 
 		if (!window.turnstile) return;
+		if (!this.containerRef.current) return;
 
 		this.widgetId = window.turnstile.render(this.containerRef.current, {
 			sitekey: siteKey,

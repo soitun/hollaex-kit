@@ -111,13 +111,15 @@ const {
 	KIT_CONFIG_KEYS,
 	KIT_SECRETS_KEYS,
 	NUMBER_OF_ALLOWED_ATTEMPTS,
+	USER_DATE_FORMATS,
+	USER_TIME_FORMATS
 } = require(`${SERVER_PATH}/constants`);
 const { sendEmail } = require(`${SERVER_PATH}/mail`);
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { getKitConfig, isValidTierLevel, getKitTier, isDatetime, getAssetsPrices, getRoles, getKitSecrets, sendCustomEmail, emailHtmlBoilerplate, updateKitConfigSecrets, sleep, getKitCoins, getKitCoin, subscribedToCoin, getQuickTrades } = require('./common');
 const { isSmsPluginActive } = require('./plugin');
 const { sendVerificationCode } = require('./verification');
-const { isValidPassword, createSession } = require('./security');
+const { isValidPassword, createSession, getCountryFromIp } = require('./security');
 const { getNodeLib } = require(`${SERVER_PATH}/init`);
 const { all, reject } = require('bluebird');
 const { Op, fn, col, literal } = require('sequelize');
@@ -126,7 +128,6 @@ const { parse } = require('json2csv');
 const flatten = require('flat');
 const uuid = require('uuid/v4');
 const { checkCaptcha, validatePassword, verifyOtpBeforeAction } = require('./security');
-const geoip = require('geoip-lite');
 const moment = require('moment');
 const mathjs = require('mathjs');
 const { loggerUser } = require('../../../config/logger');
@@ -605,8 +606,10 @@ const registerUserLogin = (
 		login.country = opts.country;
 	}
 
-	const geo = geoip.lookup(ip);
-	if (geo?.country && !opts?.country) login.country = geo.country;
+	if (!opts?.country) {
+		const country = getCountryFromIp(ip, opts?.headers);
+		if (country) login.country = country;
+	}
 	return getModel('login').create(login)
 		.then((loginData) => {
 			if (opts.token && opts.status) {
@@ -639,7 +642,7 @@ const updateLoginStatus = (loginId) => {
 	return getModel('login').update({ status: true }, { where: { id: loginId } });
 };
 
-const createUserLogin = async (user, ip, device, domain, origin, referer, token, long_term, status) => {
+const createUserLogin = async (user, ip, device, domain, origin, referer, token, long_term, status, headers) => {
 	const loginData = status == false && await findUserLatestLogin(user, status);
 
 	if (!loginData) {
@@ -650,7 +653,8 @@ const createUserLogin = async (user, ip, device, domain, origin, referer, token,
 			referer,
 			token,
 			status,
-			expiry: long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL
+			expiry: long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL,
+			headers
 		});
 	}
 	else if (loginData.status == false) {
@@ -984,9 +988,18 @@ const omitUserFields = (user) => {
 			...initialSettings.notification,
 			...filteredUser.settings.notification
 		};
+		filteredUser.settings.interface = {
+			...initialSettings.interface,
+			...filteredUser.settings.interface
+		};
 		Object.keys(initialSettings.notification).forEach((key) => {
 			if (isNil(filteredUser.settings.notification[key])) {
 				filteredUser.settings.notification[key] = initialSettings.notification[key];
+			}
+		});
+		Object.keys(initialSettings.interface).forEach((key) => {
+			if (isNil(filteredUser.settings.interface[key])) {
+				filteredUser.settings.interface[key] = initialSettings.interface[key];
 			}
 		});
 		filteredUser.settings.risk = {
@@ -1534,6 +1547,10 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 			...initialSettings.notification,
 			...userSettings.notification
 		},
+		interface: {
+			...initialSettings.interface,
+			...userSettings.interface
+		},
 		risk: {
 			...initialSettings.risk,
 			...userSettings.risk
@@ -1542,6 +1559,11 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 	Object.keys(initialSettings.notification).forEach((key) => {
 		if (isNil(userSettings.notification[key])) {
 			userSettings.notification[key] = initialSettings.notification[key];
+		}
+	});
+	Object.keys(initialSettings.interface).forEach((key) => {
+		if (isNil(userSettings.interface[key])) {
+			userSettings.interface[key] = initialSettings.interface[key];
 		}
 	});
 	Object.keys(initialSettings.risk).forEach((key) => {
@@ -1566,10 +1588,23 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 				(!isString(newSettings[key]) || VERIFICATION_METHODS.indexOf(newSettings[key]) === -1)
 			) {
 				throw new Error(`verification_method must be one of: ${VERIFICATION_METHODS.join(', ')}`);
+			} else if (key === 'interface' && isPlainObject(newSettings[key])) {
+				if (
+					has(newSettings[key], 'date_format') &&
+					(!isString(newSettings[key].date_format) || USER_DATE_FORMATS.indexOf(newSettings[key].date_format) === -1)
+				) {
+					throw new Error(`date_format must be one of: ${USER_DATE_FORMATS.join(', ')}`);
+				}
+				if (
+					has(newSettings[key], 'time_format') &&
+					(!isString(newSettings[key].time_format) || USER_TIME_FORMATS.indexOf(newSettings[key].time_format) === -1)
+				) {
+					throw new Error(`time_format must be one of: ${USER_TIME_FORMATS.join(', ')}`);
+				}
 			}
 			if (isPlainObject(userSettings[key]) && isPlainObject(newSettings[key])) {
 				joinedSettings[key] = { ...userSettings[key], ...newSettings[key] };
-				if (key === 'notification' || key === 'risk') {
+				if (key === 'notification' || key === 'risk' || key === 'interface') {
 					Object.keys(initialSettings[key]).forEach((settingKey) => {
 						if (isNil(joinedSettings[key][settingKey])) {
 							joinedSettings[key][settingKey] = initialSettings[key][settingKey];
@@ -1640,7 +1675,9 @@ const INITIAL_SETTINGS = () => {
 		},
 		interface: {
 			order_book_levels: 10,
-			theme: getKitConfig().defaults.theme
+			theme: getKitConfig().defaults.theme,
+			date_format: 'MM/DD/YYYY',
+			time_format: '12h'
 		},
 		language: getKitConfig().defaults.language,
 		audio: {
@@ -2799,11 +2836,14 @@ const getAllBalancesAdmin = async (opts = {
 };
 
 // set all active sessions of the user to false and remove them from redis
-const revokeAllUserSessions = async (userId) => {
+const revokeAllUserSessions = async (userId, excludedSessionId = null) => {
 
 	const sessions = await getModel('session').findAll(
 		{
-			where: { status: true },
+			where: {
+				status: true,
+				...(excludedSessionId && { id: { [Op.ne]: excludedSessionId } })
+			},
 			include: [
 				{
 					model: getModel('login'),
@@ -5343,7 +5383,8 @@ const issueSubaccountToken = async ({ masterKitId, subKitId, ip, headers = {} })
 			origin: headers.origin,
 			referer: headers.referer,
 			token,
-			status: true
+			status: true,
+			headers
 		}
 	);
 
@@ -5523,6 +5564,7 @@ const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, heade
 			referer: headers.referer,
 			token,
 			status: true,
+			headers,
 			meta: {
 				is_sharedaccount: true,
 				sharedaccount_id: link.id,

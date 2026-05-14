@@ -1,8 +1,7 @@
 import React from 'react';
-import { Button } from 'antd';
 import { getFormatTimestamp } from 'utils/utils';
 import STRINGS from 'config/localizedStrings';
-import { EditWrapper } from 'components';
+import { Button } from 'components';
 
 export const generateLogins = () => {
 	return [
@@ -31,19 +30,19 @@ export const RenderBtn = ({ closeDialog, setStep, step, goBack, label }) => {
 					closeDialog ? closeDialog() : setStep(goBack);
 				}}
 				className="back-btn"
-			>
-				<EditWrapper stringId="ACCOUNT_SECURITY.OTP.BACK">
-					{STRINGS['ACCOUNT_SECURITY.OTP.BACK']}
-				</EditWrapper>
-			</Button>
+				label={STRINGS['ACCOUNT_SECURITY.OTP.BACK']}
+				stringId="ACCOUNT_SECURITY.OTP.BACK"
+				type="button"
+			/>
 			<Button
 				onClick={() => {
 					setStep(step);
 				}}
 				className="proceed-btn"
-			>
-				<EditWrapper stringId={label}>{STRINGS[label]}</EditWrapper>
-			</Button>
+				label={STRINGS[label]}
+				stringId={label}
+				type="button"
+			/>
 		</div>
 	);
 };
@@ -57,10 +56,9 @@ export const RenderBackBtn = ({ setStep, setErrorMsg, setOtpValue, step }) => {
 				setOtpValue('');
 			}}
 			className="back-btn"
-		>
-			<EditWrapper stringId="ACCOUNT_SECURITY.OTP.BACK">
-				{STRINGS['ACCOUNT_SECURITY.OTP.BACK']}
-			</EditWrapper>
-		</Button>
+			label={STRINGS['ACCOUNT_SECURITY.OTP.BACK']}
+			stringId="ACCOUNT_SECURITY.OTP.BACK"
+			type="button"
+		/>
 	);
 };
