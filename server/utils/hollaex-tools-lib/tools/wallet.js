@@ -223,6 +223,7 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 			network,
 			freeze_account_link: `${domain}/confirm-login?token=${token}&prompt=false&freeze_account=true`
 		},
+		sendEmailFallback: version !== 'v4',
 		domain
 	});
 	return data;

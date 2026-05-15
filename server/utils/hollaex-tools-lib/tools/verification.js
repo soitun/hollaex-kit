@@ -7,10 +7,19 @@ const {
 } = require(`${SERVER_PATH}/constants`);
 const { publisher } = require('./database/redis');
 const { sendEmail } = require(`${SERVER_PATH}/mail`);
+const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { getKitConfig } = require('./common');
 const { isSmsPluginActive } = require('./plugin');
 const { logger } = require(`${SERVER_PATH}/config/logger`);
 const { isEmail } = require('validator');
+
+const LEGACY_EMAIL_FALLBACK_TYPES = new Set([
+	MAILTYPE.SIGNUP,
+	MAILTYPE.RESET_PASSWORD,
+	MAILTYPE.CHANGE_PASSWORD,
+	MAILTYPE.SUSPICIOUS_LOGIN,
+	MAILTYPE.WITHDRAWAL_REQUEST
+]);
 
 const getEffectiveVerificationMethod = async (user, deps = {}) => {
 	const _getKitConfig = deps.getKitConfig || getKitConfig;
@@ -45,6 +54,7 @@ const sendVerificationCode = async (user, {
 	verification_code,
 	emailType,
 	emailData = {},
+	sendEmailFallback = false,
 	domain
 }) => {
 	if (!user) {
@@ -73,7 +83,12 @@ const sendVerificationCode = async (user, {
 		method = 'email';
 	}
 
-	if (method === 'email' && emailType && isEmail(user.email)) {
+	const shouldSendEmail = emailType && isEmail(user.email) && (
+		method === 'email' ||
+		(method === 'sms' && (sendEmailFallback || LEGACY_EMAIL_FALLBACK_TYPES.has(emailType)))
+	);
+
+	if (shouldSendEmail) {
 		try {
 			sendEmail(emailType, user.email, emailData, user.settings, domain);
 		} catch (err) {

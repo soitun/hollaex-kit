@@ -2,8 +2,7 @@ import React from 'react';
 import { reduxForm } from 'redux-form';
 import {
 	requiredWithCustomMessage,
-	email,
-	normalizeEmail,
+	emailOrPhone,
 } from 'components/Form/validations';
 import { AuthForm } from 'components';
 import STRINGS from 'config/localizedStrings';
@@ -11,16 +10,15 @@ import STRINGS from 'config/localizedStrings';
 export const FORM_NAME = 'ResetPasswordForm';
 
 export const generateFormFields = (theme) => ({
-	email: {
-		type: 'email',
+	value: {
+		type: 'text',
 		validate: [
-			requiredWithCustomMessage(STRINGS['VALIDATIONS.TYPE_EMAIL']),
-			email,
+			requiredWithCustomMessage(STRINGS['VALIDATIONS.REQUIRED']),
+			emailOrPhone,
 		],
-		normalize: normalizeEmail,
 		fullWidth: true,
-		label: STRINGS['FORM_FIELDS.EMAIL_LABEL'],
-		placeholder: STRINGS['FORM_FIELDS.EMAIL_PLACEHOLDER'],
+		label: 'Email or phone number',
+		placeholder: 'Email or phone number',
 	},
 });
 

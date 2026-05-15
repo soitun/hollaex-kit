@@ -328,7 +328,8 @@ const signUpUser = async (email, password, opts = {}, version) => {
 			await sendVerificationCode(user, {
 				action_type: 'signup',
 				verification_code: verificationCode,
-				emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP
+				emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+				sendEmailFallback: version !== 'v4'
 			});
 		} else {
 			sendEmail(
