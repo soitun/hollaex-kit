@@ -299,6 +299,7 @@ const getVerifyUser = (req, res) => {
 						action_type: 'signup',
 						verification_code: verificationCode,
 						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+						sendEmailFallback: version !== 'v4',
 						domain
 					});
 				}
@@ -332,6 +333,7 @@ const getVerifyUser = (req, res) => {
 						action_type: 'signup',
 						verification_code: verificationCode,
 						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+						sendEmailFallback: version !== 'v4',
 						domain
 					});
 				} else {
@@ -813,6 +815,7 @@ const loginPost = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
+				sendEmailFallback: version !== 'v4',
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');
@@ -1101,6 +1104,7 @@ const loginWithGoogle = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
+				sendEmailFallback: version !== 'v4',
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');
@@ -3002,6 +3006,7 @@ const verifyPasskeyLogin = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
+				sendEmailFallback: version !== 'v4',
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');

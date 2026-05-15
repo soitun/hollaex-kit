@@ -362,6 +362,7 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 				emailData: isShortCodeVersion
 					? { code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` }
 					: { code, ip },
+				sendEmailFallback: version !== 'v4',
 				domain
 			});
 			return;
@@ -527,6 +528,7 @@ const sendResetPasswordCode = (identifier, captcha, ip, domain, version, headers
 						ip,
 						freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true`
 					},
+					sendEmailFallback: version !== 'v4',
 					domain
 				});
 			});

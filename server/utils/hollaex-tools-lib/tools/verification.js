@@ -54,6 +54,7 @@ const sendVerificationCode = async (user, {
 	verification_code,
 	emailType,
 	emailData = {},
+	sendEmailFallback = false,
 	domain
 }) => {
 	if (!user) {
@@ -84,7 +85,7 @@ const sendVerificationCode = async (user, {
 
 	const shouldSendEmail = emailType && isEmail(user.email) && (
 		method === 'email' ||
-		(method === 'sms' && LEGACY_EMAIL_FALLBACK_TYPES.has(emailType))
+		(method === 'sms' && (sendEmailFallback || LEGACY_EMAIL_FALLBACK_TYPES.has(emailType)))
 	);
 
 	if (shouldSendEmail) {
