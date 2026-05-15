@@ -1153,25 +1153,9 @@ table th {
     .otp_form-wrapper .step-one-pop-up .btn-wrapper .proceed-btn,
     .otp_form-wrapper .step-two-pop-up .btn-wrapper .back-btn,
     .otp_form-wrapper .step-two-pop-up .btn-wrapper .proceed-btn {
-      background-color: var(--specials_buttons-links-and-highlights);
-      border: none;
       width: 45%;
       height: 40px;
-      text-align: center;
-      color: var(--calculated_specials_buttons-links-and-highlights-text); }
-      .otp_form-wrapper .step-one-pop-up .btn-wrapper .back-btn:hover, .otp_form-wrapper .step-one-pop-up .btn-wrapper .back-btn:focus, .otp_form-wrapper .step-one-pop-up .btn-wrapper .back-btn:active,
-      .otp_form-wrapper .step-one-pop-up .btn-wrapper .proceed-btn:hover,
-      .otp_form-wrapper .step-one-pop-up .btn-wrapper .proceed-btn:focus,
-      .otp_form-wrapper .step-one-pop-up .btn-wrapper .proceed-btn:active,
-      .otp_form-wrapper .step-two-pop-up .btn-wrapper .back-btn:hover,
-      .otp_form-wrapper .step-two-pop-up .btn-wrapper .back-btn:focus,
-      .otp_form-wrapper .step-two-pop-up .btn-wrapper .back-btn:active,
-      .otp_form-wrapper .step-two-pop-up .btn-wrapper .proceed-btn:hover,
-      .otp_form-wrapper .step-two-pop-up .btn-wrapper .proceed-btn:focus,
-      .otp_form-wrapper .step-two-pop-up .btn-wrapper .proceed-btn:active {
-        background-color: var(--specials_buttons-links-and-highlights);
-        border: none;
-        color: var(--calculated_specials_buttons-links-and-highlights-text); }
+      text-align: center; }
   .otp_form-wrapper .step-two-pop-up .btn-wrapper {
     margin-top: 5% !important; }
   .otp_form-wrapper .step-three-pop-up .verfication-field {
@@ -1192,25 +1176,9 @@ table th {
   .otp_form-wrapper .step-three-pop-up .proceed-btn,
   .otp_form-wrapper .step-four-pop-up .back-btn,
   .otp_form-wrapper .step-four-pop-up .proceed-btn {
-    background-color: var(--specials_buttons-links-and-highlights);
-    border: none;
     width: 45%;
     height: 40px;
-    text-align: center;
-    color: var(--calculated_specials_buttons-links-and-highlights-text); }
-    .otp_form-wrapper .step-three-pop-up .back-btn:hover, .otp_form-wrapper .step-three-pop-up .back-btn:focus, .otp_form-wrapper .step-three-pop-up .back-btn:active,
-    .otp_form-wrapper .step-three-pop-up .proceed-btn:hover,
-    .otp_form-wrapper .step-three-pop-up .proceed-btn:focus,
-    .otp_form-wrapper .step-three-pop-up .proceed-btn:active,
-    .otp_form-wrapper .step-four-pop-up .back-btn:hover,
-    .otp_form-wrapper .step-four-pop-up .back-btn:focus,
-    .otp_form-wrapper .step-four-pop-up .back-btn:active,
-    .otp_form-wrapper .step-four-pop-up .proceed-btn:hover,
-    .otp_form-wrapper .step-four-pop-up .proceed-btn:focus,
-    .otp_form-wrapper .step-four-pop-up .proceed-btn:active {
-      background-color: var(--specials_buttons-links-and-highlights);
-      border: none;
-      color: var(--calculated_specials_buttons-links-and-highlights-text); }
+    text-align: center; }
   .otp_form-wrapper .step-four-pop-up .back-btn {
     width: 100%; }
   .otp_form-wrapper .otp_form-section-wrapper {
