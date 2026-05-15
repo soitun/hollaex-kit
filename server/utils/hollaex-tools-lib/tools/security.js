@@ -4,7 +4,7 @@ const rp = require('request-promise');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { intersection, has } = require('lodash');
-const { isEmail } = require('validator');
+const { isEmail, isMobilePhone } = require('validator');
 const ipRangeCheck = require('ip-range-check');
 const { SERVER_PATH } = require('../constants');
 const {
@@ -466,12 +466,32 @@ const createResetPasswordCode = (userId, version) => {
 		});
 };
 
-const sendResetPasswordCode = (email, captcha, ip, domain, version, headers = {}) => {
-	if (typeof email !== 'string' || !isEmail(email)) {
+const normalizeResetPasswordPhone = (raw) => {
+	const value = String(raw || '').trim();
+	if (!isMobilePhone(value, 'any', { strictMode: true })) {
+		return null;
+	}
+	const digits = value.slice(1).replace(/\D/g, '');
+	if (!digits || digits.length < 8 || digits.length > 15) {
+		return null;
+	}
+	return `+${digits}`;
+};
+
+const sendResetPasswordCode = (identifier, captcha, ip, domain, version, headers = {}) => {
+	if (typeof identifier !== 'string') {
 		return reject(new Error(USER_NOT_FOUND));
 	}
 
-	return dbQuery.findOne('user', { where: { email } })
+	const value = identifier.trim();
+	const email = isEmail(value) ? value.toLowerCase() : null;
+	const phone_number = email ? null : normalizeResetPasswordPhone(value);
+
+	if (!email && !phone_number) {
+		return reject(new Error(USER_NOT_FOUND));
+	}
+
+	return dbQuery.findOne('user', { where: email ? { email } : { phone_number } })
 		.then((user) => {
 			if (!user) {
 				throw new Error(USER_NOT_FOUND);

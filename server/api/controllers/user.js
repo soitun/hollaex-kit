@@ -1246,36 +1246,43 @@ function requestEmailConfirmation(req, res) {
 }
 
 const requestResetPassword = (req, res) => {
-	let email = req.swagger.params.email.value;
+	const value = req.swagger.params.value && req.swagger.params.value.value;
+	const email = req.swagger.params.email && req.swagger.params.email.value;
+	const phone_number = req.swagger.params.phone_number && req.swagger.params.phone_number.value;
 	let version = req.swagger.params.version.value;
 	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
+	let identifier = value || phone_number || email;
 
 	loggerUser.info(
 		req.uuid,
 		'controllers/user/requestResetPassword',
-		email,
-		'email',
+		identifier,
+		'identifier',
 		'ip',
 		ip,
 		'domain',
 		domain
 	);
 
-	if (!email || typeof email !== 'string' || !isEmail(email)) {
+	if (
+		!identifier ||
+		typeof identifier !== 'string' ||
+		(!isEmail(identifier) && !isMobilePhone(identifier.trim(), 'any', { strictMode: true }))
+	) {
 		loggerUser.error(
 			req.uuid,
-			'controllers/user/requestResetPassword invalid email',
-			email
+			'controllers/user/requestResetPassword invalid identifier',
+			identifier
 		);
 		const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 		return res.status(200).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 	}
 
-	email = email.toLowerCase();
+	identifier = isEmail(identifier) ? identifier.toLowerCase() : identifier.trim();
 
-	toolsLib.security.sendResetPasswordCode(email, captcha, ip, domain, version, req.headers)
+	toolsLib.security.sendResetPasswordCode(identifier, captcha, ip, domain, version, req.headers)
 		.then(() => {
 			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 			return res.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
