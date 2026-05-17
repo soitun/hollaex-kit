@@ -475,7 +475,8 @@
 
 	.back-btn,
 	.next-btn,
-	.okay-btn {
+	.okay-btn,
+	.add-btn {
 		background-color: var(--specials_buttons-links-and-highlights);
 		width: 45%;
 		color: var(--labels_important-active-labels-text-graphics);
@@ -484,6 +485,34 @@
 
 	.okay-btn {
 		width: 100% !important;
+	}
+
+	.add-btn[disabled],
+	.add-btn[disabled]:hover,
+	.add-btn[disabled]:focus,
+	.add-btn[disabled]:active {
+		background-color: var(--labels_inactive-button) !important;
+		color: var(--labels_secondary-inactive-label-text-graphics) !important;
+		border: none !important;
+		box-shadow: none !important;
+		opacity: 1 !important;
+		cursor: not-allowed !important;
+	}
+}
+
+.add-referral-input-field {
+	width: 100%;
+	padding: 10px;
+	background-color: transparent;
+	border: 1px solid var(--labels_secondary-inactive-label-text-graphics) !important;
+	color: var(--labels_important-active-labels-text-graphics);
+	font-size: 13px;
+	outline: none !important;
+	box-shadow: none !important;
+	&:focus {
+		border-color: var(
+			--labels_secondary-inactive-label-text-graphics
+		) !important;
 	}
 }
 
