@@ -1722,6 +1722,7 @@ const createCryptoAddress = (req, res) => {
 			if (user.is_subaccount) {
 				throw new Error(SUBACCOUNT_CANNOT_GENERATE_ADDRESS);
 			}
+			toolsLib.wallet.validateDepositEnabled(crypto.value, network.value);
 			return toolsLib.user.createUserCryptoAddressByKitId(id, crypto.value, {
 				network: network.value,
 				additionalHeaders: {

@@ -1256,17 +1256,12 @@ const getDepositFee = (currency, network, amount, level) => {
 	};
 };
 
-async function validateDeposit(user, amount, currency, network = null) {
-	const coinConfiguration = getKitCoin(currency);
-
+const validateDepositEnabled = (currency, network = null) => {
 	if (!subscribedToCoin(currency)) {
 		throw new Error(INVALID_COIN(currency));
 	}
 
-	if (amount <= 0) {
-		throw new Error(INVALID_AMOUNT(amount));
-	}
-
+	const coinConfiguration = getKitCoin(currency);
 	if (!coinConfiguration.allow_deposit) {
 		throw new Error(DEPOSIT_DISABLED_FOR_COIN(currency));
 	}
@@ -1274,6 +1269,14 @@ async function validateDeposit(user, amount, currency, network = null) {
 	const depositNetworkOverrides = getKitConfig()?.coin_customizations?.[currency]?.network_overrides;
 	if (network && depositNetworkOverrides?.[network]?.allow_deposit === false) {
 		throw new Error(DEPOSIT_DISABLED_FOR_COIN(currency));
+	}
+};
+
+async function validateDeposit(user, amount, currency, network = null) {
+	validateDepositEnabled(currency, network);
+
+	if (amount <= 0) {
+		throw new Error(INVALID_AMOUNT(amount));
 	}
 
 	if (!user) {
@@ -1436,6 +1439,7 @@ module.exports = {
 	updatePendingMint,
 	updatePendingBurn,
 	isValidAddress,
+	validateDepositEnabled,
 	validateDeposit,
 	getWallets,
 	calculateWithdrawalMax,
