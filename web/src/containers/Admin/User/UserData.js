@@ -60,41 +60,6 @@ const BaseDataFields = {
 	},
 };
 
-const buildVerificationMethodField = ({
-	smsFeatureEnabled,
-	smsPluginEnabled,
-	hasPhoneNumber,
-}) => {
-	const smsAllowed = smsFeatureEnabled && smsPluginEnabled && hasPhoneNumber;
-	let disabledReason = '';
-	if (!smsFeatureEnabled) {
-		disabledReason = 'SMS verification is not enabled for this exchange.';
-	} else if (!smsPluginEnabled) {
-		disabledReason = 'No active SMS plugin is installed.';
-	} else if (!hasPhoneNumber) {
-		disabledReason = 'User has no verified phone number.';
-	}
-
-	const options = [{ value: 'email', label: 'Email' }];
-	if (smsAllowed) {
-		options.push({ value: 'sms', label: 'SMS (phone)' });
-	}
-
-	return {
-		type: 'select',
-		label: 'Verification method',
-		options,
-		description: !smsAllowed
-			? `SMS option unavailable: ${disabledReason}`
-			: undefined,
-	};
-};
-
-const buildDataFields = (options) => ({
-	...BaseDataFields,
-	verification_method: buildVerificationMethodField(options),
-});
-
 const onSubmit = (dataFields, onChangeSuccess, handleClose) => (values) => {
 	const submitData = {
 		id: values.id,
@@ -134,16 +99,11 @@ const onSubmit = (dataFields, onChangeSuccess, handleClose) => (values) => {
 
 const generateInitialValues = (initialValues) => {
 	const { dob = '' } = initialValues;
-	const storedMethod =
-		initialValues?.settings?.verification_method ||
-		initialValues?.verification_method ||
-		'email';
 	return {
 		...initialValues,
 		...initialValues.address,
 		gender: initialValues.gender ? 'Woman' : 'Man',
 		dob: dob ? moment(dob) : dob,
-		verification_method: storedMethod,
 	};
 };
 
@@ -153,8 +113,6 @@ const UserData = ({
 	onChangeSuccess,
 	handleClose,
 	handleNav,
-	features = {},
-	plugins = [],
 }) => {
 	const renderEditPopup = () => {
 		return (
@@ -164,15 +122,7 @@ const UserData = ({
 		);
 	};
 
-	const smsPluginEnabled = (plugins || []).some(
-		(plugin) => plugin?.type === 'phone'
-	);
-
-	const dataFields = buildDataFields({
-		smsFeatureEnabled: !!features?.sms_verification,
-		smsPluginEnabled,
-		hasPhoneNumber: !!initialValues?.phone_number,
-	});
+	const dataFields = { ...BaseDataFields };
 
 	const fieldsData = {
 		...dataFields,

@@ -384,12 +384,10 @@ exports.SETTING_KEYS = [
 	'risk',
 	'chat',
 	'app',
-	'watchlist',
-	'verification_method'
+	'watchlist'
 ];
 
-exports.VERIFICATION_METHODS = ['email', 'sms'];
-exports.DEFAULT_VERIFICATION_METHOD = 'email';
+exports.REQUEST_VERIFICATION_METHODS = ['email', 'sms'];
 exports.USER_DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'MMM DD, YYYY', 'DD MMM YYYY'];
 exports.USER_TIME_FORMATS = ['12h', '24h'];
 

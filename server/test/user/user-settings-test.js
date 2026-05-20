@@ -65,7 +65,7 @@ describe('tests for /user/settings', function () {
         response.body.settings.interface.time_format.should.equal('24h');
     });
 
-    it('Integration Test - should accept verification_method = email', async () => {
+    it('Integration Test - should ignore verification_method in user settings', async () => {
         const response = await request()
             .put('/v2/user/settings')
             .set('Authorization', `Bearer ${bearerToken}`)
@@ -73,7 +73,7 @@ describe('tests for /user/settings', function () {
 
         response.should.have.status(200);
         response.should.be.json;
-        response.body.settings.verification_method.should.equal('email');
+        response.body.settings.should.not.have.property('verification_method');
     });
 
     it('Integration Test - should fill legacy settings with missing nested fields', async () => {
@@ -142,15 +142,6 @@ describe('tests for /user/settings', function () {
         }
     });
 
-    it('Integration Test - should reject invalid verification_method', async () => {
-        const response = await request()
-            .put('/v2/user/settings')
-            .set('Authorization', `Bearer ${bearerToken}`)
-            .send({ verification_method: 'pigeon' });
-
-        response.should.have.status(400);
-    });
-
     it('Integration Test - should reject invalid date and time formats', async () => {
         const dateResponse = await request()
             .put('/v2/user/settings')
@@ -175,14 +166,4 @@ describe('tests for /user/settings', function () {
         timeResponse.should.have.status(400);
     });
 
-    it('Integration Test - should reject verification_method = sms when prerequisites are not met', async () => {
-        // Without a verified phone_number + sms_verification feature + an active
-        // SMS plugin, this request must fail regardless of exchange configuration.
-        const response = await request()
-            .put('/v2/user/settings')
-            .set('Authorization', `Bearer ${bearerToken}`)
-            .send({ verification_method: 'sms' });
-
-        response.should.have.status(400);
-    });
 });
