@@ -1594,7 +1594,16 @@
 		"GO_TO_REFERRAL": "Go To Referral",
 		"REFER_DESC": "Share a link below with friends to Start earning commissions on their trading",
 		"SUCCESSFULLY_SETTLED": "Successfully Settled",
-		"SETTLE_AMOUNT": "You've successfully settled the amount of {0} {1}"
+		"SETTLE_AMOUNT": "You've successfully settled the amount of {0} {1}",
+		"ADD_REFERRAL_TITLE": "Add Referral Code",
+		"ADD_REFERRAL_DESC": "The referral code must be added within 24 hours of the first signup.",
+		"ADD_REFERRAL_CODE_LABEL": "Referral code:",
+		"ADD_REFERRAL_PLACEHOLDER": "Enter referral code",
+		"ADD_REFERRAL_SUCCESS": "Referral code added successfully!",
+		"ADD": "ADD",
+		"DO_YOU_HAVE_REFERRAL_CODE": "Do you have a referral code?",
+		"ACTIVATE_REFERRAL_CODE": "Active your",
+		"ACTIVATE_REFERRAL_CODE_LINK": "referral code here."
 	},
 	"NOT_LOGGEDIN": {
 		"TEXT_GENERAL": "To view you must login",

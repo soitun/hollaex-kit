@@ -26,6 +26,7 @@ import {
 	fetchReferralCodes,
 	postSettleFees,
 	fetchRealizedFeeEarnings,
+	onHandleAddReferralCode,
 } from './actions';
 import { Table } from 'components';
 import { getUserReferrals } from 'actions/userAction';
@@ -46,6 +47,7 @@ const ReferralList = ({
 	icons: ICON,
 	router,
 	features,
+	user_created_at,
 }) => {
 	const [balanceHistory, setBalanceHistory] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -86,6 +88,8 @@ const ReferralList = ({
 	const [discount, setDiscount] = useState(0);
 	const [activeTab, setActiveTab] = useState('0');
 	const [realizedData, setRealizedData] = useState([]);
+	const [displayAddReferral, setDisplayAddReferral] = useState(false);
+	const [addReferralCode, setAddReferralCode] = useState('');
 
 	const tabList = ['summary', 'history'];
 
@@ -619,6 +623,102 @@ const ReferralList = ({
 		}
 
 		return code;
+	};
+
+	const isWithin24Hours = () => {
+		if (!user_created_at) return false;
+		const createdAt = moment(user_created_at);
+		const currentTime = moment();
+		return currentTime.diff(createdAt, 'hours') < 24;
+	};
+
+	const onHandleCloseAddReferral = () => {
+		setDisplayAddReferral(false);
+		setAddReferralCode('');
+	};
+
+	const handleAddReferralSubmit = async () => {
+		try {
+			await onHandleAddReferralCode({ code: addReferralCode?.trim() });
+			onHandleCloseAddReferral();
+			setSnackNotification({
+				icon: ICONS.COPY_NOTIFICATION,
+				content: STRINGS['REFERRAL_LINK.ADD_REFERRAL_SUCCESS'],
+				timer: 2000,
+			});
+		} catch (error) {
+			showErrorMessage(error?.data?.message);
+		}
+	};
+
+	const renderAddReferralPopup = () => {
+		return (
+			<div className="referral-pop-up-wrapper">
+				<Dialog
+					className="referral_table_theme create_referral_wrapper"
+					isOpen={displayAddReferral}
+					onCloseDialog={() => onHandleCloseAddReferral()}
+					label="add-referral-popup"
+				>
+					<div>
+						<div className="refer-code-popup-wrapper fs-13">
+							<div className="d-flex new-referral-wrapper">
+								<Image
+									iconId="REFER_DOLLAR_ICON"
+									icon={ICON['REFER_DOLLAR_ICON']}
+									wrapperClassName="refer-icon"
+								/>
+								<div className="new-referral-label font-weight-bold">
+									<EditWrapper stringId="REFERRAL_LINK.ADD_REFERRAL_TITLE">
+										{STRINGS['REFERRAL_LINK.ADD_REFERRAL_TITLE']}
+									</EditWrapper>
+								</div>
+							</div>
+							<div className="referral-active-text unique-referral">
+								<EditWrapper stringId="REFERRAL_LINK.ADD_REFERRAL_DESC">
+									{STRINGS['REFERRAL_LINK.ADD_REFERRAL_DESC']}
+								</EditWrapper>
+							</div>
+							<div className="referral-active-text mt-3 mb-3">
+								<EditWrapper stringId="REFERRAL_LINK.ADD_REFERRAL_CODE_LABEL">
+									{STRINGS['REFERRAL_LINK.ADD_REFERRAL_CODE_LABEL']}
+								</EditWrapper>
+							</div>
+							<input
+								className="add-referral-input-field"
+								type="text"
+								value={addReferralCode}
+								placeholder={STRINGS['REFERRAL_LINK.ADD_REFERRAL_PLACEHOLDER']}
+								onChange={(e) => {
+									const val = e.target?.value?.trim();
+									setAddReferralCode(val);
+								}}
+							/>
+						</div>
+						<div className="referral-popup-btn-wrapper">
+							<AntButton
+								onClick={() => onHandleCloseAddReferral()}
+								className="back-btn"
+							>
+								<EditWrapper stringId="REFERRAL_LINK.BACK">
+									{STRINGS['REFERRAL_LINK.BACK']}
+								</EditWrapper>
+							</AntButton>
+							<AntButton
+								onClick={() => handleAddReferralSubmit()}
+								className="add-btn"
+								type="default"
+								disabled={!addReferralCode || addReferralCode?.length < 6}
+							>
+								<EditWrapper stringId="REFERRAL_LINK.ADD">
+									{STRINGS['REFERRAL_LINK.ADD']}
+								</EditWrapper>
+							</AntButton>
+						</div>
+					</div>
+				</Dialog>
+			</div>
+		);
 	};
 
 	const onHandleClose = () => {
@@ -1349,6 +1449,7 @@ const ReferralList = ({
 				{displayCreateLink && createReferralCode()}
 				{displaySettle && settleReferral()}
 				{isSuccessfullySettled && renderSuccessfulSettleReferral()}
+				{displayAddReferral && renderAddReferralPopup()}
 				{!isMobile && (
 					<div>
 						<span
@@ -1503,6 +1604,32 @@ const ReferralList = ({
 												</div>
 											</div>
 										)}
+										{isWithin24Hours() ? (
+											<div className="mt-4 d-flex">
+												<div className="referral-active-text">
+													<EditWrapper stringId="REFERRAL_LINK.DO_YOU_HAVE_REFERRAL_CODE">
+														{STRINGS['REFERRAL_LINK.DO_YOU_HAVE_REFERRAL_CODE']}
+													</EditWrapper>
+												</div>
+												<div className="referral-active-text pl-2">
+													<EditWrapper stringId="REFERRAL_LINK.ACTIVATE_REFERRAL_CODE">
+														{STRINGS['REFERRAL_LINK.ACTIVATE_REFERRAL_CODE']}
+													</EditWrapper>{' '}
+													<EditWrapper stringId="REFERRAL_LINK.ACTIVATE_REFERRAL_CODE_LINK">
+														<span
+															className="view-history-label"
+															onClick={() => setDisplayAddReferral(true)}
+														>
+															{
+																STRINGS[
+																	'REFERRAL_LINK.ACTIVATE_REFERRAL_CODE_LINK'
+																]
+															}
+														</span>
+													</EditWrapper>
+												</div>
+											</div>
+										) : null}
 									</div>
 								</div>
 								{!isMobile && (
@@ -1953,6 +2080,7 @@ const mapStateToProps = (state) => ({
 	affiliation: state.user.affiliation || {},
 	is_hap: state.user.is_hap,
 	features: state.app.features,
+	user_created_at: state.user.created_at,
 });
 
 const mapDispatchToProps = (dispatch) => ({
