@@ -43,20 +43,6 @@ import { isLoggedIn } from 'utils/token';
 import STRINGS from 'config/localizedStrings';
 import withConfig from 'components/ConfigProvider/withConfig';
 
-const isPhoneSignupSyntheticEmailUser = (user = {}) => {
-	if (!user) {
-		return false;
-	}
-	if (user.meta && user.meta.phone_signup === true) {
-		return true;
-	}
-	const e = user.email;
-	if (!e || typeof e !== 'string') {
-		return false;
-	}
-	return e.endsWith('_sms');
-};
-
 class UserSettings extends Component {
 	state = {
 		sections: [],
@@ -192,9 +178,6 @@ class UserSettings extends Component {
 			icons: ICONS,
 			themeOptions,
 			selectable_native_currencies,
-			features = {},
-			plugins = [],
-			user = {},
 		} = this.props;
 		const formValues = generateFormValues({
 			options: themeOptions?.map(({ value }) => ({ value, label: value })),
@@ -210,20 +193,11 @@ class UserSettings extends Component {
 			{ value: true, label: STRINGS['DEFAULT_TOGGLE_OPTIONS.ON'] },
 			{ value: false, label: STRINGS['DEFAULT_TOGGLE_OPTIONS.OFF'] },
 		];
-		const smsPluginEnabled = (plugins || []).some(
-			(plugin) => plugin?.type === 'phone'
-		);
 		const usernameFormValues = generateUsernameFormValues(
 			settings.chat.set_username
 		);
 		const notificationFormValues = generateNotificationFormValues(
-			DEFAULT_TOGGLE_OPTIONS,
-			{
-				smsFeatureEnabled: !!features?.sms_verification,
-				smsPluginEnabled,
-				hasPhoneNumber: !!user?.phone_number,
-				isSyntheticEmail: isPhoneSignupSyntheticEmailUser(user),
-			}
+			DEFAULT_TOGGLE_OPTIONS
 		);
 		const audioFormValues = generateAudioCueFormValues(DEFAULT_TOGGLE_OPTIONS);
 
@@ -265,15 +239,7 @@ class UserSettings extends Component {
 							this.onSubmitSettings(formProps, 'notification')
 						}
 						formFields={notificationFormValues}
-						initialValues={{
-							...settings.notification,
-							...(notificationFormValues.verification_method
-								? {
-										verification_method:
-											settings.verification_method || 'email',
-								  }
-								: {}),
-						}}
+						initialValues={settings.notification}
 						ICONS={ICONS}
 					/>
 				),
@@ -401,21 +367,9 @@ class UserSettings extends Component {
 		let settings = {};
 		let formValues = { ...formProps };
 		switch (formKey) {
-			case 'notification': {
-				const { verification_method, ...notificationValues } = formProps;
-				settings.notification = notificationValues;
-				const blockEmailForSynthetic =
-					verification_method === 'email' &&
-					isPhoneSignupSyntheticEmailUser(this.props.user);
-				if (
-					verification_method !== undefined &&
-					verification_method !== null &&
-					!blockEmailForSynthetic
-				) {
-					settings.verification_method = verification_method;
-				}
+			case 'notification':
+				settings.notification = formProps;
 				break;
-			}
 			case 'interface':
 				if (formProps.order_book_levels) {
 					formValues.order_book_levels = parseInt(

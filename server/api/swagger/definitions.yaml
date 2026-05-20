@@ -1,4 +1,13 @@
 definitions:
+  RequestVerificationMethod:
+    type: string
+    enum:
+      - email
+      - sms
+    description: >-
+      Channel for delivering verification codes on this request. Omit to default
+      to email (SMS when the account uses a synthetic phone-signup email). "email"
+      sends only to email; "sms" sends only via the SMS publisher.
   ObjectResponse:
     type: object
   MessageResponse:
@@ -41,6 +50,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
       long_term:
         type: boolean
   SignupAuthentication:
@@ -73,6 +84,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
   SetEmailRequest:
     type: object
     required:
@@ -117,6 +130,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
       long_term:
         type: boolean
   GoogleSignup:
@@ -353,16 +368,6 @@ definitions:
         items:
           type: string
         description: List of trading pair symbols for the user's watchlist
-      verification_method:
-        type: string
-        enum:
-          - email
-          - sms
-        default: email
-        description: >-
-          Channel used for user-initiated verification codes (e.g. withdrawal request).
-          "sms" requires a verified phone_number, an active SMS plugin, and the
-          sms_verification exchange feature to be enabled.
   ChangePassword:
     type: object
     required:
@@ -383,6 +388,8 @@ definitions:
       version:
         type: string
         enum: ['v2', 'v3', 'v4']
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
   SetInitialPassword:
     type: object
     required:
@@ -464,6 +471,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
   OtpRequest:
     type: object
     required:
@@ -535,6 +544,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
       service:
         type: string
         maxLength: 256

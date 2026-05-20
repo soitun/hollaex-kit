@@ -130,7 +130,8 @@ const signUpUser = (req, res) => {
 		password,
 		captcha,
 		referral,
-		phone_number: phoneNumberRaw
+		phone_number: phoneNumberRaw,
+		verification_method
 	} = req.swagger.params.signup.value;
 
 	let { email, version } = req.swagger.params.signup.value;
@@ -181,7 +182,12 @@ const signUpUser = (req, res) => {
 			return toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 		})
 		.then(() =>
-			toolsLib.user.signUpUser(signupEmail, password, { referral, phone_number }, version)
+			toolsLib.user.signUpUser(
+				signupEmail,
+				password,
+				{ referral, phone_number, verification_method },
+				version
+			)
 		)
 		.then(() => {
 			const requiresVerification = toolsLib.getKitConfig().email_verification_required;
@@ -274,6 +280,8 @@ const getVerifyUser = (req, res) => {
 	const phoneNumberRaw = req.swagger.params.phone_number && req.swagger.params.phone_number.value;
 	const resendEmail = req.swagger.params.resend.value;
 	const version = req.swagger.params.version && req.swagger.params.version.value;
+	const verification_method = req.swagger.params.verification_method
+		&& req.swagger.params.verification_method.value;
 	const domain = req.headers['x-real-origin'];
 	const ip = req.headers['x-real-ip'];
 	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
@@ -294,12 +302,11 @@ const getVerifyUser = (req, res) => {
 					await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 					const verificationCode = generateCode();
 					toolsLib.user.storeVerificationCode(user, verificationCode);
-					await toolsLib.user.validateSmsVerificationEligibility(user);
 					await toolsLib.verification.sendVerificationCode(user, {
 						action_type: 'signup',
 						verification_code: verificationCode,
 						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
-						sendEmailFallback: version !== 'v4',
+						requestVerificationMethod: verification_method,
 						domain
 					});
 				}
@@ -328,12 +335,11 @@ const getVerifyUser = (req, res) => {
 
 				const phoneSignup = toolsLib.user.isPhoneSignupSyntheticUser(user);
 				if (phoneSignup && user.phone_number) {
-					await toolsLib.user.validateSmsVerificationEligibility(user);
 					await toolsLib.verification.sendVerificationCode(user, {
 						action_type: 'signup',
 						verification_code: verificationCode,
 						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
-						sendEmailFallback: version !== 'v4',
+						requestVerificationMethod: verification_method,
 						domain
 					});
 				} else {
@@ -490,7 +496,8 @@ const loginPost = async (req, res) => {
 		captcha,
 		service,
 		long_term,
-		version
+		version,
+		verification_method
 	} = req.swagger.params.authentication.value;
 	let {
 		email,
@@ -815,7 +822,7 @@ const loginPost = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
-				sendEmailFallback: version !== 'v4',
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');
@@ -906,7 +913,8 @@ const loginWithGoogle = async (req, res) => {
 		long_term,
 		version,
 		captcha,
-		otp_code
+		otp_code,
+		verification_method
 	} = req.swagger.params.authentication.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
@@ -1104,7 +1112,7 @@ const loginWithGoogle = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
-				sendEmailFallback: version !== 'v4',
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');
@@ -1254,6 +1262,8 @@ const requestResetPassword = (req, res) => {
 	const email = req.swagger.params.email && req.swagger.params.email.value;
 	const phone_number = req.swagger.params.phone_number && req.swagger.params.phone_number.value;
 	let version = req.swagger.params.version.value;
+	const verification_method = req.swagger.params.verification_method
+		&& req.swagger.params.verification_method.value;
 	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
@@ -1286,7 +1296,15 @@ const requestResetPassword = (req, res) => {
 
 	identifier = isEmail(identifier) ? identifier.toLowerCase() : identifier.trim();
 
-	toolsLib.security.sendResetPasswordCode(identifier, captcha, ip, domain, version, req.headers)
+	toolsLib.security.sendResetPasswordCode(
+		identifier,
+		captcha,
+		ip,
+		domain,
+		version,
+		req.headers,
+		verification_method
+	)
 		.then(() => {
 			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 			return res.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
@@ -1380,7 +1398,7 @@ const updateSettings = (req, res) => {
 const changePassword = (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/user/changePassword', req.auth.sub);
 	const email = req.auth.sub.email;
-	const { old_password, new_password, otp_code, version } = req.swagger.params.data.value;
+	const { old_password, new_password, otp_code, version, verification_method } = req.swagger.params.data.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = API_HOST + HOLLAEX_NETWORK_BASE_URL;
 
@@ -1391,7 +1409,16 @@ const changePassword = (req, res) => {
 		otp_code
 	);
 
-	toolsLib.security.changeUserPassword(email, old_password, new_password, ip, domain, otp_code, version)
+	toolsLib.security.changeUserPassword(
+		email,
+		old_password,
+		new_password,
+		ip,
+		domain,
+		otp_code,
+		version,
+		verification_method
+	)
 		.then(() => res.json({ message: `Verification email to change password is sent to: ${email}` }))
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/changePassword', err.message);
@@ -2895,7 +2922,8 @@ const verifyPasskeyLogin = async (req, res) => {
 			challenge,
 			credential,
 			version = 'v4',
-			service
+			service,
+			verification_method
 		} = req.swagger.params.data.value;
 
 		if (!challenge || !credential) {
@@ -3006,7 +3034,7 @@ const verifyPasskeyLogin = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
-				sendEmailFallback: version !== 'v4',
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');

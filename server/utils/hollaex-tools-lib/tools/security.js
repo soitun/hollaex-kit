@@ -314,7 +314,7 @@ const confirmChangeUserPassword = (code, domain) => {
 		});
 };
 
-const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode, version) => {
+const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode, version, verification_method) => {
 	if (oldPassword === newPassword) {
 		return reject(new Error(SAME_PASSWORD));
 	}
@@ -362,7 +362,7 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 				emailData: isShortCodeVersion
 					? { code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` }
 					: { code, ip },
-				sendEmailFallback: version !== 'v4',
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			return;
@@ -479,7 +479,7 @@ const normalizeResetPasswordPhone = (raw) => {
 	return `+${digits}`;
 };
 
-const sendResetPasswordCode = (identifier, captcha, ip, domain, version, headers = {}) => {
+const sendResetPasswordCode = (identifier, captcha, ip, domain, version, headers = {}, verification_method) => {
 	if (typeof identifier !== 'string') {
 		return reject(new Error(USER_NOT_FOUND));
 	}
@@ -528,7 +528,7 @@ const sendResetPasswordCode = (identifier, captcha, ip, domain, version, headers
 						ip,
 						freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true`
 					},
-					sendEmailFallback: version !== 'v4',
+					requestVerificationMethod: verification_method,
 					domain
 				});
 			});

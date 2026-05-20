@@ -3,50 +3,131 @@
 const { SERVER_PATH } = require('../constants');
 const {
 	EVENTS_CHANNEL,
-	DEFAULT_VERIFICATION_METHOD
+	REQUEST_VERIFICATION_METHODS
 } = require(`${SERVER_PATH}/constants`);
 const { publisher } = require('./database/redis');
 const { sendEmail } = require(`${SERVER_PATH}/mail`);
-const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { getKitConfig } = require('./common');
 const { isSmsPluginActive } = require('./plugin');
 const { logger } = require(`${SERVER_PATH}/config/logger`);
 const { isEmail } = require('validator');
+const {
+	NO_ACTIVE_SMS_PLUGIN_ON_EXCHANGE,
+	PROVIDE_VALID_EMAIL,
+	USER_EMAIL_NOT_VERIFIED,
+	USER_HAS_NO_PHONE,
+	USER_PHONE_NOT_VERIFIED,
+	VERIFICATION_EMAIL_REQUIRES_REAL_EMAIL
+} = require(`${SERVER_PATH}/messages`);
 
-const LEGACY_EMAIL_FALLBACK_TYPES = new Set([
-	MAILTYPE.SIGNUP,
-	MAILTYPE.RESET_PASSWORD,
-	MAILTYPE.CHANGE_PASSWORD,
-	MAILTYPE.SUSPICIOUS_LOGIN,
-	MAILTYPE.WITHDRAWAL_REQUEST
+const PHONE_SIGNUP_EMAIL_SUFFIX = '_sms';
+
+const ACTIONS_SKIP_CONTACT_VERIFIED_CHECK = new Set([
+	'signup',
+	'reset_password',
+	'confirm_email'
 ]);
 
-const getEffectiveVerificationMethod = async (user, deps = {}) => {
+const isPhoneSignupSyntheticUser = (user = {}) => {
+	if (!user) {
+		return false;
+	}
+	if (user.meta && user.meta.phone_signup === true) {
+		return true;
+	}
+	if (!user.email || typeof user.email !== 'string') {
+		return false;
+	}
+	return user.email.endsWith(PHONE_SIGNUP_EMAIL_SUFFIX);
+};
+
+const hasDeliverableEmail = (user) => {
+	return !!(user?.email && isEmail(user.email) && !isPhoneSignupSyntheticUser(user));
+};
+
+const requiresVerifiedContact = (action_type) => {
+	return !ACTIONS_SKIP_CONTACT_VERIFIED_CHECK.has(action_type);
+};
+
+const parseRequestVerificationMethod = (value) => {
+	if (value == null || value === '') {
+		return undefined;
+	}
+	const normalized = String(value).toLowerCase();
+	if (normalized === 'sms') {
+		return 'sms';
+	}
+	if (normalized === 'email') {
+		return 'email';
+	}
+	throw new Error(
+		`verification_method must be one of: ${REQUEST_VERIFICATION_METHODS.join(', ')}`
+	);
+};
+
+const assertEmailVerificationEligible = (user, { requireVerified = false } = {}) => {
+	if (!user?.email || !isEmail(user.email)) {
+		throw new Error(PROVIDE_VALID_EMAIL);
+	}
+	if (isPhoneSignupSyntheticUser(user)) {
+		throw new Error(VERIFICATION_EMAIL_REQUIRES_REAL_EMAIL);
+	}
+	if (requireVerified && !user.email_verified) {
+		throw new Error(USER_EMAIL_NOT_VERIFIED);
+	}
+};
+
+const assertSmsVerificationEligible = async (
+	user,
+	{ requireVerified = false } = {},
+	deps = {}
+) => {
+	if (!user?.phone_number) {
+		throw new Error(USER_HAS_NO_PHONE);
+	}
+	if (requireVerified && !user.phone_number_verified) {
+		throw new Error(USER_PHONE_NOT_VERIFIED);
+	}
 	const _getKitConfig = deps.getKitConfig || getKitConfig;
 	const _isSmsPluginActive = deps.isSmsPluginActive || isSmsPluginActive;
 
-	const stored =
-		user?.settings?.verification_method || DEFAULT_VERIFICATION_METHOD;
-
-	if (stored !== 'sms') return 'email';
-	if (!_getKitConfig()?.features?.sms_verification) return 'email';
-	if (!user?.phone_number) return 'email';
-
-	let active;
-	try {
-		active = await _isSmsPluginActive();
-	} catch (err) {
-		// A transient DB / runtime failure while checking plugin availability
-		// must never block the user from receiving their verification code.
-		// Degrade safely to email so delivery still happens via sendEmail().
-		logger.error(
-			'tools/verification/getEffectiveVerificationMethod isSmsPluginActive failed, falling back to email',
-			err.message
-		);
-		return 'email';
+	if (!_getKitConfig()?.features?.sms_verification) {
+		throw new Error('SMS verification feature is not enabled on this exchange');
 	}
-	if (!active) return 'email';
-	return 'sms';
+	const active = await _isSmsPluginActive();
+	if (!active) {
+		throw new Error(NO_ACTIVE_SMS_PLUGIN_ON_EXCHANGE);
+	}
+};
+
+const resolveDeliveryChannels = async (user, {
+	emailType,
+	requestVerificationMethod,
+	action_type,
+	deps = {}
+}) => {
+	const request = parseRequestVerificationMethod(requestVerificationMethod);
+	const requireVerified = requiresVerifiedContact(action_type);
+
+	if (request === 'email') {
+		assertEmailVerificationEligible(user, { requireVerified });
+		if (!emailType) {
+			throw new Error(PROVIDE_VALID_EMAIL);
+		}
+		return { sendEmail: true, publishSms: false, method: 'email' };
+	}
+	if (request === 'sms') {
+		await assertSmsVerificationEligible(user, { requireVerified }, deps);
+		return { sendEmail: false, publishSms: true, method: 'sms' };
+	}
+
+	// Default: email when a real address is available; SMS for synthetic phone-signup emails.
+	if (emailType && hasDeliverableEmail(user)) {
+		assertEmailVerificationEligible(user, { requireVerified });
+		return { sendEmail: true, publishSms: false, method: 'email' };
+	}
+	await assertSmsVerificationEligible(user, { requireVerified }, deps);
+	return { sendEmail: false, publishSms: true, method: 'sms' };
 };
 
 const sendVerificationCode = async (user, {
@@ -54,8 +135,8 @@ const sendVerificationCode = async (user, {
 	verification_code,
 	emailType,
 	emailData = {},
-	sendEmailFallback = false,
-	domain
+	domain,
+	requestVerificationMethod
 }) => {
 	if (!user) {
 		throw new Error('sendVerificationCode: user is required');
@@ -67,28 +148,13 @@ const sendVerificationCode = async (user, {
 		throw new Error('sendVerificationCode: verification_code is required');
 	}
 
-	// Callers may invoke this fire-and-forget to keep critical paths (e.g. the
-	// withdrawal HTTP response) off this function's DB / SMTP / Redis work.
-	// Every step below catches its own failures so the returned promise cannot
-	// reject once the validation block above has passed.
+	const channels = await resolveDeliveryChannels(user, {
+		emailType,
+		requestVerificationMethod,
+		action_type
+	});
 
-	let method;
-	try {
-		method = await getEffectiveVerificationMethod(user);
-	} catch (err) {
-		logger.error(
-			'tools/verification/sendVerificationCode resolve method failed, defaulting to email',
-			err.message
-		);
-		method = 'email';
-	}
-
-	const shouldSendEmail = emailType && isEmail(user.email) && (
-		method === 'email' ||
-		(method === 'sms' && (sendEmailFallback || LEGACY_EMAIL_FALLBACK_TYPES.has(emailType)))
-	);
-
-	if (shouldSendEmail) {
+	if (channels.sendEmail) {
 		try {
 			sendEmail(emailType, user.email, emailData, user.settings, domain);
 		} catch (err) {
@@ -99,28 +165,32 @@ const sendVerificationCode = async (user, {
 		}
 	}
 
-	try {
-		publisher.publish(EVENTS_CHANNEL, JSON.stringify({
-			type: 'user_verification',
-			data: {
-				user_id: user.id,
-				verification_method: method,
-				action_type,
-				verification_code,
-				phone_number: method === 'sms' ? user.phone_number : undefined
-			}
-		}));
-	} catch (err) {
-		logger.error(
-			'tools/verification/sendVerificationCode publish failed',
-			err.message
-		);
+	if (channels.publishSms) {
+		try {
+			publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+				type: 'user_verification',
+				data: {
+					user_id: user.id,
+					verification_method: 'sms',
+					action_type,
+					verification_code,
+					phone_number: user.phone_number
+				}
+			}));
+		} catch (err) {
+			logger.error(
+				'tools/verification/sendVerificationCode publish failed',
+				err.message
+			);
+		}
 	}
 
-	return { method };
+	return { method: channels.method };
 };
 
 module.exports = {
-	getEffectiveVerificationMethod,
+	parseRequestVerificationMethod,
+	assertEmailVerificationEligible,
+	assertSmsVerificationEligible,
 	sendVerificationCode
 };

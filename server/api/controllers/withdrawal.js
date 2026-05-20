@@ -77,7 +77,8 @@ const requestWithdrawal = (req, res) => {
 		amount,
 		currency,
 		network,
-		version
+		version,
+		verification_method
 	} = req.swagger.params.data.value;
 	const domain = req.headers['x-real-origin'];
 	const ip = req.headers['x-real-ip'];
@@ -99,7 +100,8 @@ const requestWithdrawal = (req, res) => {
 		network,
 		otpCode: otp_code,
 		ip,
-		domain
+		domain,
+		verification_method
 	})
 		.then(() => {
 			return res.json({ message: 'Success' });
