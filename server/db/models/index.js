@@ -80,6 +80,8 @@ model = require(path.join(__dirname, './subaccount'))(sequelize, Sequelize.DataT
 db[model.name] = model;
 model = require(path.join(__dirname, './passkey'))(sequelize, Sequelize.DataTypes);
 db[model.name] = model;
+model = require(path.join(__dirname, './blacklistedAddress'))(sequelize, Sequelize.DataTypes);
+db[model.name] = model;
 model = require(path.join(__dirname, './sharedaccount'))(sequelize, Sequelize.DataTypes);
 db[model.name] = model;
 Object.keys(db).forEach(function (modelName) {

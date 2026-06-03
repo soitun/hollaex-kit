@@ -8,6 +8,7 @@ import {
 	Input,
 	Select,
 	Tooltip,
+	Pagination,
 } from 'antd';
 import { connect } from 'react-redux';
 import { browserHistory } from 'react-router';
@@ -40,6 +41,9 @@ import {
 	updateConstants,
 	getEmailStrings,
 	getEmailType,
+	getBlacklistedAddresses,
+	addBlacklistedAddress,
+	removeBlacklistedAddress,
 } from './action';
 import { getGeneralFields, publishJSON } from './utils';
 import { publish } from 'actions/operatorActions';
@@ -126,6 +130,17 @@ class GeneralContent extends Component {
 				site_key: '',
 				secret_key: '',
 			},
+			blacklistedAddresses: [],
+			blacklistedAddressesTotal: 0,
+			blacklistPage: 1,
+			blacklistLimit: 10,
+			blacklistLoading: false,
+			blacklistSearchInput: '',
+			blacklistSearch: '',
+			isBlacklistModalVisible: false,
+			blacklistAddressInput: '',
+			blacklistNetworkInput: '',
+			blacklistLabelInput: '',
 		};
 		this.priceAssetTimeout = null;
 		this.passkeyAndroidRef = React.createRef();
@@ -214,6 +229,130 @@ class GeneralContent extends Component {
 			await this.requestEmailType();
 			await this.requestEmail();
 		}
+		if (this.props.activeTab === 'blockchain') {
+			this.fetchBlacklistedAddresses();
+		}
+	};
+
+	fetchBlacklistedAddresses = (params = {}) => {
+		const limit = params.limit || this.state.blacklistLimit;
+		const page = params.page || this.state.blacklistPage;
+		const search =
+			params.search !== undefined ? params.search : this.state.blacklistSearch;
+		const trimmedSearch = search ? search.trim() : '';
+
+		this.setState({ blacklistLoading: true });
+		getBlacklistedAddresses({
+			limit,
+			page,
+			...(trimmedSearch && { search: trimmedSearch }),
+		})
+			.then((res) => {
+				const total = res?.count || 0;
+				const data = res?.data || [];
+				const maxPage = Math.max(1, Math.ceil(total / limit));
+				if (page > maxPage) {
+					this.fetchBlacklistedAddresses({
+						limit,
+						page: maxPage,
+						search: trimmedSearch,
+					});
+					return;
+				}
+				this.setState({
+					blacklistedAddresses: data,
+					blacklistedAddressesTotal: total,
+					blacklistPage: page,
+					blacklistLimit: limit,
+					blacklistSearch: trimmedSearch,
+					blacklistLoading: false,
+				});
+			})
+			.catch((err) => {
+				this.setState({ blacklistLoading: false });
+				const _error =
+					err.data && err.data.message ? err.data.message : err.message;
+				message.error(_error);
+			});
+	};
+
+	handleBlacklistSearchChange = (e) => {
+		const value = e.target.value;
+		this.setState({ blacklistSearchInput: value });
+		if (!value && this.state.blacklistSearch) {
+			this.fetchBlacklistedAddresses({ page: 1, search: '' });
+		}
+	};
+
+	handleBlacklistSearch = (value) => {
+		const search = value ? value.trim() : '';
+		this.setState({ blacklistSearchInput: search });
+		this.fetchBlacklistedAddresses({ page: 1, search });
+	};
+
+	handleBlacklistPageChange = (page, pageSize) => {
+		const limitChanged = pageSize !== this.state.blacklistLimit;
+		this.fetchBlacklistedAddresses({
+			page: limitChanged ? 1 : page,
+			limit: pageSize,
+		});
+	};
+
+	handleBlacklistModal = () => {
+		this.setState({
+			isBlacklistModalVisible: true,
+			blacklistAddressInput: '',
+			blacklistNetworkInput: '',
+			blacklistLabelInput: '',
+		});
+	};
+
+	closeBlacklistModal = () => {
+		this.setState({ isBlacklistModalVisible: false });
+	};
+
+	handleAddBlacklistedAddress = () => {
+		const {
+			blacklistAddressInput,
+			blacklistNetworkInput,
+			blacklistLabelInput,
+		} = this.state;
+		if (!blacklistAddressInput || !blacklistAddressInput.trim()) {
+			message.error('Address is required');
+			return;
+		}
+		this.setState({ blacklistLoading: true });
+		addBlacklistedAddress({
+			address: blacklistAddressInput.trim(),
+			...(blacklistNetworkInput && { network: blacklistNetworkInput.trim() }),
+			...(blacklistLabelInput && { label: blacklistLabelInput.trim() }),
+		})
+			.then(() => {
+				message.success('Address added to blacklist');
+				this.setState({ isBlacklistModalVisible: false });
+				this.fetchBlacklistedAddresses({ page: 1 });
+			})
+			.catch((err) => {
+				this.setState({ blacklistLoading: false });
+				const _error =
+					err.data && err.data.message ? err.data.message : err.message;
+				message.error(_error);
+			});
+	};
+
+	handleRemoveBlacklistedAddress = (id) => {
+		this.setState({ blacklistLoading: true });
+		removeBlacklistedAddress(id)
+			.then(() => {
+				message.success('Address removed from blacklist');
+				this.fetchBlacklistedAddresses();
+			})
+			.catch((err) => {
+				this.setState({ blacklistLoading: false });
+				const _error =
+					err.data && err.data.message ? err.data.message : err.message;
+				message.error(_error);
+			});
 	};
 
 	requestEmail = (body) => {
@@ -1901,6 +2040,136 @@ class GeneralContent extends Component {
 						coins={coins}
 						enabledPlugins={enabledPlugins}
 					/>
+				) : null}
+				{this.props.user?.configs?.includes('blockchain') &&
+				activeTab === 'blockchain' ? (
+					<div>
+						<div className="general-wrapper">
+							<div className="sub-title" id="blacklisted-address">
+								Blacklisted Address
+							</div>
+							<div className="description">
+								Add a blockchain address to block withdrawals to it. Any
+								withdrawal to a blacklisted address will be rejected.
+							</div>
+							<div className="blacklist-tools">
+								<Input.Search
+									allowClear
+									placeholder="Search address, network, label, reason"
+									value={this.state.blacklistSearchInput}
+									onChange={this.handleBlacklistSearchChange}
+									onSearch={this.handleBlacklistSearch}
+								/>
+								<div className="blacklist-count">
+									{this.state.blacklistedAddressesTotal} address
+									{this.state.blacklistedAddressesTotal === 1 ? '' : 'es'}
+								</div>
+							</div>
+							<Spin spinning={this.state.blacklistLoading}>
+								<div className="geo-display">
+									{this.state.blacklistedAddresses?.length ? (
+										this.state.blacklistedAddresses.map((item) => (
+											<div className="d-flex location-data" key={item.id}>
+												<div>
+													{item.address}
+													{item.network
+														? ` (${item.network})`
+														: ' (All networks)'}
+													{item.label ? ` — ${item.label}` : ''}
+												</div>
+												<div>
+													(
+													<span
+														className="anchor"
+														onClick={() =>
+															this.handleRemoveBlacklistedAddress(item.id)
+														}
+													>
+														Remove
+													</span>
+													)
+												</div>
+											</div>
+										))
+									) : (
+										<div className="placeHolder">
+											Add address to the list...
+										</div>
+									)}
+								</div>
+							</Spin>
+							{this.state.blacklistedAddressesTotal >
+							this.state.blacklistLimit ? (
+								<Pagination
+									className="blacklist-pagination"
+									current={this.state.blacklistPage}
+									pageSize={this.state.blacklistLimit}
+									total={this.state.blacklistedAddressesTotal}
+									pageSizeOptions={['10', '25', '50', '100']}
+									showSizeChanger
+									size="small"
+									onChange={this.handleBlacklistPageChange}
+									onShowSizeChange={this.handleBlacklistPageChange}
+								/>
+							) : null}
+							<div>
+								<Button
+									type="primary"
+									onClick={this.handleBlacklistModal}
+									className="green-btn minimal-btn mt-5 mb-3"
+								>
+									Add
+								</Button>
+							</div>
+							<Modal
+								visible={this.state.isBlacklistModalVisible}
+								footer={null}
+								onCancel={this.closeBlacklistModal}
+							>
+								<div className="general-geo-wrapper">
+									<div className="title">Blacklist a withdrawal address</div>
+									<div>Withdrawals to this address will be blocked.</div>
+									<div className="mt-4">Address</div>
+									<Input
+										placeholder="Enter blockchain address"
+										value={this.state.blacklistAddressInput}
+										onChange={(e) =>
+											this.setState({ blacklistAddressInput: e.target.value })
+										}
+									/>
+									<div className="mt-3">Network (optional)</div>
+									<Input
+										placeholder="e.g. eth, trx — leave empty to block all networks"
+										value={this.state.blacklistNetworkInput}
+										onChange={(e) =>
+											this.setState({ blacklistNetworkInput: e.target.value })
+										}
+									/>
+									<div className="mt-3">Label (optional)</div>
+									<Input
+										placeholder="Note / reason"
+										value={this.state.blacklistLabelInput}
+										onChange={(e) =>
+											this.setState({ blacklistLabelInput: e.target.value })
+										}
+									/>
+									<div className="btn-wrapper mt-4">
+										<Button type="primary" onClick={this.closeBlacklistModal}>
+											Back
+										</Button>
+										<div className="separator"></div>
+										<Button
+											type="primary"
+											onClick={this.handleAddBlacklistedAddress}
+											disabled={!this.state.blacklistAddressInput}
+										>
+											Add
+										</Button>
+									</div>
+								</div>
+							</Modal>
+						</div>
+					</div>
 				) : null}
 				{this.props.user?.configs?.includes('security') &&
 				activeTab === 'security' ? (
