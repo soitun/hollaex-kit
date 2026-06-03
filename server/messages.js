@@ -223,6 +223,7 @@ exports.BROKER_PAUSED = 'Broker pair is paused';
 exports.BROKER_ERROR_DELETE_UNPAUSED = 'Broker pair could not be deleted while unpaused';
 exports.BROKER_EXISTS = 'A deal for this symbol alreadys exists';
 exports.BROKER_FORMULA_NOT_FOUND = 'Broker formula not found';
+exports.TIER_NOT_FOUND = 'Fee tier configuration could not be found for the user or broker verification level';
 exports.SPREAD_MISSING = 'Spread is missing';
 exports.REBALANCE_SYMBOL_MISSING = 'Rebalance symbol for hedge account is missing';
 exports.DYNAMIC_BROKER_CREATE_ERROR = 'Cannot create a dynamic broker without required fields';

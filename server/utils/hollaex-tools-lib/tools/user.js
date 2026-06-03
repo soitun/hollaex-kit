@@ -1183,8 +1183,9 @@ const getAllUsersAdmin = (opts = {
 	}
 
 	if (opts.bank_key != null && opts.bank_value != null) {
+		const sequelize = getModel('sequelize');
 		const jsonStr = JSON.stringify([{ [opts.bank_key]: opts.bank_value }]);
-		const condition = getModel('sequelize').literal(`bank_account @> '${jsonStr}'`);
+		const condition = sequelize.literal(`bank_account @> ${sequelize.escape(jsonStr)}::jsonb`);
 		query.where[Op.and] = [
 			...query.where[Op.and],
 			condition
