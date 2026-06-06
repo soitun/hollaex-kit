@@ -344,6 +344,7 @@ const getAdminWithdrawals = (req, res) => {
 		rejected,
 		processing,
 		waiting,
+		onhold,
 		transaction_id,
 		address,
 		description
@@ -370,6 +371,7 @@ const getAdminWithdrawals = (req, res) => {
 		description.value,
 		null,
 		{
+			onhold: onhold.value,
 			additionalHeaders: {
 				'x-forwarded-for': req.headers['x-forwarded-for']
 			}
@@ -505,6 +507,7 @@ const downloadWithdrawalsCsv = (req, res) => {
 		rejected,
 		processing,
 		waiting,
+		onhold,
 		transaction_id,
 		address,
 		description
@@ -529,6 +532,7 @@ const downloadWithdrawalsCsv = (req, res) => {
 		description.value,
 		'csv',
 		{
+			onhold: onhold.value,
 			additionalHeaders: {
 				'x-forwarded-for': req.headers['x-forwarded-for']
 			}
