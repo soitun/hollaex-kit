@@ -352,6 +352,7 @@ export const ADMIN_TABS_PERMISSIONS = {
 		6: 'defaults',
 		7: 'links',
 		8: 'apps',
+		9: 'blockchain',
 	},
 	'/admin/financials': {
 		0: '/admin/balance:get',
