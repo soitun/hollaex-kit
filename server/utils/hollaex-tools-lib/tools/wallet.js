@@ -14,6 +14,8 @@ const {
 	INVALID_AMOUNT,
 	DEPOSIT_DISABLED_FOR_COIN,
 	WITHDRAWAL_DISABLED_FOR_COIN,
+	DEPOSIT_DISABLED_FOR_COIN_ON_NETWORK,
+	WITHDRAWAL_DISABLED_FOR_COIN_ON_NETWORK,
 	UPGRADE_VERIFICATION_LEVEL,
 	NO_DATA_FOR_CSV,
 	USER_NOT_FOUND,
@@ -40,6 +42,44 @@ const { has } = require('lodash');
 const WAValidator = require('multicoin-address-validator');
 const { isEmail } = require('validator');
 const BigNumber = require('bignumber.js');
+
+// Mirrors getNetworkNameByKey in web/src/utils/wallet.js. The frontend util
+// can't be imported here (separate package), so the mapping is kept in sync
+// to display human-friendly network names (e.g. eth -> ERC20) in messages.
+const getNetworkNameByKey = (network) => {
+	if (network) {
+		switch (network) {
+			case 'eth':
+				return 'ERC20';
+			case 'trx':
+				return 'TRC20';
+			case 'bnb':
+				return 'BEP20';
+			case 'klay':
+				return 'Klaytn';
+			case 'matic':
+				return 'Polygon';
+			case 'pol':
+				return 'Polygon';
+			case 'sol':
+				return 'Solana';
+			case 'xlm':
+				return 'Stellar';
+			case 'ftm':
+				return 'Fantom';
+			case 's':
+				return 'Sonic';
+			case 'arb':
+				return 'Arbitrum';
+			case 'sui':
+				return 'Sui';
+			default:
+				return network.toUpperCase();
+		}
+	} else {
+		return network;
+	}
+};
 
 const isValidAddress = (currency, address, network) => {
 	if (address.indexOf('://') > -1) {
@@ -426,7 +466,11 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 
 	const withdrawalNetworkOverrides = getKitConfig()?.coin_customizations?.[currency]?.network_overrides;
 	if (network && withdrawalNetworkOverrides?.[network]?.allow_withdrawal === false) {
-		throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
+		const supportedNetworks = coinConfiguration.network ? coinConfiguration.network.split(',') : [currency];
+		const availableNetworks = supportedNetworks
+			.filter((net) => net !== network && withdrawalNetworkOverrides?.[net]?.allow_withdrawal !== false)
+			.map(getNetworkNameByKey);
+		throw new Error(WITHDRAWAL_DISABLED_FOR_COIN_ON_NETWORK(currency, getNetworkNameByKey(network), availableNetworks.join(',') || 'none'));
 	}
 
 	if (network === 'email') {
@@ -1268,7 +1312,11 @@ const validateDepositEnabled = (currency, network = null) => {
 
 	const depositNetworkOverrides = getKitConfig()?.coin_customizations?.[currency]?.network_overrides;
 	if (network && depositNetworkOverrides?.[network]?.allow_deposit === false) {
-		throw new Error(DEPOSIT_DISABLED_FOR_COIN(currency));
+		const supportedNetworks = coinConfiguration.network ? coinConfiguration.network.split(',') : [currency];
+		const availableNetworks = supportedNetworks
+			.filter((net) => net !== network && depositNetworkOverrides?.[net]?.allow_deposit !== false)
+			.map(getNetworkNameByKey);
+		throw new Error(DEPOSIT_DISABLED_FOR_COIN_ON_NETWORK(currency, getNetworkNameByKey(network), availableNetworks.join(',') || 'none'));
 	}
 };
 
