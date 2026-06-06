@@ -19,7 +19,6 @@ const tabList = [
 	{ tab: 'localization', tabName: 'Localization' },
 	{ tab: 'help_info', tabName: 'Help Info' },
 	{ tab: 'apps', tabName: 'Apps' },
-	{ tab: 'blockchain', tabName: 'Blockchain' },
 ];
 const General = ({ user: { configs = [] } = {}, router }) => {
 	const [activeTab, setActiveTab] = useState('0');

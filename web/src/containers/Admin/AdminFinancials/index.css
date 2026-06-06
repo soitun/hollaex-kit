@@ -593,3 +593,27 @@
 .asset-exchange-wallet-wrapper .filter-button {
 	min-width: 0%;
 }
+
+.blacklist-addresses-wrapper .header-txt {
+	font-size: 22px;
+	font-weight: bold;
+	margin-top: 0.5rem;
+}
+
+.blacklist-addresses-wrapper .description {
+	color: #c4c4c4;
+	max-width: 40rem;
+}
+
+.blacklist-addresses-wrapper .blacklist-tools {
+	display: flex;
+	align-items: center;
+}
+
+.blacklist-addresses-wrapper .anchor {
+	color: #5d63ff;
+}
+
+.blacklist-addresses-wrapper .break-word {
+	word-break: break-all;
+}
