@@ -30,6 +30,7 @@ const {
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
+const { enforceAddressNotBlacklisted } = require('./blockchain');
 const { client } = require('./database/redis');
 const crypto = require('crypto');
 const uuid = require('uuid/v4');
@@ -339,7 +340,8 @@ const performWithdrawal = (userId, address, currency, amount, opts = {
 			}
 			return user;
 		})
-		.then((user) => {
+		.then(async (user) => {
+			await enforceAddressNotBlacklisted(address, opts.network, user);
 			return getNodeLib().performWithdrawal(user.network_id, address, currency, amount, opts);
 		});
 };
@@ -349,14 +351,16 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 	additionalHeaders: null
 }) {
 	const user = await getUserByKitId(userId);
+	// validateWithdrawal already enforces the address blacklist, so no extra check here
 	await validateWithdrawal(user, address, amount, currency, opts.network);
 	return await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, opts);
 }
 
-const performWithdrawalNetwork = (networkId, address, currency, amount, opts = {
+const performWithdrawalNetwork = async (networkId, address, currency, amount, opts = {
 	network: null,
 	additionalHeaders: null
 }) => {
+	await enforceAddressNotBlacklisted(address, opts.network, { network_id: networkId });
 	return getNodeLib().performWithdrawal(networkId, address, currency, amount, opts);
 };
 
@@ -492,6 +496,7 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		if (!isValidAddress(currency, address, network)) {
 			throw new Error(`Invalid ${currency} address: ${address}`);
 		}
+		await enforceAddressNotBlacklisted(address, network, user);
 	}
 
 	if (!user) {

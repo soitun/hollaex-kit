@@ -689,6 +689,118 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+  /admin/blacklist/address:
+    x-swagger-router-controller: admin
+    get:
+      operationId: getBlacklistedAddresses
+      description: Get the list of blacklisted withdrawal addresses
+      tags:
+        - Admin
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        - name: page
+          in: query
+          required: false
+          type: integer
+          format: int32
+          minimum: 1
+        - name: order_by
+          in: query
+          required: false
+          type: string
+          enum: [id, address, network, label, reason, created_by, created_at, updated_at]
+        - name: order
+          in: query
+          required: false
+          type: string
+          enum: [asc, desc]
+        - name: search
+          in: query
+          required: false
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+    post:
+      operationId: postBlacklistedAddress
+      description: Blacklist a withdrawal address
+      tags:
+        - Admin
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - address
+            properties:
+              address:
+                type: string
+                maxLength: 256
+              network:
+                type: string
+                maxLength: 64
+              label:
+                type: string
+                maxLength: 256
+              reason:
+                type: string
+                maxLength: 256
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+    delete:
+      operationId: deleteBlacklistedAddress
+      description: Remove a blacklisted withdrawal address
+      tags:
+        - Admin
+      parameters:
+        - name: id
+          in: query
+          description: Id of the blacklisted address
+          required: true
+          type: integer
+          format: int32
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
   /admin/upload:
     x-swagger-router-controller: admin
     post:
