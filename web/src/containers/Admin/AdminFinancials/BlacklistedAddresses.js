@@ -23,6 +23,8 @@ const BlacklistedAddresses = () => {
 	const [networkInput, setNetworkInput] = useState('');
 	const [labelInput, setLabelInput] = useState('');
 
+	const [removeTarget, setRemoveTarget] = useState(null);
+
 	const fetchAddresses = (params = {}) => {
 		const nextLimit = params.limit || limit;
 		const nextPage = params.page || page;
@@ -124,8 +126,21 @@ const BlacklistedAddresses = () => {
 			});
 	};
 
-	const handleRemove = (id) => {
+	const openRemoveModal = (record) => {
+		setRemoveTarget(record);
+	};
+
+	const closeRemoveModal = () => {
+		setRemoveTarget(null);
+	};
+
+	const handleRemove = () => {
+		if (!removeTarget) {
+			return;
+		}
+		const id = removeTarget.id;
 		setIsLoading(true);
+		setRemoveTarget(null);
 		removeBlacklistedAddress(id)
 			.then(() => {
 				message.success('Address removed from blacklist');
@@ -177,7 +192,8 @@ const BlacklistedAddresses = () => {
 			render: (_, record) => (
 				<span
 					className="anchor underline-text cursor-pointer"
-					onClick={() => handleRemove(record.id)}
+					style={{ cursor: 'pointer' }}
+					onClick={() => openRemoveModal(record)}
 				>
 					Remove
 				</span>
@@ -251,6 +267,52 @@ const BlacklistedAddresses = () => {
 						<div className="separator"></div>
 						<Button type="primary" onClick={handleAdd} disabled={!addressInput}>
 							Add
+						</Button>
+					</div>
+				</div>
+			</Modal>
+			<Modal visible={!!removeTarget} footer={null} onCancel={closeRemoveModal}>
+				<div className="general-geo-wrapper">
+					<div className="title">Remove blacklisted address</div>
+					<div>
+						Are you sure you want to remove this address from the blacklist?
+						Withdrawals to it will no longer be blocked.
+					</div>
+					{removeTarget && (
+						<div className="mt-4">
+							<div className="mt-2">
+								<span className="bold">Address: </span>
+								<span className="break-word">{removeTarget.address}</span>
+							</div>
+							<div className="mt-2">
+								<span className="bold">Network: </span>
+								<span>{removeTarget.network || 'All networks'}</span>
+							</div>
+							<div className="mt-2">
+								<span className="bold">Label: </span>
+								<span>{removeTarget.label || '-'}</span>
+							</div>
+							<div className="mt-2">
+								<span className="bold">Reason: </span>
+								<span>{removeTarget.reason || '-'}</span>
+							</div>
+							<div className="mt-2">
+								<span className="bold">Added: </span>
+								<span>
+									{removeTarget.created_at
+										? moment(removeTarget.created_at).format('YYYY-MM-DD HH:mm')
+										: '-'}
+								</span>
+							</div>
+						</div>
+					)}
+					<div className="btn-wrapper mt-4">
+						<Button type="primary" onClick={closeRemoveModal}>
+							Back
+						</Button>
+						<div className="separator"></div>
+						<Button type="primary" danger onClick={handleRemove}>
+							Remove
 						</Button>
 					</div>
 				</div>
