@@ -1522,7 +1522,7 @@ const getBlacklistedAddresses = (req, res) => {
 
 	const { limit, page, order_by, order, search } = req.swagger.params;
 
-	toolsLib.blockchain.getBlacklistedAddresses({
+	toolsLib.wallet.getBlacklistedAddresses({
 		limit: limit.value,
 		page: page.value,
 		order_by: order_by.value,
@@ -1546,7 +1546,7 @@ const postBlacklistedAddress = (req, res) => {
 
 	loggerAdmin.info(req.uuid, 'controllers/admin/postBlacklistedAddress', 'address', address, 'network', network);
 
-	toolsLib.blockchain.createBlacklistedAddress({
+	toolsLib.wallet.createBlacklistedAddress({
 		address,
 		network,
 		label,
@@ -1571,7 +1571,7 @@ const deleteBlacklistedAddress = (req, res) => {
 
 	loggerAdmin.info(req.uuid, 'controllers/admin/deleteBlacklistedAddress', 'id', id);
 
-	toolsLib.blockchain.deleteBlacklistedAddress(id)
+	toolsLib.wallet.deleteBlacklistedAddress(id)
 		.then((result) => {
 			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], { id });
 			return res.json(result);
