@@ -4953,6 +4953,50 @@ const functionMessages = {
 			'zh': `该币种的提款已禁用：${coin}`,
 		};
 	},
+	'Deposit for coin': (params) => {
+		const [coin, network, availableNetworks] = params;
+		return {
+			'en': `Deposit for coin ${coin} is disabled on the ${network} network. Available networks for deposit: ${availableNetworks}`,
+			'de': `Die Einzahlung für die Münze ${coin} ist im ${network}-Netzwerk deaktiviert. Verfügbare Netzwerke für Einzahlungen: ${availableNetworks}`,
+			'es': `El depósito para la moneda ${coin} está deshabilitado en la red ${network}. Redes disponibles para depósito: ${availableNetworks}`,
+			'fa': `واریز برای سکه ${coin} روی شبکه ${network} غیرفعال است. شبکه‌های قابل استفاده برای واریز: ${availableNetworks}`,
+			'fr': `Le dépôt pour la pièce ${coin} est désactivé sur le réseau ${network}. Réseaux disponibles pour le dépôt : ${availableNetworks}`,
+			'id': `Deposit untuk koin ${coin} dinonaktifkan di jaringan ${network}. Jaringan yang tersedia untuk deposit: ${availableNetworks}`,
+			'it': `Il deposito per la moneta ${coin} è disabilitato sulla rete ${network}. Reti disponibili per il deposito: ${availableNetworks}`,
+			'ja': `コイン${coin}の入金は${network}ネットワークで無効になっています。入金可能なネットワーク：${availableNetworks}`,
+			'ko': `코인 ${coin}의 입금이 ${network} 네트워크에서 비활성화되었습니다. 입금 가능한 네트워크: ${availableNetworks}`,
+			'mn': `${coin} зоосны орлого ${network} сүлжээнд идэвхгүй байна. Орлого хийх боломжтой сүлжээ: ${availableNetworks}`,
+			'nl': `Storten voor munt ${coin} is uitgeschakeld op het ${network}-netwerk. Beschikbare netwerken voor storten: ${availableNetworks}`,
+			'pt': `O depósito para a moeda ${coin} está desativado na rede ${network}. Redes disponíveis para depósito: ${availableNetworks}`,
+			'ru': `Депозит для монеты ${coin} отключён в сети ${network}. Доступные сети для депозита: ${availableNetworks}`,
+			'tr': `${coin} para birimi için yatırım ${network} ağında devre dışı. Yatırım için kullanılabilir ağlar: ${availableNetworks}`,
+			'ur': `سکہ ${coin} کے لیے جمع کرانا ${network} نیٹ ورک پر غیر فعال ہے۔ جمع کرانے کے لیے دستیاب نیٹ ورکس: ${availableNetworks}`,
+			'vi': `Nạp tiền cho đồng ${coin} đã bị vô hiệu hóa trên mạng ${network}. Các mạng khả dụng để nạp tiền: ${availableNetworks}`,
+			'zh': `币种 ${coin} 的存款在 ${network} 网络上已禁用。可用于存款的网络：${availableNetworks}`,
+		};
+	},
+	'Withdrawal for coin': (params) => {
+		const [coin, network, availableNetworks] = params;
+		return {
+			'en': `Withdrawal for coin ${coin} is disabled on the ${network} network. Available networks for withdrawal: ${availableNetworks}`,
+			'de': `Die Auszahlung für die Münze ${coin} ist im ${network}-Netzwerk deaktiviert. Verfügbare Netzwerke für Auszahlungen: ${availableNetworks}`,
+			'es': `El retiro para la moneda ${coin} está deshabilitado en la red ${network}. Redes disponibles para retiro: ${availableNetworks}`,
+			'fa': `برداشت برای سکه ${coin} روی شبکه ${network} غیرفعال است. شبکه‌های قابل استفاده برای برداشت: ${availableNetworks}`,
+			'fr': `Le retrait pour la pièce ${coin} est désactivé sur le réseau ${network}. Réseaux disponibles pour le retrait : ${availableNetworks}`,
+			'id': `Penarikan untuk koin ${coin} dinonaktifkan di jaringan ${network}. Jaringan yang tersedia untuk penarikan: ${availableNetworks}`,
+			'it': `Il prelievo per la moneta ${coin} è disabilitato sulla rete ${network}. Reti disponibili per il prelievo: ${availableNetworks}`,
+			'ja': `コイン${coin}の出金は${network}ネットワークで無効になっています。出金可能なネットワーク：${availableNetworks}`,
+			'ko': `코인 ${coin}의 출금이 ${network} 네트워크에서 비활성화되었습니다. 출금 가능한 네트워크: ${availableNetworks}`,
+			'mn': `${coin} зоосны татан авалт ${network} сүлжээнд идэвхгүй байна. Татан авах боломжтой сүлжээ: ${availableNetworks}`,
+			'nl': `Opnemen voor munt ${coin} is uitgeschakeld op het ${network}-netwerk. Beschikbare netwerken voor opnemen: ${availableNetworks}`,
+			'pt': `O saque para a moeda ${coin} está desativado na rede ${network}. Redes disponíveis para saque: ${availableNetworks}`,
+			'ru': `Вывод для монеты ${coin} отключён в сети ${network}. Доступные сети для вывода: ${availableNetworks}`,
+			'tr': `${coin} para birimi için çekim ${network} ağında devre dışı. Çekim için kullanılabilir ağlar: ${availableNetworks}`,
+			'ur': `سکہ ${coin} کے لیے واپسی ${network} نیٹ ورک پر غیر فعال ہے۔ واپسی کے لیے دستیاب نیٹ ورکس: ${availableNetworks}`,
+			'vi': `Rút tiền cho đồng ${coin} đã bị vô hiệu hóa trên mạng ${network}. Các mạng khả dụng để rút tiền: ${availableNetworks}`,
+			'zh': `币种 ${coin} 的提款在 ${network} 网络上已禁用。可用于提款的网络：${availableNetworks}`,
+		};
+	},
 	'Verification level must be at or above': (level) => {
 		return {
 			'en': `Verification level must be at or above ${level}`,
@@ -5028,6 +5072,8 @@ functionMessages['Withdrawals are disabled for coin'].code = 1006;
 functionMessages['Verification level must be at or above'].code = 1007;
 functionMessages['Invalid verification level'].code = 1008;
 functionMessages['Communicator operators cannot update value'].code = 1009;
+functionMessages['Deposit for coin'].code = 1010;
+functionMessages['Withdrawal for coin'].code = 1011;
 
 exports.getMessage = (message_type, lang = 'en') => {
 	const entry = messages?.[message_type];

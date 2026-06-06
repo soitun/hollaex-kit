@@ -193,6 +193,8 @@ exports.INVALID_COIN = (coin) => `Invalid coin: ${coin}`;
 exports.INVALID_AMOUNT = (amount) => `Invalid amount: ${amount}`;
 exports.DEPOSIT_DISABLED_FOR_COIN = (coin) => `Deposits are disabled for coin: ${coin}`;
 exports.WITHDRAWAL_DISABLED_FOR_COIN = (coin) => `Withdrawals are disabled for coin: ${coin}`;
+exports.DEPOSIT_DISABLED_FOR_COIN_ON_NETWORK = (coin, network, availableNetworks) => `Deposit for coin ${coin} is disabled on the ${network} network. Available networks for deposit: ${availableNetworks}`;
+exports.WITHDRAWAL_DISABLED_FOR_COIN_ON_NETWORK = (coin, network, availableNetworks) => `Withdrawal for coin ${coin} is disabled on the ${network} network. Available networks for withdrawal: ${availableNetworks}`;
 exports.WITHDRAWAL_DAILY_LIMIT_REACHED = 'You have reached your daily withdrawal limit';
 exports.WITHDRAWAL_MONTHLY_LIMIT_REACHED = 'You have reached your monthly withdrawal limit';
 exports.UPGRADE_VERIFICATION_LEVEL = (level) => `Verification level must be at or above ${level}`;

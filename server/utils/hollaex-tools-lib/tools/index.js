@@ -23,7 +23,7 @@ module.exports = {
 	order,
 	plugin,
 	user,
-	wallet,
+	wallet: { ...wallet, ...blockchain },
 	tier,
 	security,
 	coin,
@@ -32,6 +32,5 @@ module.exports = {
 	broker,
 	stake,
 	p2p,
-	verification,
-	blockchain
+	verification
 };

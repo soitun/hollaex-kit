@@ -2586,6 +2586,11 @@ paths:
           type: boolean
           description: Waiting status of the deposit.
         - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
+        - in: query
           name: format
           description: Specify data format
           required: false
@@ -2712,6 +2717,11 @@ paths:
           required: false
           type: boolean
           description: Waiting status of the deposit.
+        - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
         - in: query
           name: format
           description: Specify data format
@@ -5795,6 +5805,11 @@ paths:
           type: boolean
           description: Waiting status of the deposit.
         - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
+        - in: query
           name: format
           description: Specify data format
           required: false
@@ -5920,6 +5935,11 @@ paths:
           required: false
           type: boolean
           description: Waiting status of the deposit.
+        - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
         - in: query
           name: format
           description: Specify data format
