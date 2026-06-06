@@ -256,7 +256,8 @@ exports.KIT_CONFIG_KEYS = [
 	'auto_deposit',
 	'auto_withdrawal',
 	'force_two_factor_authentication_withdrawal',
-	'cloudflare_ipcountry'
+	'cloudflare_ipcountry',
+	'blockchain'
 ];
 
 exports.KIT_SECRETS_KEYS = [

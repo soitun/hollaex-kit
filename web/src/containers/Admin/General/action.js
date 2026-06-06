@@ -40,3 +40,26 @@ export const getEmailType = () => {
 	let url = '/admin/email/types';
 	return requestAuthenticated(url);
 };
+
+export const getBlacklistedAddresses = (params = {}) => {
+	const url = `/admin/blacklist/address?${querystring.stringify(params)}`;
+	return requestAuthenticated(url);
+};
+
+export const addBlacklistedAddress = (values) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify(values),
+	};
+	return requestAuthenticated('/admin/blacklist/address', options);
+};
+
+export const removeBlacklistedAddress = (id) => {
+	const options = {
+		method: 'DELETE',
+	};
+	return requestAuthenticated(
+		`/admin/blacklist/address?${querystring.stringify({ id })}`,
+		options
+	);
+};
