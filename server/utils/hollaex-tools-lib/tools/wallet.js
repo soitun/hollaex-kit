@@ -352,8 +352,8 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 }) {
 	const user = await getUserByKitId(userId);
 	// validateWithdrawal already enforces the address blacklist, so no extra check here
-	await validateWithdrawal(user, address, amount, currency, opts.network);
-	return await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, opts);
+	const { fee_markup } = await validateWithdrawal(user, address, amount, currency, opts.network);
+	return await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
 }
 
 const performWithdrawalNetwork = async (networkId, address, currency, amount, opts = {
