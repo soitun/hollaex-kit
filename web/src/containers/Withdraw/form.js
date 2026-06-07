@@ -183,9 +183,12 @@ class Form extends Component {
 				...data,
 				email: email,
 				amount: getWithdrawAmount,
-				address: optionalTag
-					? `${getWithdrawAddress}:${optionalTag}`
-					: getWithdrawAddress,
+				// Pass the raw address and let onSubmitWithdraw combine it with
+				// destination_tag once. Pre-combining here while leaving
+				// destination_tag in the payload caused a double append
+				// (addr:tag:tag), breaking the server-side whitelist match.
+				address: getWithdrawAddress,
+				destination_tag: optionalTag || undefined,
 				fee_coin: currentCurrency,
 				network: network ? network : defaultNetwork,
 			};
