@@ -13,6 +13,7 @@ import { Dialog, OtpForm, Loader, SmartTarget } from 'components';
 import {
 	setWithdrawEmailConfirmation,
 	setWithdrawNotificationError,
+	setWithdrawNotificationSuccess,
 } from './notifications';
 import { BASE_CURRENCY } from 'config/constants';
 import {
@@ -25,6 +26,7 @@ import {
 import { setWithdrawOptionaltag, withdrawCurrency } from 'actions/appActions';
 import { renderInformation } from 'containers/Wallet/components';
 import { assetsSelector } from 'containers/Wallet/utils';
+import { getAddressBookDetails } from 'containers/Wallet/actions';
 import Fiat from './Fiat';
 import Image from 'components/Image';
 import STRINGS from 'config/localizedStrings';
@@ -62,6 +64,30 @@ class Form extends Component {
 		prevFee: null,
 		currency: '',
 		renderFiat: false,
+		whitelistedAddresses: [],
+	};
+
+	componentDidMount() {
+		// Load trusted (whitelisted) addresses so we can skip the email + 2FA
+		// confirmation when withdrawing to one of them.
+		getAddressBookDetails()
+			.then((res) => {
+				this.setState({
+					whitelistedAddresses: (res?.addresses || []).filter(
+						(entry) => entry.whitelisted
+					),
+				});
+			})
+			.catch(() => {});
+	}
+
+	isWhitelistedAddress = (address, currency, network) => {
+		return this.state.whitelistedAddresses.some(
+			(entry) =>
+				entry.address === address &&
+				entry.currency === currency &&
+				entry.network === network
+		);
 	};
 
 	UNSAFE_componentWillReceiveProps(nextProps) {
@@ -174,7 +200,17 @@ class Form extends Component {
 			coins[currentCurrency]?.network !== 'other'
 				? coins[currentCurrency]?.network
 				: coins[currentCurrency]?.symbol;
-		if (this.props.otp_enabled) {
+		const resolvedAddress = optionalTag
+			? `${getWithdrawAddress}:${optionalTag}`
+			: getWithdrawAddress;
+		const isWhitelisted = this.isWhitelistedAddress(
+			resolvedAddress,
+			currentCurrency,
+			network ? network : defaultNetwork
+		);
+		// Trusted addresses skip the 2FA prompt — the server processes them
+		// directly without an OTP or email confirmation.
+		if (this.props.otp_enabled && !isWhitelisted) {
 			this.setState({ dialogOtpOpen: true });
 		} else {
 			this.onCloseDialog();
@@ -541,7 +577,14 @@ const WithdrawForm = reduxForm({
 	onSubmitFail: setWithdrawNotificationError,
 	onSubmitSuccess: (data, dispatch) => {
 		dispatch(reset(FORM_NAME));
-		setWithdrawEmailConfirmation(data, dispatch);
+		// Trusted (whitelisted) addresses are processed immediately on the server
+		// and skip the email confirmation step — show the withdrawal success
+		// notification instead of the "check your email" prompt.
+		if (data && data.direct) {
+			setWithdrawNotificationSuccess(data, dispatch);
+		} else {
+			setWithdrawEmailConfirmation(data, dispatch);
+		}
 	},
 	enableReinitialize: true,
 	validate,

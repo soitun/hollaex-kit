@@ -69,6 +69,10 @@ const {
 	ADDRESSBOOK_MISSING_FIELDS,
 	PAYMENT_DETAIL_NOT_FOUND,
 	ADDRESSBOOK_ALREADY_EXISTS,
+	ADDRESS_NOT_IN_ADDRESSBOOK,
+	ADDRESS_ALREADY_WHITELISTED,
+	INVALID_WHITELIST_TOKEN,
+	EXPIRED_WHITELIST_TOKEN,
 	UNAUTHORIZED_UPDATE_METHOD,
 	INVALID_AUTOTRADE_CONFIG,
 	GOOGLE_TOKEN_INVALID_ISSUER,
@@ -94,6 +98,7 @@ const {
 	USER_FIELD_ADMIN_LOG,
 	ADDRESS_FIELDS,
 	CRYPTO_ADDRESS_FIELDS,
+	ADDRESSBOOK_WHITELIST_REQUEST_KEY,
 	ID_FIELDS,
 	SETTING_KEYS,
 	OMITTED_USER_FIELDS,
@@ -3951,6 +3956,19 @@ const updateUserAddresses = async (user_id, data) => {
 		} else {
 			addressObj.created_at = hasCreatedAt;
 		}
+
+		// Trust can never be granted through this endpoint — it is only set via the
+		// verified whitelist flow (requestAddressWhitelist/confirmAddressWhitelist).
+		// A new/edited address is always untrusted; an existing address keeps its
+		// stored trust only if the client still wants it true; clients may revoke.
+		const existing = userAddressBook?.addresses?.find?.(address =>
+			address.address === addressObj.address &&
+			address.network === addressObj.network &&
+			address.currency === addressObj.currency
+		);
+		addressObj.whitelisted = addressObj.whitelisted === true
+			? existing?.whitelisted === true
+			: false;
 	});
 
 	// Check for duplicate labels in the payload
@@ -3985,6 +4003,108 @@ const updateUserAddresses = async (user_id, data) => {
 	}
 
 	return userAddressBook;
+};
+
+const findAddressBookEntry = (addresses, address, currency, network) =>
+	(addresses || []).find(entry =>
+		entry.address === address &&
+		entry.currency === currency &&
+		entry.network === network
+	);
+
+const isAddressWhitelisted = async (user_id, address, currency, network) => {
+	const userAddressBook = await getModel('userAddressBook').findOne({ where: { user_id } });
+	if (!userAddressBook) {
+		return false;
+	}
+	const entry = findAddressBookEntry(userAddressBook.addresses, address, currency, network);
+	return entry?.whitelisted === true;
+};
+
+const requestAddressWhitelist = async (user_id, { address, currency, network }, opts = {
+	otpCode: null,
+	domain: null,
+	ip: null,
+	version: null,
+	verification_method: null
+}) => {
+	const user = await getUserByKitId(user_id);
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	const userAddressBook = await getModel('userAddressBook').findOne({ where: { user_id } });
+	const entry = findAddressBookEntry(userAddressBook?.addresses, address, currency, network);
+	if (!entry) {
+		throw new Error(ADDRESS_NOT_IN_ADDRESSBOOK);
+	}
+	if (entry.whitelisted === true) {
+		throw new Error(ADDRESS_ALREADY_WHITELISTED);
+	}
+
+	const validOtp = await verifyOtpBeforeAction(user_id, opts.otpCode);
+	if (!validOtp) {
+		throw new Error(INVALID_OTP_CODE);
+	}
+
+	const token = generateVerificationCode(opts.version);
+
+	await client.hsetAsync(
+		ADDRESSBOOK_WHITELIST_REQUEST_KEY,
+		token,
+		JSON.stringify({ user_id, address, currency, network, timestamp: Date.now() })
+	);
+
+	await sendVerificationCode(user, {
+		action_type: 'addressbook_whitelist',
+		verification_code: token,
+		emailType: MAILTYPE.ADDRESSBOOK_WHITELIST_REQUEST,
+		emailData: {
+			address,
+			currency,
+			network,
+			label: entry.label,
+			code: token,
+			ip: opts.ip
+		},
+		requestVerificationMethod: opts.verification_method,
+		domain: opts.domain
+	});
+
+	return { message: 'Success' };
+};
+
+const confirmAddressWhitelist = async (user_id, token) => {
+	const stored = await client.hgetAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, token);
+	if (!stored) {
+		throw new Error(INVALID_WHITELIST_TOKEN);
+	}
+
+	await client.hdelAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, token);
+
+	const request = JSON.parse(stored);
+	if (request.user_id !== user_id) {
+		throw new Error(INVALID_WHITELIST_TOKEN);
+	}
+	if (Date.now() - request.timestamp > getKitSecrets().security.withdrawal_token_expiry) {
+		throw new Error(EXPIRED_WHITELIST_TOKEN);
+	}
+
+	const userAddressBook = await getModel('userAddressBook').findOne({ where: { user_id } });
+	const entry = findAddressBookEntry(userAddressBook?.addresses, request.address, request.currency, request.network);
+	if (!entry) {
+		throw new Error(ADDRESS_NOT_IN_ADDRESSBOOK);
+	}
+
+	const addresses = userAddressBook.addresses.map(address =>
+		address.address === request.address &&
+		address.currency === request.currency &&
+		address.network === request.network
+			? { ...address, whitelisted: true }
+			: address
+	);
+
+	return userAddressBook.update({ addresses }, { fields: ['addresses'] });
 };
 
 const getPaymentDetails = async (user_id, opts = {
@@ -5714,6 +5834,9 @@ module.exports = {
 	fetchUserTradingVolume,
 	updateUserAddresses,
 	fetchUserAddressBook,
+	isAddressWhitelisted,
+	requestAddressWhitelist,
+	confirmAddressWhitelist,
 	getPaymentDetails,
 	createPaymentDetail,
 	updatePaymentDetail,

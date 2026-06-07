@@ -77,6 +77,7 @@ const MAILTYPE = {
 	SUSPICIOUS_LOGIN: 'suspicious_login',
 	SUSPICIOUS_LOGIN_CODE: 'suspicious_login_code',
 	WITHDRAWAL_REQUEST_CODE: 'withdrawal_request_code',
+	ADDRESSBOOK_WHITELIST_REQUEST: 'addressbook_whitelist_request',
 	RESET_PASSWORD_CODE: 'reset_password_code',
 	SIGNUP_CODE: 'signup_code',
 	SET_EMAIL_CODE: 'set_email_code',

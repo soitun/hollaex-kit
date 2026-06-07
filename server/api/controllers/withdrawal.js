@@ -96,15 +96,43 @@ const requestWithdrawal = (req, res) => {
 		network
 	);
 
-	toolsLib.wallet.sendRequestWithdrawalEmail(id, address, amount, currency, version, {
-		network,
-		otpCode: otp_code,
-		ip,
-		domain,
-		verification_method
-	})
-		.then(() => {
-			return res.json({ message: 'Success' });
+	toolsLib.user.isAddressWhitelisted(id, address, currency, network)
+		.then((whitelisted) => {
+			// Trusted (whitelisted) addresses skip the email confirmation and the
+			// 2FA/OTP prompt — the withdrawal is processed immediately. All other
+			// validation (limits, balance, blacklist) still runs inside
+			// performDirectWithdrawal -> validateWithdrawal.
+			if (whitelisted) {
+				return toolsLib.wallet.performDirectWithdrawal(id, address, currency, amount, {
+					network,
+					additionalHeaders: {
+						'x-forwarded-for': req.headers['x-forwarded-for']
+					}
+				})
+					.then((data) => {
+						return res.json({
+							message: 'Withdrawal request is in the queue and will be processed.',
+							direct: true,
+							id: data.id,
+							transaction_id: data.transaction_id,
+							amount: data.amount,
+							currency: data.currency,
+							fee: data.fee,
+							fee_coin: data.fee_coin
+						});
+					});
+			}
+
+			return toolsLib.wallet.sendRequestWithdrawalEmail(id, address, amount, currency, version, {
+				network,
+				otpCode: otp_code,
+				ip,
+				domain,
+				verification_method
+			})
+				.then(() => {
+					return res.json({ message: 'Success' });
+				});
 		})
 		.catch((err) => {
 			loggerWithdrawals.error(

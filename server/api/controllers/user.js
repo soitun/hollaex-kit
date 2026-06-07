@@ -2573,6 +2573,46 @@ const updateUserAddresses = (req, res) => {
 		});
 };
 
+const requestAddressWhitelist = (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/user/requestAddressWhitelist/auth', req.auth);
+
+	const { address, currency, network, otp_code, version, verification_method } = req.swagger.params.data.value;
+	const domain = req.headers['x-real-origin'];
+	const ip = req.headers['x-real-ip'];
+
+	toolsLib.user.requestAddressWhitelist(req.auth.sub.id, { address, currency, network }, {
+		otpCode: otp_code,
+		domain,
+		ip,
+		version,
+		verification_method
+	})
+		.then(() => {
+			return res.json({ message: 'Success' });
+		})
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/requestAddressWhitelist err', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const confirmAddressWhitelist = (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/user/confirmAddressWhitelist/auth', req.auth);
+
+	const { token } = req.swagger.params.data.value;
+
+	toolsLib.user.confirmAddressWhitelist(req.auth.sub.id, token)
+		.then((data) => {
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/confirmAddressWhitelist err', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 const getPaymentDetails = (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/user/getPaymentDetails/auth', req.auth);
 
@@ -3194,6 +3234,8 @@ module.exports = {
 	fetchUserTradingVolume,
 	updateUserAddresses,
 	fetchUserAddressBook,
+	requestAddressWhitelist,
+	confirmAddressWhitelist,
 	getPaymentDetails,
 	createPaymentDetail,
 	updatePaymentDetail,

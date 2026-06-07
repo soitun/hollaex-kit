@@ -306,6 +306,7 @@ exports.HOLLAEX_NETWORK_PATH_ACTIVATE = '/exchange/activate';
 // API
 exports.INIT_CHANNEL = 'channel:init';
 exports.WITHDRAWALS_REQUEST_KEY = 'withdrawals:request';
+exports.ADDRESSBOOK_WHITELIST_REQUEST_KEY = 'addressbook:whitelist:request';
 exports.HMAC_TOKEN_KEY = 'hmac:token';
 exports.EVENTS_CHANNEL = 'channel:events';
 exports.CONFIGURATION_CHANNEL = CONFIGURATION_CHANNEL;
@@ -768,7 +769,7 @@ exports.USER_FIELD_ADMIN_LOG = [
 ];
 
 exports.ADDRESS_FIELDS = ['city', 'address', 'country', 'postal_code'];
-exports.CRYPTO_ADDRESS_FIELDS = ['address', 'network', 'label', 'currency'];
+exports.CRYPTO_ADDRESS_FIELDS = ['address', 'network', 'label', 'currency', 'whitelisted'];
 
 exports.VERIFY_STATUS = {
 	EMPTY: 0,
