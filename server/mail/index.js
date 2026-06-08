@@ -1,5 +1,6 @@
 'use strict';
 
+const { isEmail } = require('validator');
 const { formatDate, getCountryFromIp, sendSMTPEmail, sendSMTPTestEmail } = require('./utils');
 const payloadTemplate = require('./templates/helpers/payloadTemplate');
 const { loggerEmail } = require('../config/logger');
@@ -137,6 +138,26 @@ const sendEmail = (
 		default:
 			return;
 	}
+
+	// Central deliverability guard: drop undeliverable recipients before
+	// hitting SMTP. Phone-signup ("sms") users have a synthetic, intentionally
+	// invalid email (`<digits>_sms`, no @), so isEmail() filters them out here
+	// and they no longer receive dead activity notifications (2FA, deposits,
+	// etc). Audit-routed mail types override ToAddresses with the audit inbox,
+	// so those are unaffected.
+	// require_tld:false keeps internal/no-TLD relay addresses (e.g. admin@exir)
+	// deliverable; the synthetic phone-signup email has no @ so it is rejected
+	// regardless.
+	const isDeliverable = (address) => isEmail(String(address || '').trim(), { require_tld: false });
+	to.ToAddresses = (to.ToAddresses || []).filter(isDeliverable);
+	if (to.BccAddresses) {
+		to.BccAddresses = to.BccAddresses.filter(isDeliverable);
+	}
+	if (to.ToAddresses.length === 0) {
+		loggerEmail.info('mail/sendEmail skipping send to undeliverable recipient', type, receiver);
+		return;
+	}
+
 	const messageContent = generateMessageContent(
 		type,
 		receiver,
