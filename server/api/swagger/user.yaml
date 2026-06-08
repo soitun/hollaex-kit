@@ -352,6 +352,99 @@ paths:
                       type: string
                     currency:
                       type: string
+                    whitelisted:
+                      type: boolean
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ObjectResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-security-scopes:
+        - user
+  /user/addressbook/whitelist:
+    x-swagger-router-controller: user
+    post:
+      description: Request to mark an address book address as trusted (whitelisted). Sends an email confirmation code and requires OTP if enabled.
+      operationId: requestAddressWhitelist
+      tags:
+        - User
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - address
+              - currency
+              - network
+            properties:
+              address:
+                type: string
+                maxLength: 256
+              currency:
+                type: string
+                maxLength: 256
+              network:
+                type: string
+                minLength: 1
+                maxLength: 10
+              otp_code:
+                type: string
+                minLength: 6
+                maxLength: 6
+              version:
+                type: string
+                enum:
+                  - v2
+                  - v3
+                  - v4
+              verification_method:
+                $ref: '#/definitions/RequestVerificationMethod'
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/MessageResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-security-scopes:
+        - user
+  /user/addressbook/whitelist/confirm:
+    x-swagger-router-controller: user
+    post:
+      description: Confirm a trusted (whitelisted) address request using the emailed token.
+      operationId: confirmAddressWhitelist
+      tags:
+        - User
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - token
+            properties:
+              token:
+                type: string
+                maxLength: 256
       responses:
         200:
           description: Success

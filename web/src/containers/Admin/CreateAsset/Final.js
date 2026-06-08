@@ -75,6 +75,7 @@ const Final = ({
 		isUpdateRequired = true;
 	}
 	const { meta = {}, type } = coinFormData;
+	const isFiatAsset = (type || '').toLowerCase() === 'fiat';
 	let coinData = {};
 	allCoins.forEach((item) => {
 		if (item.symbol === coinFormData.symbol) {
@@ -87,7 +88,7 @@ const Final = ({
 
 	const showMintAndBurnButtons =
 		coinFormData?.verified &&
-		(coinFormData?.owner_id === user_id || type === 'fiat');
+		(coinFormData?.owner_id === user_id || isFiatAsset);
 
 	const { withdrawal_fees = {}, deposit_fees = {} } = coinData;
 	const { onramp = {} } = constants;
@@ -1341,9 +1342,9 @@ const Final = ({
 				<div style={{ position: 'absolute' }}>
 					<h2>{coinFormData?.symbol?.toUpperCase()} Fee Markups</h2>
 					<h5>
-						Below are the blockchain protocols that this asset(
-						{coinFormData?.symbol?.toUpperCase()}) operates on for deposits and
-						withdrawals
+						{isFiatAsset
+							? `Fee markups are not applicable for fiat assets like ${coinFormData?.symbol?.toUpperCase()}.`
+							: `Below are the blockchain protocols that this asset(${coinFormData?.symbol?.toUpperCase()}) operates on for deposits and withdrawals`}
 					</h5>
 
 					<div
@@ -1385,45 +1386,57 @@ const Final = ({
 						)}
 					</div>
 
-					<h4>Chain markup fee:</h4>
-					<div style={{ marginBottom: 15 }}>
-						You can adjust withdrawal markup fee for each specific blockchain
-						for this coin. This fee is an additional fee added to the default
-						network fee (blockchain fee) and is a fee collected as as source of
-						revenue by the exchange operators.
-					</div>
+					{isFiatAsset ? (
+						<div className="fee-markup-not-applicable">
+							<h4>Not applicable for fiat assets</h4>
+							<div>
+								Fiat assets do not operate on blockchain networks, so there are
+								no network fee markups to configure here.
+							</div>
+						</div>
+					) : (
+						<Fragment>
+							<h4>Chain markup fee:</h4>
+							<div style={{ marginBottom: 15 }}>
+								You can adjust withdrawal markup fee for each specific
+								blockchain for this coin. This fee is an additional fee added to
+								the default network fee (blockchain fee) and is a fee collected
+								as as source of revenue by the exchange operators.
+							</div>
 
-					<Table
-						className="blue-admin-table"
-						columns={columns}
-						dataSource={coinFormData?.network?.split(',')?.map((net) => {
-							return {
-								symbol: coinFormData.symbol,
-								net: net?.toUpperCase(),
-								fullname: coinFormData.fullname,
-								withdrawal_fee_markup:
-									coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
-										net?.toLowerCase()
-									]?.withdrawal?.value,
-								symbol_withdrawal:
-									coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
-										net?.toLowerCase()
-									]?.withdrawal?.symbol,
-								symbol_deposit:
-									coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
-										net?.toLowerCase()
-									]?.deposit?.symbol,
-								deposit_fee_markup:
-									coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
-										net?.toLowerCase()
-									]?.deposit?.value,
-							};
-						})}
-						rowKey={(data) => {
-							return data.id;
-						}}
-						pagination={false}
-					/>
+							<Table
+								className="blue-admin-table"
+								columns={columns}
+								dataSource={coinFormData?.network?.split(',')?.map((net) => {
+									return {
+										symbol: coinFormData.symbol,
+										net: net?.toUpperCase(),
+										fullname: coinFormData.fullname,
+										withdrawal_fee_markup:
+											coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
+												net?.toLowerCase()
+											]?.withdrawal?.value,
+										symbol_withdrawal:
+											coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
+												net?.toLowerCase()
+											]?.withdrawal?.symbol,
+										symbol_deposit:
+											coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
+												net?.toLowerCase()
+											]?.deposit?.symbol,
+										deposit_fee_markup:
+											coinCustomizations[coinFormData?.symbol]?.fee_markups?.[
+												net?.toLowerCase()
+											]?.deposit?.value,
+									};
+								})}
+								rowKey={(data) => {
+									return data.id;
+								}}
+								pagination={false}
+							/>
+						</Fragment>
+					)}
 
 					{/* <div style={{ marginTop: 15 }}>Looking for universal markup fees?</div>
 					<div style={{ textDecoration: 'underline' }} onClick={() => { handleTabChange(1)}} >Click Here</div> */}

@@ -20,7 +20,12 @@ import {
 import { renderBackToWallet } from 'containers/Deposit/utils';
 import { openContactForm, setSnackNotification } from 'actions/appActions';
 import { renderNeedHelpAction } from './components';
-import { getAddressBookDetails, setUserLabelAndAddress } from './actions';
+import {
+	getAddressBookDetails,
+	setUserLabelAndAddress,
+	requestWhitelistAddress,
+	confirmWhitelistAddress,
+} from './actions';
 import { getNetworkNameByKey } from 'utils/wallet';
 
 const AddressBook = ({
@@ -32,6 +37,7 @@ const AddressBook = ({
 	constants = { links: {} },
 	setSnackNotification,
 	openContactForm,
+	otp_enabled,
 }) => {
 	const [getUserData, setGetUserData] = useState([]);
 	const [renderPopUps, setRenderPopUps] = useState({
@@ -40,6 +46,15 @@ const AddressBook = ({
 		step3: false,
 	});
 	const [userLabel, setUserLabel] = useState('');
+	const [addAsTrusted, setAddAsTrusted] = useState(false);
+	const [trustFlow, setTrustFlow] = useState({
+		open: false,
+		step: 'otp',
+		entry: null,
+		otpCode: '',
+		emailCode: '',
+		loading: false,
+	});
 	const [topAssets, setTopAssets] = useState([]);
 	const [selectedAsset, setSelectedAsset] = useState({
 		selectedCurrency: null,
@@ -159,6 +174,41 @@ const AddressBook = ({
 			),
 		},
 		{
+			stringId: 'ADDRESS_BOOK.TRUSTED',
+			label: STRINGS['ADDRESS_BOOK.TRUSTED'],
+			key: 'trusted',
+			renderCell: (data, key) => (
+				<td key={key}>
+					<div className="d-flex justify-content-center align-items-center">
+						{data?.whitelisted ? (
+							<>
+								<span className="text-success mr-2">
+									{STRINGS['ADDRESS_BOOK.TRUSTED_YES']}
+								</span>
+								<div
+									className="link-content fs-13 text-uppercase remove-btn"
+									onClick={() => onRevokeTrust(data)}
+								>
+									<EditWrapper stringId="ADDRESS_BOOK.REVOKE_TRUST">
+										{STRINGS['ADDRESS_BOOK.REVOKE_TRUST']}
+									</EditWrapper>
+								</div>
+							</>
+						) : (
+							<div
+								className="blue-link fs-13 text-uppercase pointer"
+								onClick={() => onOpenTrustFlow(data)}
+							>
+								<EditWrapper stringId="ADDRESS_BOOK.MARK_TRUSTED">
+									{STRINGS['ADDRESS_BOOK.MARK_TRUSTED']}
+								</EditWrapper>
+							</div>
+						)}
+					</div>
+				</td>
+			),
+		},
+		{
 			stringId: 'ADDRESS_BOOK.REMOVE',
 			label: STRINGS['ADDRESS_BOOK.REMOVE'],
 			key: 'remove',
@@ -228,11 +278,107 @@ const AddressBook = ({
 		}));
 		setIsValidAddress(null);
 		setUserLabel('');
+		if (currStep === 'step1' || currStep === 'step3') {
+			setAddAsTrusted(false);
+		}
 	};
 
 	const onHandleRemove = (data) => {
 		setRenderPopUps((prev) => ({ ...prev, remove: true }));
 		setSelectedAsset((prev) => ({ ...prev, selectedData: data }));
+	};
+
+	const onCloseTrustFlow = () => {
+		setTrustFlow({
+			open: false,
+			step: 'otp',
+			entry: null,
+			otpCode: '',
+			emailCode: '',
+			loading: false,
+		});
+	};
+
+	const isSameEntry = (a, b) =>
+		a?.address === b?.address &&
+		a?.currency === b?.currency &&
+		a?.network === b?.network;
+
+	const submitTrustRequest = async (entry, otpCode) => {
+		setTrustFlow((prev) => ({ ...prev, loading: true }));
+		try {
+			await requestWhitelistAddress({
+				address: entry.address,
+				currency: entry.currency,
+				network: entry.network,
+				otp_code: otpCode || undefined,
+				version: 'v4',
+			});
+			message.success(STRINGS['ADDRESS_BOOK.TRUST_CODE_SENT']);
+			setTrustFlow((prev) => ({
+				...prev,
+				step: 'code',
+				otpCode: '',
+				loading: false,
+			}));
+		} catch (error) {
+			message.error(error?.data?.message || error.message);
+			setTrustFlow((prev) => ({ ...prev, loading: false }));
+		}
+	};
+
+	const onOpenTrustFlow = (entry) => {
+		if (otp_enabled) {
+			setTrustFlow({
+				open: true,
+				step: 'otp',
+				entry,
+				otpCode: '',
+				emailCode: '',
+				loading: false,
+			});
+		} else {
+			setTrustFlow({
+				open: true,
+				step: 'code',
+				entry,
+				otpCode: '',
+				emailCode: '',
+				loading: false,
+			});
+			submitTrustRequest(entry, '');
+		}
+	};
+
+	const onConfirmTrust = async () => {
+		setTrustFlow((prev) => ({ ...prev, loading: true }));
+		try {
+			await confirmWhitelistAddress(trustFlow.emailCode);
+			setGetUserData((prev) =>
+				prev.map((a) =>
+					isSameEntry(a, trustFlow.entry) ? { ...a, whitelisted: true } : a
+				)
+			);
+			message.success(STRINGS['ADDRESS_BOOK.TRUST_SUCCESS']);
+			onCloseTrustFlow();
+		} catch (error) {
+			message.error(error?.data?.message || error.message);
+			setTrustFlow((prev) => ({ ...prev, loading: false }));
+		}
+	};
+
+	const onRevokeTrust = async (entry) => {
+		const updated = getUserData.map((a) =>
+			isSameEntry(a, entry) ? { ...a, whitelisted: false } : a
+		);
+		setGetUserData(updated);
+		try {
+			const payload = updated.map(({ created_at, ...rest }) => rest);
+			await setUserLabelAndAddress({ addresses: payload });
+			message.success(STRINGS['ADDRESS_BOOK.REVOKE_TRUST_SUCCESS']);
+		} catch (error) {
+			console.error(error);
+		}
 	};
 
 	const onHandlePopUpBtn = (previousStep, nextStep) => {
@@ -302,6 +448,12 @@ const AddressBook = ({
 					await setUserLabelAndAddress({
 						addresses: [currValue, ...restGetUserData],
 					});
+					// If the user opted to trust this address while adding it, kick off
+					// the verified whitelist flow once the address is saved.
+					if (addAsTrusted) {
+						onOpenTrustFlow(currValue);
+						setAddAsTrusted(false);
+					}
 				} catch (error) {
 					console.error(error);
 				}
@@ -321,6 +473,104 @@ const AddressBook = ({
 
 	return (
 		<div className="address-book-wrapper">
+			{trustFlow.open && (
+				<Dialog
+					isOpen={trustFlow.open}
+					onCloseDialog={onCloseTrustFlow}
+					className="address_book_popup_wrapper"
+					label="address-book-trust-popup"
+				>
+					<div className="address-book-popup-wrapper">
+						<div className="address-book-title">
+							<EditWrapper stringId="ADDRESS_BOOK.TRUST_VERIFY_TITLE">
+								{STRINGS['ADDRESS_BOOK.TRUST_VERIFY_TITLE']}
+							</EditWrapper>
+						</div>
+						<div className="mt-2">
+							<EditWrapper stringId="ADDRESS_BOOK.TRUST_VERIFY_DESC">
+								{STRINGS['ADDRESS_BOOK.TRUST_VERIFY_DESC']}
+							</EditWrapper>
+						</div>
+						<div className="mt-3">
+							<span>{trustFlow.entry?.label}</span>
+							<div className="text-break">{trustFlow.entry?.address}</div>
+						</div>
+						{trustFlow.step === 'otp' ? (
+							<div className="mt-3">
+								<div className="confirm-title-text mb-2">
+									<EditWrapper stringId="ADDRESS_BOOK.TRUST_OTP_DESC">
+										{STRINGS['ADDRESS_BOOK.TRUST_OTP_DESC']}
+									</EditWrapper>
+								</div>
+								<Input
+									placeholder={STRINGS['ADDRESS_BOOK.TRUST_OTP_LABEL']}
+									value={trustFlow.otpCode}
+									onChange={(e) =>
+										setTrustFlow((prev) => ({
+											...prev,
+											otpCode: e.target.value,
+										}))
+									}
+								/>
+								<div className="address-book-popup-button-wrapper">
+									<RenderBtn
+										string="REFERRAL_LINK.BACK"
+										buttonClassName="back-btn"
+										onHandleClick={onCloseTrustFlow}
+									/>
+									<RenderBtn
+										string="ADDRESS_BOOK.TRUST_CONTINUE"
+										buttonClassName={
+											!trustFlow.otpCode || trustFlow.loading
+												? 'disable-btn'
+												: 'next-btn'
+										}
+										disabled={!trustFlow.otpCode || trustFlow.loading}
+										onHandleClick={() =>
+											submitTrustRequest(trustFlow.entry, trustFlow.otpCode)
+										}
+									/>
+								</div>
+							</div>
+						) : (
+							<div className="mt-3">
+								<div className="confirm-title-text mb-2">
+									<EditWrapper stringId="ADDRESS_BOOK.TRUST_CODE_DESC">
+										{STRINGS['ADDRESS_BOOK.TRUST_CODE_DESC']}
+									</EditWrapper>
+								</div>
+								<Input
+									placeholder={STRINGS['ADDRESS_BOOK.TRUST_CODE_LABEL']}
+									value={trustFlow.emailCode}
+									onChange={(e) =>
+										setTrustFlow((prev) => ({
+											...prev,
+											emailCode: e.target.value,
+										}))
+									}
+								/>
+								<div className="address-book-popup-button-wrapper">
+									<RenderBtn
+										string="REFERRAL_LINK.BACK"
+										buttonClassName="back-btn"
+										onHandleClick={onCloseTrustFlow}
+									/>
+									<RenderBtn
+										string="ADDRESS_BOOK.TRUST_CONFIRM"
+										buttonClassName={
+											!trustFlow.emailCode || trustFlow.loading
+												? 'disable-btn'
+												: 'next-btn'
+										}
+										disabled={!trustFlow.emailCode || trustFlow.loading}
+										onHandleClick={onConfirmTrust}
+									/>
+								</div>
+							</div>
+						)}
+					</div>
+				</Dialog>
+			)}
 			{renderPopUps.step1 && (
 				<Dialog
 					className="address_book_popup_wrapper add_withdrawal_address_wrapper"
@@ -524,6 +774,8 @@ const AddressBook = ({
 					onHandleClose={onHandleClose}
 					onHandlePopUpBtn={onHandlePopUpBtn}
 					onHandleAddressBookDetails={onHandleAddressBookDetails}
+					addAsTrusted={addAsTrusted}
+					setAddAsTrusted={setAddAsTrusted}
 				/>
 			)}
 			<div className="address-book-form">
@@ -619,6 +871,8 @@ const AddressBook = ({
 						onHandleAddressBookDetails={onHandleAddressBookDetails}
 						setRenderPopUps={setRenderPopUps}
 						onHandleRemove={onHandleRemove}
+						addAsTrusted={addAsTrusted}
+						setAddAsTrusted={setAddAsTrusted}
 					/>
 				</div>
 			</div>
@@ -631,6 +885,7 @@ const mapStateToProps = (store) => ({
 	assets: assetsSelector(store),
 	coins: store.app.coins,
 	constants: store.app.constants,
+	otp_enabled: store.user.otp_enabled,
 });
 
 const mapDispatchToProps = (dispatch) => ({
