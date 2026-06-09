@@ -160,7 +160,27 @@ const performWithdrawal = (req, res) => {
 		token
 	);
 
-	toolsLib.wallet.validateWithdrawalToken(token)
+	// This endpoint is intentionally unauthenticated so the v1 email-link flow
+	// still works when the user is logged out. The in-app code flow (v3/v4)
+	// always carries the user's bearer token though, so when it's present we
+	// verify it and pass the authenticated user_id down to namespace the redis
+	// lookup. That way a short 6-digit code can only ever be confirmed by the
+	// user who requested it — no random user can confirm someone else's token,
+	// and codes that collide live in separate per-user buckets. A missing or
+	// invalid bearer simply falls back to the global (long-token) lookup.
+	const authorization = req.headers['authorization'];
+	const ip = req.headers['x-real-ip'];
+
+	Promise.resolve()
+		.then(() => {
+			if (!authorization) {
+				return undefined;
+			}
+			return toolsLib.security.verifyBearerTokenPromise(authorization, ip)
+				.then((decodedToken) => decodedToken?.sub?.id)
+				.catch(() => undefined);
+		})
+		.then((user_id) => toolsLib.wallet.validateWithdrawalToken(token, user_id))
 		.then((withdrawal) => {
 			return all([ withdrawal, toolsLib.user.getUserByKitId(withdrawal.user_id) ]);
 		})

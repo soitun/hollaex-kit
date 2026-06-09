@@ -2,8 +2,17 @@
 
 const {
 	INVALID_CAPTCHA,
-	INVALID_CREDENTIALS
+	INVALID_CREDENTIALS,
+	WRONG_ORDER_BY
 } = require('../messages');
+
+// Raw Sequelize/Postgres errors surfaced when an invalid `order_by` column is
+// forwarded to the query/network layer leak the ORM model name and act as a
+// column-existence oracle (e.g. "column Deposit.foo does not exist"). Detect
+// that shape and collapse it to the generic WRONG_ORDER_BY message before it
+// reaches the client.
+const isRawDbColumnError = (message) =>
+	typeof message === 'string' && /column\s+["']?[\w.]+["']?\s+does not exist/i.test(message);
 
 const {
 	getMessage, functionMessages
@@ -16,11 +25,15 @@ const toBool = (value) => {
 const errorMessageConverter = (error, lang) => {
 	// For backward compatibility
 	if (lang === null) {
-		return error.message;
+		return isRawDbColumnError(error.message) ? WRONG_ORDER_BY : error.message;
 	}
 
 	const normalizedLang = lang || 'en';
 	let message = error.message;
+
+	if (isRawDbColumnError(message)) {
+		message = WRONG_ORDER_BY;
+	}
 
 	if (error.name === 'SequelizeValidationError') {
 		message = error.errors[0].message;
