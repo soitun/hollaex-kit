@@ -4080,9 +4080,14 @@ const requestAddressWhitelist = async (user_id, { address, currency, network }, 
 
 	const token = generateVerificationCode(opts.version);
 
+	// Namespace the redis field by user_id so a token only ever matches the
+	// authenticated user who requested it. This prevents one user's token value
+	// (which is short, e.g. a 6-digit v4 code) from colliding with or deleting
+	// another user's pending request, and confines brute-force attempts to the
+	// attacker's own bucket.
 	await client.hsetAsync(
 		ADDRESSBOOK_WHITELIST_REQUEST_KEY,
-		token,
+		`${user_id}:${token}`,
 		JSON.stringify({ user_id, address, currency, network, timestamp: Date.now() })
 	);
 
@@ -4106,12 +4111,16 @@ const requestAddressWhitelist = async (user_id, { address, currency, network }, 
 };
 
 const confirmAddressWhitelist = async (user_id, token) => {
-	const stored = await client.hgetAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, token);
+	// The field is namespaced by the authenticated user_id, so a token can only
+	// ever resolve to a request the same user created — no cross-user lookup or
+	// deletion is possible.
+	const field = `${user_id}:${token}`;
+	const stored = await client.hgetAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, field);
 	if (!stored) {
 		throw new Error(INVALID_WHITELIST_TOKEN);
 	}
 
-	await client.hdelAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, token);
+	await client.hdelAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, field);
 
 	const request = JSON.parse(stored);
 	if (request.user_id !== user_id) {

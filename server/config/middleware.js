@@ -528,6 +528,38 @@ const rateLimitMiddleware = (app) => {
 		});
 	});
 
+	// /user/addressbook/whitelist requests trusting (whitelisting) an address.
+	// Each call costs a real outbound email/SMS verification code, so cap it
+	// tightly per-user (with IP fallback) to prevent spamming the owner and
+	// flooding redis with pending tokens.
+	limiter({
+		path: '/v2/user/addressbook/whitelist',
+		method: 'post',
+		total: 5,
+		expire: 1000 * 60 * 2,
+		lookup: authOrIpLookup,
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'addressbook-whitelist-request');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
+	// /user/addressbook/whitelist/confirm submits the emailed verification code
+	// (as short as a 6-digit v4 code). The tools layer namespaces the token by
+	// user_id, but this transport-level cap is defense in depth against a stolen
+	// session brute-forcing the code.
+	limiter({
+		path: '/v2/user/addressbook/whitelist/confirm',
+		method: 'post',
+		total: 5,
+		expire: 1000 * 60 * 2,
+		lookup: authOrIpLookup,
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'addressbook-whitelist-confirm');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
 	// /user/confirm-withdrawal submits the one-time withdrawal token and is
 	// unauthenticated, so brute-forcing the token from many sessions/IPs is
 	// the main risk. Keyed per-IP as a transport-level cap.
