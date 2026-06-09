@@ -227,8 +227,20 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 		token = data.transaction_id || crypto.randomBytes(60).toString('hex');
 	}
 
-	await client.hsetAsync(WITHDRAWALS_REQUEST_KEY, token, stringData);
-		
+	// Code-based verification (v3/v4) uses a short, guessable token — v4 is a
+	// 6-digit code — so namespace the redis field by the authenticated user_id.
+	// This confines collisions and brute-force to the requester's own bucket: a
+	// code can only ever be confirmed by the same user who requested it, since
+	// the in-app confirm flow carries that user's bearer token. The v1 flow uses
+	// a long random token clicked from an email link (possibly while logged out),
+	// so it stays in the global namespace where validateWithdrawalToken can still
+	// resolve it without an authenticated user_id.
+	const field = (version === 'v3' || version === 'v4')
+		? `${user.id}:${token}`
+		: token;
+
+	await client.hsetAsync(WITHDRAWALS_REQUEST_KEY, field, stringData);
+
 	await client.setexAsync(
 		`user:freeze-account:${token}`,
 		60 * 60 * 6,
@@ -271,23 +283,39 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 	return data;
 };
 
-const validateWithdrawalToken = (token) => {
-	return client.hgetAsync(WITHDRAWALS_REQUEST_KEY, token)
-		.then((withdrawal) => {
-			if (!withdrawal) {
-				throw new Error(INVALID_WITHDRAWAL_TOKEN);
-			} else {
-				withdrawal = JSON.parse(withdrawal);
+const validateWithdrawalToken = async (token, user_id) => {
+	// In-app code confirmations (v3/v4) are stored namespaced by the
+	// authenticated user_id; the logged-out v1 email-link flow is stored under
+	// the bare (long, random) token. When we have an authenticated user we try
+	// the namespaced field first, then fall back to the global field. Short codes
+	// are never written to the global namespace, so this fallback can only ever
+	// resolve an unguessable v1 token — it cannot reach another user's 6-digit
+	// code.
+	const fields = user_id ? [`${user_id}:${token}`, token] : [token];
 
-				client.hdelAsync(WITHDRAWALS_REQUEST_KEY, token);
+	let matchedField;
+	let stored;
+	for (const candidate of fields) {
+		stored = await client.hgetAsync(WITHDRAWALS_REQUEST_KEY, candidate);
+		if (stored) {
+			matchedField = candidate;
+			break;
+		}
+	}
 
-				if (Date.now() - withdrawal.timestamp > getKitSecrets().security.withdrawal_token_expiry) {
-					throw new Error(EXPIRED_WITHDRAWAL_TOKEN);
-				} else {
-					return withdrawal;
-				}
-			}
-		});
+	if (!stored) {
+		throw new Error(INVALID_WITHDRAWAL_TOKEN);
+	}
+
+	await client.hdelAsync(WITHDRAWALS_REQUEST_KEY, matchedField);
+
+	const withdrawal = JSON.parse(stored);
+
+	if (Date.now() - withdrawal.timestamp > getKitSecrets().security.withdrawal_token_expiry) {
+		throw new Error(EXPIRED_WITHDRAWAL_TOKEN);
+	}
+
+	return withdrawal;
 };
 
 const cancelUserWithdrawalByKitId = async (userId, withdrawalId, opts = {
