@@ -89,7 +89,9 @@ const {
 	VERIFICATION_EMAIL_REQUIRES_REAL_EMAIL,
 	USER_HAS_NO_PHONE,
 	USER_PHONE_ALREADY_VERIFIED,
-	PASSWORD_NOT_SET
+	PASSWORD_NOT_SET,
+	INVALID_COIN,
+	INVALID_NETWORK
 } = require(`${SERVER_PATH}/messages`);
 const { publisher, client } = require('./database/redis');
 const {
@@ -98,6 +100,7 @@ const {
 	USER_FIELD_ADMIN_LOG,
 	ADDRESS_FIELDS,
 	CRYPTO_ADDRESS_FIELDS,
+	TRAVEL_RULE_INFO_FIELDS,
 	ADDRESSBOOK_WHITELIST_REQUEST_KEY,
 	ID_FIELDS,
 	SETTING_KEYS,
@@ -3950,6 +3953,34 @@ const updateUserAddresses = async (user_id, data) => {
 			}
 		});
 
+		// the asset symbol must correspond to a coin configured on the exchange,
+		// and the network must be one of that coin's supported networks.
+		const coinConfiguration = getKitCoin(addressObj.currency);
+		if (!coinConfiguration) {
+			throw new Error(INVALID_COIN(addressObj.currency));
+		}
+		if (coinConfiguration.network) {
+			if (!coinConfiguration.network.split(',').includes(addressObj.network)) {
+				throw new Error(INVALID_NETWORK(addressObj.network, coinConfiguration.network));
+			}
+		} else if (addressObj.network !== addressObj.currency) {
+			throw new Error(INVALID_NETWORK(addressObj.network, addressObj.currency));
+		}
+
+		// sanitize the optional travel_rule beneficiary info: keep only the
+		// allowed sub-fields, drop the key entirely if no info is provided.
+		if (addressObj.travel_rule != null) {
+			if (typeof addressObj.travel_rule !== 'object' || Array.isArray(addressObj.travel_rule)) {
+				throw new Error(ADDRESSBOOK_MISSING_FIELDS);
+			}
+			const sanitized = pick(addressObj.travel_rule, ...TRAVEL_RULE_INFO_FIELDS);
+			if (Object.keys(sanitized).length === 0) {
+				delete addressObj.travel_rule;
+			} else {
+				addressObj.travel_rule = sanitized;
+			}
+		}
+
 		const hasCreatedAt = userAddressBook?.addresses?.find?.(address => address.label === addressObj.label)?.created_at;
 		if (!hasCreatedAt) {
 			addressObj.created_at = moment().toISOString();
@@ -5834,6 +5865,7 @@ module.exports = {
 	fetchUserTradingVolume,
 	updateUserAddresses,
 	fetchUserAddressBook,
+	findAddressBookEntry,
 	isAddressWhitelisted,
 	requestAddressWhitelist,
 	confirmAddressWhitelist,
