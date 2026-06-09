@@ -365,6 +365,8 @@ paths:
         - hmac
       x-security-scopes:
         - user
+      x-token-permissions:
+        - can_trade
     put:
       description: update transaction for p2p
       operationId: updateP2PTransaction
@@ -400,6 +402,8 @@ paths:
       x-security-types:
         - bearer
         - hmac
+      x-token-permissions:
+        - can_trade
       x-security-scopes:
         - user
   /p2p/order/chat:

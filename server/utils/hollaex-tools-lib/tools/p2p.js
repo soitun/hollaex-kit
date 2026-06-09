@@ -24,7 +24,8 @@ const {
 	NO_DATA_FOR_CSV,
     FUNDING_ACCOUNT_INSUFFICIENT_BALANCE,
     USER_NOT_FOUND,
-	P2P_DEAL_NOT_FOUND
+	P2P_DEAL_NOT_FOUND,
+	AMOUNT_NEGATIVE_ERROR
 } = require(`${SERVER_PATH}/messages`);
 
 
@@ -266,6 +267,10 @@ const createP2PDeal = async (data) => {
 
 	const balance = await getP2PAccountBalance(merchant_id, buying_asset);
 
+	if (new BigNumber(total_order_amount).isLessThanOrEqualTo(0)) {
+		throw new Error(AMOUNT_NEGATIVE_ERROR);
+	};
+
 	if (new BigNumber(balance).comparedTo(new BigNumber(total_order_amount)) !== 1) {
         throw new Error(FUNDING_ACCOUNT_INSUFFICIENT_BALANCE);
     };
@@ -381,6 +386,10 @@ const updateP2PDeal = async (data) => {
     };
 
 	const balance = await getP2PAccountBalance(merchant_id, buying_asset);
+
+	if (new BigNumber(total_order_amount).isLessThanOrEqualTo(0)) {
+		throw new Error(AMOUNT_NEGATIVE_ERROR);
+	};
 
 	if (new BigNumber(balance).comparedTo(new BigNumber(total_order_amount)) !== 1) {
         throw new Error(FUNDING_ACCOUNT_INSUFFICIENT_BALANCE);

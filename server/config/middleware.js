@@ -116,6 +116,22 @@ const pickPasswordAccount = (req) => {
 	return null;
 };
 
+// Reset-password mint (GET /reset-password) carries the target identifier in
+// the query string (`value`, or the deprecated `email`/`phone_number`). Keying
+// the limiter on it stops an attacker spamming reset codes/emails at a single
+// victim from rotating IPs. The consume (POST) carries only the code, so it is
+// capped per-IP instead (see below).
+const pickResetAccount = (req) => {
+	const q = (req.swagger && req.swagger.params) || {};
+	const pick = (name) => (q[name] && q[name].value) || (req.query && req.query[name]) || '';
+	const value = pick('value').toString().trim();
+	const email = (pick('email') || (value.includes('@') ? value : '')).toString().trim().toLowerCase();
+	const phone = (pick('phone_number') || (!value.includes('@') ? value : '')).toString().trim();
+	if (email) return `email:${email}`;
+	if (phone) return `phone:${phone}`;
+	return null;
+};
+
 // Hashes the raw Google OAuth id_token into a short bucket key. We can't
 // cheaply key by the underlying Google account (that would require a full
 // OAuth verification round-trip in the lookup), but capping per-token use
@@ -382,6 +398,22 @@ const rateLimitMiddleware = (app) => {
 		}
 	});
 
+	// Per-account limiter for the reset-password mint (GET) keyed by email or
+	// phone_number so an attacker cannot spam reset codes at a single victim
+	// from rotating IPs. Requests with no identifier fall into an IP-scoped
+	// 'unknown' bucket.
+	limiter({
+		path: '/v2/reset-password',
+		method: 'get',
+		total: 4,
+		expire: 1000 * 60 * 2,
+		lookup: accountOrIpUnknownLookup(pickResetAccount),
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'get reset-password account');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
 	// Per-account limiter for /v2/password keyed by email or phone_number.
 	// Requests with neither fall into an IP-scoped 'unknown' bucket.
 	limiter({
@@ -586,6 +618,23 @@ const rateLimitMiddleware = (app) => {
 		lookup: 'headers.x-forwarded-for',
 		onRateLimited: function (req, res, next) {
 			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'confirm-login');
+			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
+		}
+	});
+
+	// /user/freeze-account is unauthenticated and consumes a short (6-digit)
+	// freeze token via a direct Redis lookup with no per-token fail-counter,
+	// so brute-forcing the token across requests is the main risk. Cap per-IP
+	// as a transport-level limit (the body carries only the token, no account
+	// to key on).
+	limiter({
+		path: '/v2/user/freeze-account',
+		method: 'post',
+		total: 5,
+		expire: 1000 * 60 * 2,
+		lookup: 'headers.x-forwarded-for',
+		onRateLimited: function (req, res, next) {
+			logger.verbose('config/middleware/rateLimitMiddleware', 'abuse', 'freeze-account');
 			return res.status(429).json({ message: 'Too many requests. Your account is blocked for 2 minutes' });
 		}
 	});
