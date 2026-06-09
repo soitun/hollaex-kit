@@ -124,10 +124,14 @@ const FiatFees = ({ coins, dispatch, constants }) => {
 	];
 
 	useEffect(() => {
-		// setIsLoading(true);
-		requesCoinConfiguration(queryFilters.page, queryFilters.limit);
+		// Wait for coins to be loaded before building the fiat fees table,
+		// otherwise the closure captures an empty `coins` and filters out all
+		// fiat rows (showing "No Data" on a fresh load of this tab).
+		if (coins && Object.keys(coins).length) {
+			requesCoinConfiguration(queryFilters.page, queryFilters.limit);
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [coins]);
 
 	useEffect(() => {
 		// requesCoinConfiguration(queryFilters.page, queryFilters.limit);
