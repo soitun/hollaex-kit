@@ -21,6 +21,7 @@ const Button = ({
 	currencyWallet,
 	btnLabel,
 	icons,
+	stringId,
 }) => {
 	const getIcon = (iconId, iconList) => (
 		<Image iconId={iconId} icon={iconList[iconId]} height={16} width={16} />
@@ -54,10 +55,10 @@ const Button = ({
 								: icons['WALLET_ARROW_UP']
 						}
 					/>
-					<EditWrapper>{label}</EditWrapper>
+					<EditWrapper stringId={stringId}>{label}</EditWrapper>
 				</div>
 			) : (
-				<EditWrapper>
+				<EditWrapper stringId={stringId}>
 					<div
 						className={classnames('d-flex align-items-center', {
 							'reverse-direction': position === 'right',
@@ -81,6 +82,7 @@ Button.propTypes = {
 	onClick: PropTypes.func,
 	type: PropTypes.string,
 	disabled: PropTypes.bool,
+	stringId: PropTypes.string,
 };
 
 Button.defaultProps = {

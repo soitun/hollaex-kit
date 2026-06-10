@@ -2036,6 +2036,35 @@ class GeneralContent extends Component {
 									</Button>
 								</div>
 							) : null}
+							<div style={{ marginTop: 24 }}>
+								<div className="sub-title" id="cloudflare-ipcountry">
+									Cloudflare Country Header
+								</div>
+								<div className="description">
+									Use Cloudflare&apos;s CF-IPCountry header for geofencing,
+									suspicious login checks, and login notification emails. Enable
+									this only when your API origin is protected so clients cannot
+									spoof Cloudflare headers.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(
+											constants,
+											'kit.cloudflare_ipcountry.active',
+											false
+										)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													cloudflare_ipcountry: {
+														active: checked,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+							</div>
 						</div>
 						<div className="divider"></div>
 						<div className="general-wrapper mb-5">

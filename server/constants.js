@@ -36,7 +36,8 @@ let configuration = {
 		google_oauth: {},
 		auto_deposit: {},
 		auto_withdrawal: {},
-		force_two_factor_authentication_withdrawal: {}
+		force_two_factor_authentication_withdrawal: {},
+		cloudflare_ipcountry: { active: false }
 	},
 	email: {}
 };
@@ -130,7 +131,8 @@ const resetAllConfig = () => {
 			google_oauth: {},
 			auto_deposit: {},
 			auto_withdrawal: {},
-			force_two_factor_authentication_withdrawal: {}
+			force_two_factor_authentication_withdrawal: {},
+			cloudflare_ipcountry: { active: false }
 		},
 		email: {}
 	};
@@ -253,7 +255,9 @@ exports.KIT_CONFIG_KEYS = [
 	'google_oauth',
 	'auto_deposit',
 	'auto_withdrawal',
-	'force_two_factor_authentication_withdrawal'
+	'force_two_factor_authentication_withdrawal',
+	'cloudflare_ipcountry',
+	'blockchain'
 ];
 
 exports.KIT_SECRETS_KEYS = [
@@ -302,6 +306,7 @@ exports.HOLLAEX_NETWORK_PATH_ACTIVATE = '/exchange/activate';
 // API
 exports.INIT_CHANNEL = 'channel:init';
 exports.WITHDRAWALS_REQUEST_KEY = 'withdrawals:request';
+exports.ADDRESSBOOK_WHITELIST_REQUEST_KEY = 'addressbook:whitelist:request';
 exports.HMAC_TOKEN_KEY = 'hmac:token';
 exports.EVENTS_CHANNEL = 'channel:events';
 exports.CONFIGURATION_CHANNEL = CONFIGURATION_CHANNEL;
@@ -381,12 +386,12 @@ exports.SETTING_KEYS = [
 	'risk',
 	'chat',
 	'app',
-	'watchlist',
-	'verification_method'
+	'watchlist'
 ];
 
-exports.VERIFICATION_METHODS = ['email', 'sms'];
-exports.DEFAULT_VERIFICATION_METHOD = 'email';
+exports.REQUEST_VERIFICATION_METHODS = ['email', 'sms'];
+exports.USER_DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'MMM DD, YYYY', 'DD MMM YYYY'];
+exports.USER_TIME_FORMATS = ['12h', '24h'];
 
 exports.OMITTED_USER_FIELDS = [
 	'password',
@@ -764,7 +769,7 @@ exports.USER_FIELD_ADMIN_LOG = [
 ];
 
 exports.ADDRESS_FIELDS = ['city', 'address', 'country', 'postal_code'];
-exports.CRYPTO_ADDRESS_FIELDS = ['address', 'network', 'label', 'currency'];
+exports.CRYPTO_ADDRESS_FIELDS = ['address', 'network', 'label', 'currency', 'whitelisted'];
 
 exports.VERIFY_STATUS = {
 	EMPTY: 0,

@@ -24,3 +24,19 @@ export const setUserLabelAndAddress = (values) => {
 	};
 	return requestAuthenticated(`/user/addressbook`, options);
 };
+
+export const requestWhitelistAddress = (values) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify(values),
+	};
+	return requestAuthenticated(`/user/addressbook/whitelist`, options);
+};
+
+export const confirmWhitelistAddress = (token) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify({ token }),
+	};
+	return requestAuthenticated(`/user/addressbook/whitelist/confirm`, options);
+};

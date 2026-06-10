@@ -1,6 +1,6 @@
 import React from 'react';
 import { browserHistory } from 'react-router';
-import { Button } from 'antd';
+import { Button, Checkbox } from 'antd';
 import { ExclamationCircleFilled } from '@ant-design/icons';
 import { createSelector } from 'reselect';
 import math from 'mathjs';
@@ -240,6 +240,8 @@ export const AddressBookDialog = ({
 	onHandlePopUpBtn,
 	onHandleAddressBookDetails,
 	setRenderPopUps,
+	addAsTrusted,
+	setAddAsTrusted,
 }) => {
 	return (
 		<Dialog
@@ -434,6 +436,18 @@ export const AddressBookDialog = ({
 						</EditWrapper>
 					</div>
 				</div>
+				{renderPopUps.step3 && setAddAsTrusted && (
+					<div className="mt-3">
+						<Checkbox
+							checked={!!addAsTrusted}
+							onChange={(e) => setAddAsTrusted(e.target.checked)}
+						>
+							<EditWrapper stringId="ADDRESS_BOOK.TRUST_TOGGLE_LABEL">
+								{STRINGS['ADDRESS_BOOK.TRUST_TOGGLE_LABEL']}
+							</EditWrapper>
+						</Checkbox>
+					</div>
+				)}
 				<div className="address-book-popup-button-wrapper">
 					<RenderBtn
 						string="REFERRAL_LINK.BACK"

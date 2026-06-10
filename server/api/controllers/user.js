@@ -51,7 +51,6 @@ const { isDate } = require('moment');
 const moment = require('moment');
 const DeviceDetector = require('node-device-detector');
 const uuid = require('uuid/v4');
-const geoip = require('geoip-lite');
 const SMTP_SERVER = () => GET_KIT_SECRETS()?.smtp?.server;
 
 const VERIFY_STATUS = {
@@ -79,7 +78,9 @@ const INITIAL_SETTINGS = () => {
 		},
 		interface: {
 			order_book_levels: 10,
-			theme: toolsLib.getKitConfig().defaults.theme
+			theme: toolsLib.getKitConfig().defaults.theme,
+			date_format: 'MM/DD/YYYY',
+			time_format: '12h'
 		},
 		language: toolsLib.getKitConfig().defaults.language,
 		audio: {
@@ -129,7 +130,8 @@ const signUpUser = (req, res) => {
 		password,
 		captcha,
 		referral,
-		phone_number: phoneNumberRaw
+		phone_number: phoneNumberRaw,
+		verification_method
 	} = req.swagger.params.signup.value;
 
 	let { email, version } = req.swagger.params.signup.value;
@@ -175,12 +177,17 @@ const signUpUser = (req, res) => {
 
 	const signupEmail = emailTrim || null;
 
-	toolsLib.security.checkIp(ip)
+	toolsLib.security.checkIp(ip, req.headers)
 		.then(() => {
 			return toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 		})
 		.then(() =>
-			toolsLib.user.signUpUser(signupEmail, password, { referral, phone_number }, version)
+			toolsLib.user.signUpUser(
+				signupEmail,
+				password,
+				{ referral, phone_number, verification_method },
+				version
+			)
 		)
 		.then(() => {
 			const requiresVerification = toolsLib.getKitConfig().email_verification_required;
@@ -224,7 +231,7 @@ const signUpUserWithGoogle = async (req, res) => {
 		}
 
 		// Geo/IP check (enforce same blocking as email login)
-		await toolsLib.security.checkIp(ip);
+		await toolsLib.security.checkIp(ip, req.headers);
 
 		// Verify Google token and get user data
 		const googleUserData = await toolsLib.user.verifyGoogleToken(google_token);
@@ -273,6 +280,8 @@ const getVerifyUser = (req, res) => {
 	const phoneNumberRaw = req.swagger.params.phone_number && req.swagger.params.phone_number.value;
 	const resendEmail = req.swagger.params.resend.value;
 	const version = req.swagger.params.version && req.swagger.params.version.value;
+	const verification_method = req.swagger.params.verification_method
+		&& req.swagger.params.verification_method.value;
 	const domain = req.headers['x-real-origin'];
 	const ip = req.headers['x-real-ip'];
 	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
@@ -293,11 +302,11 @@ const getVerifyUser = (req, res) => {
 					await toolsLib.security.checkCaptcha(captcha, ip, req.headers);
 					const verificationCode = generateCode();
 					toolsLib.user.storeVerificationCode(user, verificationCode);
-					await toolsLib.user.validateSmsVerificationEligibility(user);
 					await toolsLib.verification.sendVerificationCode(user, {
 						action_type: 'signup',
 						verification_code: verificationCode,
 						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+						requestVerificationMethod: verification_method,
 						domain
 					});
 				}
@@ -326,11 +335,11 @@ const getVerifyUser = (req, res) => {
 
 				const phoneSignup = toolsLib.user.isPhoneSignupSyntheticUser(user);
 				if (phoneSignup && user.phone_number) {
-					await toolsLib.user.validateSmsVerificationEligibility(user);
 					await toolsLib.verification.sendVerificationCode(user, {
 						action_type: 'signup',
 						verification_code: verificationCode,
 						emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+						requestVerificationMethod: verification_method,
 						domain
 					});
 				} else {
@@ -487,7 +496,8 @@ const loginPost = async (req, res) => {
 		captcha,
 		service,
 		long_term,
-		version
+		version,
+		verification_method
 	} = req.swagger.params.authentication.value;
 	let {
 		email,
@@ -602,7 +612,7 @@ const loginPost = async (req, res) => {
 	}
 
 	try {
-		await toolsLib.security.checkIp(ip);
+		await toolsLib.security.checkIp(ip, req.headers);
 		loggerUser.verbose(
 			req.uuid,
 			'controllers/user/loginPost checkIp passed',
@@ -691,7 +701,8 @@ const loginPost = async (req, res) => {
 				referer,
 				null,
 				long_term,
-				false
+				false,
+				req.headers
 			);
 			const loginData = await toolsLib.user.findUserLatestLogin(user, false);
 			const message = createAttemptMessage(loginData, user, domain);
@@ -728,7 +739,8 @@ const loginPost = async (req, res) => {
 					referer,
 					null,
 					long_term,
-					false
+					false,
+					req.headers
 				);
 				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
 				const message = createAttemptMessage(loginData, user, domain);
@@ -739,8 +751,7 @@ const loginPost = async (req, res) => {
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
 
-		const geo = geoip.lookup(ip);
-		const country = geo?.country || '';
+		const country = toolsLib.security.getCountryFromIp(ip, req.headers);
 
 		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		let suspiciousLogin = false;
@@ -811,6 +822,7 @@ const loginPost = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');
@@ -876,7 +888,8 @@ const loginPost = async (req, res) => {
 			referer,
 			token,
 			long_term,
-			true
+			true,
+			req.headers
 		);
 
 		return res.status(201).json({ token });
@@ -900,7 +913,8 @@ const loginWithGoogle = async (req, res) => {
 		long_term,
 		version,
 		captcha,
-		otp_code
+		otp_code,
+		verification_method
 	} = req.swagger.params.authentication.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
@@ -971,7 +985,7 @@ const loginWithGoogle = async (req, res) => {
 		}
 
 		// Enforce geo/IP restrictions the same as email login
-		await toolsLib.security.checkIp(ip);
+		await toolsLib.security.checkIp(ip, req.headers);
 
 		// Captcha is the very first gate, before any account lookup or
 		// outbound Google verification call, for the same reason it runs
@@ -1039,7 +1053,7 @@ const loginWithGoogle = async (req, res) => {
 				await toolsLib.security.verifyOtpBeforeAction(user.id, otp_code);
 			} catch (err) {
 				await toolsLib.user.createUserLogin(
-					user, ip, device, domain, origin, referer, null, long_term, false
+					user, ip, device, domain, origin, referer, null, long_term, false, req.headers
 				);
 				const loginData = await toolsLib.user.findUserLatestLogin(user, false);
 				const message = createAttemptMessage(loginData, user, domain);
@@ -1053,8 +1067,7 @@ const loginWithGoogle = async (req, res) => {
 		// code and require the user to confirm before the next attempt.
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
-		const geo = geoip.lookup(ip);
-		const country = geo?.country || '';
+		const country = toolsLib.security.getCountryFromIp(ip, req.headers);
 		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		let suspiciousLogin = false;
 		if (suspiciousLoginEnabled && SMTP_SERVER()?.length > 0) {
@@ -1099,6 +1112,7 @@ const loginWithGoogle = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');
@@ -1130,7 +1144,7 @@ const loginWithGoogle = async (req, res) => {
 			user.role
 		);
 
-		await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true);
+		await toolsLib.user.createUserLogin(user, ip, device, domain, origin, referer, token, long_term, true, req.headers);
 
 		// Publish login event
 		publisher.publish(EVENTS_CHANNEL, JSON.stringify({
@@ -1244,36 +1258,53 @@ function requestEmailConfirmation(req, res) {
 }
 
 const requestResetPassword = (req, res) => {
-	let email = req.swagger.params.email.value;
+	const value = req.swagger.params.value && req.swagger.params.value.value;
+	const email = req.swagger.params.email && req.swagger.params.email.value;
+	const phone_number = req.swagger.params.phone_number && req.swagger.params.phone_number.value;
 	let version = req.swagger.params.version.value;
+	const verification_method = req.swagger.params.verification_method
+		&& req.swagger.params.verification_method.value;
 	const captcha = req.swagger.params.captcha && req.swagger.params.captcha.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
+	let identifier = value || phone_number || email;
 
 	loggerUser.info(
 		req.uuid,
 		'controllers/user/requestResetPassword',
-		email,
-		'email',
+		identifier,
+		'identifier',
 		'ip',
 		ip,
 		'domain',
 		domain
 	);
 
-	if (!email || typeof email !== 'string' || !isEmail(email)) {
+	if (
+		!identifier ||
+		typeof identifier !== 'string' ||
+		(!isEmail(identifier) && !isMobilePhone(identifier.trim(), 'any', { strictMode: true }))
+	) {
 		loggerUser.error(
 			req.uuid,
-			'controllers/user/requestResetPassword invalid email',
-			email
+			'controllers/user/requestResetPassword invalid identifier',
+			identifier
 		);
 		const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 		return res.status(200).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 	}
 
-	email = email.toLowerCase();
+	identifier = isEmail(identifier) ? identifier.toLowerCase() : identifier.trim();
 
-	toolsLib.security.sendResetPasswordCode(email, captcha, ip, domain, version, req.headers)
+	toolsLib.security.sendResetPasswordCode(
+		identifier,
+		captcha,
+		ip,
+		domain,
+		version,
+		req.headers,
+		verification_method
+	)
 		.then(() => {
 			const messageObj = errorMessageConverter({ message: RESET_PASSWORD_REQUEST_SENT_IF_USER_EXISTS }, req?.auth?.sub?.lang);
 			return res.json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
@@ -1367,7 +1398,7 @@ const updateSettings = (req, res) => {
 const changePassword = (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/user/changePassword', req.auth.sub);
 	const email = req.auth.sub.email;
-	const { old_password, new_password, otp_code, version } = req.swagger.params.data.value;
+	const { old_password, new_password, otp_code, version, verification_method } = req.swagger.params.data.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = API_HOST + HOLLAEX_NETWORK_BASE_URL;
 
@@ -1378,7 +1409,16 @@ const changePassword = (req, res) => {
 		otp_code
 	);
 
-	toolsLib.security.changeUserPassword(email, old_password, new_password, ip, domain, otp_code, version)
+	toolsLib.security.changeUserPassword(
+		email,
+		old_password,
+		new_password,
+		ip,
+		domain,
+		otp_code,
+		version,
+		verification_method
+	)
 		.then(() => res.json({ message: `Verification email to change password is sent to: ${email}` }))
 		.catch((err) => {
 			loggerUser.error(req.uuid, 'controllers/user/changePassword', err.message);
@@ -1682,6 +1722,7 @@ const createCryptoAddress = (req, res) => {
 			if (user.is_subaccount) {
 				throw new Error(SUBACCOUNT_CANNOT_GENERATE_ADDRESS);
 			}
+			toolsLib.wallet.validateDepositEnabled(crypto.value, network.value);
 			return toolsLib.user.createUserCryptoAddressByKitId(id, crypto.value, {
 				network: network.value,
 				additionalHeaders: {
@@ -2532,6 +2573,46 @@ const updateUserAddresses = (req, res) => {
 		});
 };
 
+const requestAddressWhitelist = (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/user/requestAddressWhitelist/auth', req.auth);
+
+	const { address, currency, network, otp_code, version, verification_method } = req.swagger.params.data.value;
+	const domain = req.headers['x-real-origin'];
+	const ip = req.headers['x-real-ip'];
+
+	toolsLib.user.requestAddressWhitelist(req.auth.sub.id, { address, currency, network }, {
+		otpCode: otp_code,
+		domain,
+		ip,
+		version,
+		verification_method
+	})
+		.then(() => {
+			return res.json({ message: 'Success' });
+		})
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/requestAddressWhitelist err', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const confirmAddressWhitelist = (req, res) => {
+	loggerUser.verbose(req.uuid, 'controllers/user/confirmAddressWhitelist/auth', req.auth);
+
+	const { token } = req.swagger.params.data.value;
+
+	toolsLib.user.confirmAddressWhitelist(req.auth.sub.id, token)
+		.then((data) => {
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/confirmAddressWhitelist err', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 const getPaymentDetails = (req, res) => {
 	loggerUser.verbose(req.uuid, 'controllers/user/getPaymentDetails/auth', req.auth);
 
@@ -2882,7 +2963,8 @@ const verifyPasskeyLogin = async (req, res) => {
 			challenge,
 			credential,
 			version = 'v4',
-			service
+			service,
+			verification_method
 		} = req.swagger.params.data.value;
 
 		if (!challenge || !credential) {
@@ -2953,8 +3035,7 @@ const verifyPasskeyLogin = async (req, res) => {
 
 		const lastLogins = await toolsLib.user.findUserLastLogins(user);
 		const successfulRecords = (lastLogins || []).filter((login) => login.status);
-		const geo = geoip.lookup(ip);
-		const country = geo?.country || '';
+		const country = toolsLib.security.getCountryFromIp(ip, req.headers);
 		const suspiciousLoginEnabled = toolsLib?.getKitConfig()?.suspicious_login?.active;
 		let suspiciousLogin = false;
 		if (suspiciousLoginEnabled && SMTP_SERVER()?.length > 0 && isArray(lastLogins) && lastLogins.length > 0) {
@@ -2994,6 +3075,7 @@ const verifyPasskeyLogin = async (req, res) => {
 					? MAILTYPE.SUSPICIOUS_LOGIN_CODE
 					: MAILTYPE.SUSPICIOUS_LOGIN,
 				emailData: data,
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			throw new Error('Suspicious login detected, please check your email.');
@@ -3021,7 +3103,8 @@ const verifyPasskeyLogin = async (req, res) => {
 			req.headers.referer,
 			token,
 			false,
-			true
+			true,
+			req.headers
 		);
 
 		publisher.publish(EVENTS_CHANNEL, JSON.stringify({
@@ -3151,6 +3234,8 @@ module.exports = {
 	fetchUserTradingVolume,
 	updateUserAddresses,
 	fetchUserAddressBook,
+	requestAddressWhitelist,
+	confirmAddressWhitelist,
 	getPaymentDetails,
 	createPaymentDetail,
 	updatePaymentDetail,

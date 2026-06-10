@@ -1,4 +1,13 @@
 definitions:
+  RequestVerificationMethod:
+    type: string
+    enum:
+      - email
+      - sms
+    description: >-
+      Channel for delivering verification codes on this request. Omit to default
+      to email (SMS when the account uses a synthetic phone-signup email). "email"
+      sends only to email; "sms" sends only via the SMS publisher.
   ObjectResponse:
     type: object
   MessageResponse:
@@ -41,6 +50,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
       long_term:
         type: boolean
   SignupAuthentication:
@@ -73,6 +84,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
   SetEmailRequest:
     type: object
     required:
@@ -117,6 +130,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
       long_term:
         type: boolean
   GoogleSignup:
@@ -270,6 +285,18 @@ definitions:
             default: 'en'
             maxLength: 3
             minLength: 2
+          interface:
+            type: object
+            properties:
+              date_format:
+                type: string
+                default: MM/DD/YYYY
+              time_format:
+                type: string
+                enum:
+                  - 12h
+                  - 24h
+                default: 12h
   SettingsPut:
     type: object
     properties:
@@ -312,6 +339,17 @@ definitions:
             format: int32
             minimum: 1
             maximum: 20
+          date_format:
+            type: string
+            default: MM/DD/YYYY
+            description: Preferred date display format.
+          time_format:
+            type: string
+            enum:
+              - 12h
+              - 24h
+            default: 12h
+            description: Preferred time display format.
       notification:
         type: object
         properties:
@@ -330,16 +368,6 @@ definitions:
         items:
           type: string
         description: List of trading pair symbols for the user's watchlist
-      verification_method:
-        type: string
-        enum:
-          - email
-          - sms
-        default: email
-        description: >-
-          Channel used for user-initiated verification codes (e.g. withdrawal request).
-          "sms" requires a verified phone_number, an active SMS plugin, and the
-          sms_verification exchange feature to be enabled.
   ChangePassword:
     type: object
     required:
@@ -360,6 +388,8 @@ definitions:
       version:
         type: string
         enum: ['v2', 'v3', 'v4']
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
   SetInitialPassword:
     type: object
     required:
@@ -441,6 +471,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
   OtpRequest:
     type: object
     required:
@@ -512,6 +544,8 @@ definitions:
           - v2
           - v3
           - v4
+      verification_method:
+        $ref: '#/definitions/RequestVerificationMethod'
       service:
         type: string
         maxLength: 256
@@ -833,6 +867,8 @@ definitions:
           auto_withdrawal:
             type: object
           force_two_factor_authentication_withdrawal:
+            type: object
+          cloudflare_ipcountry:
             type: object
       secrets:
         type: object

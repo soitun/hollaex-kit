@@ -1153,12 +1153,9 @@ table th {
     .otp_form-wrapper .step-one-pop-up .btn-wrapper .proceed-btn,
     .otp_form-wrapper .step-two-pop-up .btn-wrapper .back-btn,
     .otp_form-wrapper .step-two-pop-up .btn-wrapper .proceed-btn {
-      background-color: var(--specials_buttons-links-and-highlights);
-      border: none;
       width: 45%;
       height: 40px;
-      text-align: center;
-      color: var(--labels_important-active-labels-text-graphics); }
+      text-align: center; }
   .otp_form-wrapper .step-two-pop-up .btn-wrapper {
     margin-top: 5% !important; }
   .otp_form-wrapper .step-three-pop-up .verfication-field {
@@ -1179,12 +1176,9 @@ table th {
   .otp_form-wrapper .step-three-pop-up .proceed-btn,
   .otp_form-wrapper .step-four-pop-up .back-btn,
   .otp_form-wrapper .step-four-pop-up .proceed-btn {
-    background-color: var(--specials_buttons-links-and-highlights);
-    border: none;
     width: 45%;
     height: 40px;
-    text-align: center;
-    color: var(--labels_important-active-labels-text-graphics); }
+    text-align: center; }
   .otp_form-wrapper .step-four-pop-up .back-btn {
     width: 100%; }
   .otp_form-wrapper .otp_form-section-wrapper {
@@ -11021,13 +11015,36 @@ table th {
   margin-top: 5%; }
   .referral-popup-btn-wrapper .back-btn,
   .referral-popup-btn-wrapper .next-btn,
-  .referral-popup-btn-wrapper .okay-btn {
+  .referral-popup-btn-wrapper .okay-btn,
+  .referral-popup-btn-wrapper .add-btn {
     background-color: var(--specials_buttons-links-and-highlights);
     width: 45%;
     color: var(--labels_important-active-labels-text-graphics);
     border: none; }
   .referral-popup-btn-wrapper .okay-btn {
     width: 100% !important; }
+  .referral-popup-btn-wrapper .add-btn[disabled],
+  .referral-popup-btn-wrapper .add-btn[disabled]:hover,
+  .referral-popup-btn-wrapper .add-btn[disabled]:focus,
+  .referral-popup-btn-wrapper .add-btn[disabled]:active {
+    background-color: var(--labels_inactive-button) !important;
+    color: var(--labels_secondary-inactive-label-text-graphics) !important;
+    border: none !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important; }
+
+.add-referral-input-field {
+  width: 100%;
+  padding: 10px;
+  background-color: transparent;
+  border: 1px solid var(--labels_secondary-inactive-label-text-graphics) !important;
+  color: var(--labels_important-active-labels-text-graphics);
+  font-size: 13px;
+  outline: none !important;
+  box-shadow: none !important; }
+  .add-referral-input-field:focus {
+    border-color: var(--labels_secondary-inactive-label-text-graphics) !important; }
 
 .layout-mobile .referral-list-wrapper {
   width: 100%; }

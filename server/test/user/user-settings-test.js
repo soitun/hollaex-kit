@@ -48,7 +48,24 @@ describe('tests for /user/settings', function () {
         responseSecond.body.settings.risk.order_portfolio_percentage.should.equal(90)
     });
 
-    it('Integration Test - should accept verification_method = email', async () => {
+    it('Integration Test - should update date and time format preferences', async () => {
+        const response = await request()
+            .put('/v2/user/settings')
+            .set('Authorization', `Bearer ${bearerToken}`)
+            .send({
+                interface: {
+                    date_format: 'DD/MM/YYYY',
+                    time_format: '24h'
+                }
+            });
+
+        response.should.have.status(200);
+        response.should.be.json;
+        response.body.settings.interface.date_format.should.equal('DD/MM/YYYY');
+        response.body.settings.interface.time_format.should.equal('24h');
+    });
+
+    it('Integration Test - should ignore verification_method in user settings', async () => {
         const response = await request()
             .put('/v2/user/settings')
             .set('Authorization', `Bearer ${bearerToken}`)
@@ -56,7 +73,7 @@ describe('tests for /user/settings', function () {
 
         response.should.have.status(200);
         response.should.be.json;
-        response.body.settings.verification_method.should.equal('email');
+        response.body.settings.should.not.have.property('verification_method');
     });
 
     it('Integration Test - should fill legacy settings with missing nested fields', async () => {
@@ -96,6 +113,8 @@ describe('tests for /user/settings', function () {
             getResponse.body.settings.notification.popup_order_confirmation.should.equal(true);
             getResponse.body.settings.notification.popup_order_completed.should.equal(true);
             getResponse.body.settings.notification.popup_order_partially_filled.should.equal(true);
+            getResponse.body.settings.interface.date_format.should.equal('MM/DD/YYYY');
+            getResponse.body.settings.interface.time_format.should.equal('12h');
             getResponse.body.settings.risk.order_portfolio_percentage.should.equal(DEFAULT_ORDER_RISK_PERCENTAGE);
 
             const updateResponse = await request()
@@ -114,6 +133,8 @@ describe('tests for /user/settings', function () {
             updateResponse.body.settings.notification.popup_order_completed.should.equal(false);
             updateResponse.body.settings.notification.popup_order_confirmation.should.equal(true);
             updateResponse.body.settings.notification.popup_order_partially_filled.should.equal(true);
+            updateResponse.body.settings.interface.date_format.should.equal('MM/DD/YYYY');
+            updateResponse.body.settings.interface.time_format.should.equal('12h');
             updateResponse.body.settings.risk.popup_warning.should.equal(false);
             updateResponse.body.settings.risk.order_portfolio_percentage.should.equal(DEFAULT_ORDER_RISK_PERCENTAGE);
         } finally {
@@ -121,23 +142,28 @@ describe('tests for /user/settings', function () {
         }
     });
 
-    it('Integration Test - should reject invalid verification_method', async () => {
-        const response = await request()
+    it('Integration Test - should reject invalid date and time formats', async () => {
+        const dateResponse = await request()
             .put('/v2/user/settings')
             .set('Authorization', `Bearer ${bearerToken}`)
-            .send({ verification_method: 'pigeon' });
+            .send({
+                interface: {
+                    date_format: 'YYYY/MM/DD'
+                }
+            });
 
-        response.should.have.status(400);
-    });
+        dateResponse.should.have.status(400);
 
-    it('Integration Test - should reject verification_method = sms when prerequisites are not met', async () => {
-        // Without a verified phone_number + sms_verification feature + an active
-        // SMS plugin, this request must fail regardless of exchange configuration.
-        const response = await request()
+        const timeResponse = await request()
             .put('/v2/user/settings')
             .set('Authorization', `Bearer ${bearerToken}`)
-            .send({ verification_method: 'sms' });
+            .send({
+                interface: {
+                    time_format: '12 Hours'
+                }
+            });
 
-        response.should.have.status(400);
+        timeResponse.should.have.status(400);
     });
+
 });

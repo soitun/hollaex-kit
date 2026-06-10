@@ -220,6 +220,12 @@ paths:
           required: false
           type: string
           enum: ['v2', 'v3', 'v4']
+        - name: verification_method
+          in: query
+          required: false
+          type: string
+          enum: ['email', 'sms']
+          description: Omit to default to email (SMS for synthetic phone-signup emails); otherwise use the chosen channel
         - name: captcha
           in: query
           description: Cloudflare Turnstile captcha token (required when captcha is enabled and resend=true)
@@ -440,16 +446,35 @@ paths:
       tags:
         - Public
       parameters:
-        - name: email
+        - name: value
           in: query
-          required: true
+          description: User's email address or phone number
+          required: false
           type: string
           maxLength: 256
+        - name: email
+          in: query
+          description: User's email address (deprecated; use value)
+          required: false
+          type: string
+          maxLength: 256
+        - name: phone_number
+          in: query
+          description: User's phone number (deprecated; use value)
+          required: false
+          type: string
+          maxLength: 32
         - name: version
           in: query
           required: false
           type: string
           enum: ['v2', 'v3', 'v4']
+        - name: verification_method
+          in: query
+          required: false
+          type: string
+          enum: ['email', 'sms']
+          description: Omit to default to email (SMS for synthetic phone-signup emails); otherwise use the chosen channel
         - name: captcha
           in: query
           description: Cloudflare Turnstile captcha token (required when captcha is enabled)

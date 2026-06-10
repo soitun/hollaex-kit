@@ -14,6 +14,8 @@ const {
 	INVALID_AMOUNT,
 	DEPOSIT_DISABLED_FOR_COIN,
 	WITHDRAWAL_DISABLED_FOR_COIN,
+	DEPOSIT_DISABLED_FOR_COIN_ON_NETWORK,
+	WITHDRAWAL_DISABLED_FOR_COIN_ON_NETWORK,
 	UPGRADE_VERIFICATION_LEVEL,
 	NO_DATA_FOR_CSV,
 	USER_NOT_FOUND,
@@ -28,6 +30,7 @@ const {
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
+const { enforceAddressNotBlacklisted } = require('./blockchain');
 const { client } = require('./database/redis');
 const crypto = require('crypto');
 const uuid = require('uuid/v4');
@@ -40,6 +43,44 @@ const { has } = require('lodash');
 const WAValidator = require('multicoin-address-validator');
 const { isEmail } = require('validator');
 const BigNumber = require('bignumber.js');
+
+// Mirrors getNetworkNameByKey in web/src/utils/wallet.js. The frontend util
+// can't be imported here (separate package), so the mapping is kept in sync
+// to display human-friendly network names (e.g. eth -> ERC20) in messages.
+const getNetworkNameByKey = (network) => {
+	if (network) {
+		switch (network) {
+			case 'eth':
+				return 'ERC20';
+			case 'trx':
+				return 'TRC20';
+			case 'bnb':
+				return 'BEP20';
+			case 'klay':
+				return 'Klaytn';
+			case 'matic':
+				return 'Polygon';
+			case 'pol':
+				return 'Polygon';
+			case 'sol':
+				return 'Solana';
+			case 'xlm':
+				return 'Stellar';
+			case 'ftm':
+				return 'Fantom';
+			case 's':
+				return 'Sonic';
+			case 'arb':
+				return 'Arbitrum';
+			case 'sui':
+				return 'Sui';
+			default:
+				return network.toUpperCase();
+		}
+	} else {
+		return network;
+	}
+};
 
 const isValidAddress = (currency, address, network) => {
 	if (address.indexOf('://') > -1) {
@@ -159,7 +200,8 @@ const sendRequestWithdrawalEmail = (user_id, address, amount, currency, version,
 					transaction_id: uuid(),
 					address,
 					currency,
-					network: opts.network
+					network: opts.network,
+					verification_method: opts.verification_method
 				},
 				opts.domain,
 				opts.ip,
@@ -185,8 +227,20 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 		token = data.transaction_id || crypto.randomBytes(60).toString('hex');
 	}
 
-	await client.hsetAsync(WITHDRAWALS_REQUEST_KEY, token, stringData);
-		
+	// Code-based verification (v3/v4) uses a short, guessable token — v4 is a
+	// 6-digit code — so namespace the redis field by the authenticated user_id.
+	// This confines collisions and brute-force to the requester's own bucket: a
+	// code can only ever be confirmed by the same user who requested it, since
+	// the in-app confirm flow carries that user's bearer token. The v1 flow uses
+	// a long random token clicked from an email link (possibly while logged out),
+	// so it stays in the global namespace where validateWithdrawalToken can still
+	// resolve it without an authenticated user_id.
+	const field = (version === 'v3' || version === 'v4')
+		? `${user.id}:${token}`
+		: token;
+
+	await client.hsetAsync(WITHDRAWALS_REQUEST_KEY, field, stringData);
+
 	await client.setexAsync(
 		`user:freeze-account:${token}`,
 		60 * 60 * 6,
@@ -205,7 +259,7 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 	// trip to the withdrawal request's HTTP response latency. The helper
 	// internally catches and logs all failures (email, publish, plugin lookup),
 	// so nothing can escape as an unhandled rejection.
-	sendVerificationCode(user, {
+	await sendVerificationCode(user, {
 		action_type: 'withdrawal',
 		verification_code: token,
 		emailType: version === 'v3' || version === 'v4'
@@ -223,28 +277,45 @@ const withdrawalRequestEmail = async (user, data, domain, ip, version) => {
 			network,
 			freeze_account_link: `${domain}/confirm-login?token=${token}&prompt=false&freeze_account=true`
 		},
+		requestVerificationMethod: data.verification_method,
 		domain
 	});
 	return data;
 };
 
-const validateWithdrawalToken = (token) => {
-	return client.hgetAsync(WITHDRAWALS_REQUEST_KEY, token)
-		.then((withdrawal) => {
-			if (!withdrawal) {
-				throw new Error(INVALID_WITHDRAWAL_TOKEN);
-			} else {
-				withdrawal = JSON.parse(withdrawal);
+const validateWithdrawalToken = async (token, user_id) => {
+	// In-app code confirmations (v3/v4) are stored namespaced by the
+	// authenticated user_id; the logged-out v1 email-link flow is stored under
+	// the bare (long, random) token. When we have an authenticated user we try
+	// the namespaced field first, then fall back to the global field. Short codes
+	// are never written to the global namespace, so this fallback can only ever
+	// resolve an unguessable v1 token — it cannot reach another user's 6-digit
+	// code.
+	const fields = user_id ? [`${user_id}:${token}`, token] : [token];
 
-				client.hdelAsync(WITHDRAWALS_REQUEST_KEY, token);
+	let matchedField;
+	let stored;
+	for (const candidate of fields) {
+		stored = await client.hgetAsync(WITHDRAWALS_REQUEST_KEY, candidate);
+		if (stored) {
+			matchedField = candidate;
+			break;
+		}
+	}
 
-				if (Date.now() - withdrawal.timestamp > getKitSecrets().security.withdrawal_token_expiry) {
-					throw new Error(EXPIRED_WITHDRAWAL_TOKEN);
-				} else {
-					return withdrawal;
-				}
-			}
-		});
+	if (!stored) {
+		throw new Error(INVALID_WITHDRAWAL_TOKEN);
+	}
+
+	await client.hdelAsync(WITHDRAWALS_REQUEST_KEY, matchedField);
+
+	const withdrawal = JSON.parse(stored);
+
+	if (Date.now() - withdrawal.timestamp > getKitSecrets().security.withdrawal_token_expiry) {
+		throw new Error(EXPIRED_WITHDRAWAL_TOKEN);
+	}
+
+	return withdrawal;
 };
 
 const cancelUserWithdrawalByKitId = async (userId, withdrawalId, opts = {
@@ -297,7 +368,8 @@ const performWithdrawal = (userId, address, currency, amount, opts = {
 			}
 			return user;
 		})
-		.then((user) => {
+		.then(async (user) => {
+			await enforceAddressNotBlacklisted(address, opts.network, user);
 			return getNodeLib().performWithdrawal(user.network_id, address, currency, amount, opts);
 		});
 };
@@ -307,14 +379,16 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 	additionalHeaders: null
 }) {
 	const user = await getUserByKitId(userId);
-	await validateWithdrawal(user, address, amount, currency, opts.network);
-	return await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, opts);
+	// validateWithdrawal already enforces the address blacklist, so no extra check here
+	const { fee_markup } = await validateWithdrawal(user, address, amount, currency, opts.network);
+	return await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
 }
 
-const performWithdrawalNetwork = (networkId, address, currency, amount, opts = {
+const performWithdrawalNetwork = async (networkId, address, currency, amount, opts = {
 	network: null,
 	additionalHeaders: null
 }) => {
+	await enforceAddressNotBlacklisted(address, opts.network, { network_id: networkId });
 	return getNodeLib().performWithdrawal(networkId, address, currency, amount, opts);
 };
 
@@ -424,7 +498,11 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 
 	const withdrawalNetworkOverrides = getKitConfig()?.coin_customizations?.[currency]?.network_overrides;
 	if (network && withdrawalNetworkOverrides?.[network]?.allow_withdrawal === false) {
-		throw new Error(WITHDRAWAL_DISABLED_FOR_COIN(currency));
+		const supportedNetworks = coinConfiguration.network ? coinConfiguration.network.split(',') : [currency];
+		const availableNetworks = supportedNetworks
+			.filter((net) => net !== network && withdrawalNetworkOverrides?.[net]?.allow_withdrawal !== false)
+			.map(getNetworkNameByKey);
+		throw new Error(WITHDRAWAL_DISABLED_FOR_COIN_ON_NETWORK(currency, getNetworkNameByKey(network), availableNetworks.join(',') || 'none'));
 	}
 
 	if (network === 'email') {
@@ -446,6 +524,7 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		if (!isValidAddress(currency, address, network)) {
 			throw new Error(`Invalid ${currency} address: ${address}`);
 		}
+		await enforceAddressNotBlacklisted(address, network, user);
 	}
 
 	if (!user) {
@@ -1254,24 +1333,31 @@ const getDepositFee = (currency, network, amount, level) => {
 	};
 };
 
-async function validateDeposit(user, amount, currency, network = null) {
-	const coinConfiguration = getKitCoin(currency);
-
+const validateDepositEnabled = (currency, network = null) => {
 	if (!subscribedToCoin(currency)) {
 		throw new Error(INVALID_COIN(currency));
 	}
 
-	if (amount <= 0) {
-		throw new Error(INVALID_AMOUNT(amount));
-	}
-
+	const coinConfiguration = getKitCoin(currency);
 	if (!coinConfiguration.allow_deposit) {
 		throw new Error(DEPOSIT_DISABLED_FOR_COIN(currency));
 	}
 
 	const depositNetworkOverrides = getKitConfig()?.coin_customizations?.[currency]?.network_overrides;
 	if (network && depositNetworkOverrides?.[network]?.allow_deposit === false) {
-		throw new Error(DEPOSIT_DISABLED_FOR_COIN(currency));
+		const supportedNetworks = coinConfiguration.network ? coinConfiguration.network.split(',') : [currency];
+		const availableNetworks = supportedNetworks
+			.filter((net) => net !== network && depositNetworkOverrides?.[net]?.allow_deposit !== false)
+			.map(getNetworkNameByKey);
+		throw new Error(DEPOSIT_DISABLED_FOR_COIN_ON_NETWORK(currency, getNetworkNameByKey(network), availableNetworks.join(',') || 'none'));
+	}
+};
+
+async function validateDeposit(user, amount, currency, network = null) {
+	validateDepositEnabled(currency, network);
+
+	if (amount <= 0) {
+		throw new Error(INVALID_AMOUNT(amount));
 	}
 
 	if (!user) {
@@ -1434,6 +1520,7 @@ module.exports = {
 	updatePendingMint,
 	updatePendingBurn,
 	isValidAddress,
+	validateDepositEnabled,
 	validateDeposit,
 	getWallets,
 	calculateWithdrawalMax,

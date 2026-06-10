@@ -114,6 +114,19 @@ describe('Auth Flow', async () => {
     });
 
 
+    it('Integration Test -should accept phone number value for reset password request', async () => {
+        const response = await request()
+            .get('/v2/reset-password')
+            .query({
+                value: '+15551234567',
+                version: 'v4'
+            });
+
+        response.should.have.status(200);
+        response.should.be.json;
+    });
+
+
     //Fuzz testing
     it('Fuzz Test -should return error', async () => {
 

@@ -17,6 +17,23 @@ const WebSocket = require('ws');
 const MESSAGES_KEY = 'WS:MESSAGES';
 let MESSAGES = [];
 
+// Fields a client is allowed to set on a P2P chat message / status update.
+// Everything else (identity + server-set fields) is applied AFTER this pick so
+// the caller cannot overwrite who the event is from or inject trust markers
+// (is_admin / is_system / verified / sender_role / ...). See H-2.
+const P2P_MESSAGE_FIELDS = ['id', 'message', 'receiver_id', 'receiver_name', 'sender_name', 'transaction_id'];
+const P2P_STATUS_FIELDS = ['id', 'title', 'receiver_id', 'transaction_id'];
+const P2P_STATUS_VALUES = ['created', 'confirmed', 'cancelled', 'appeal'];
+
+const pickFields = (obj, keys) => {
+	const out = {};
+	if (!obj || typeof obj !== 'object') return out;
+	for (const key of keys) {
+		if (obj[key] !== undefined) out[key] = obj[key];
+	}
+	return out;
+};
+
 // redis subscriber, get message and updates MESSAGES array
 subscriber.subscribe(CHAT_MESSAGE_CHANNEL);
 subscriber.subscribe(P2P_CHAT_MESSAGE_CHANNEL);
@@ -79,9 +96,11 @@ const addMessage = (username, verification_level, userId, message) => {
 const addP2PMessage = (user_id, p2pData) => {
 	const created_at = moment();
 	const data = {
-		id: p2pData.id,
+		...pickFields(p2pData, P2P_MESSAGE_FIELDS),
+		// Server-set identity, applied after the whitelist so it cannot be spoofed.
 		user_id,
-		...p2pData,
+		sender_id: user_id,
+		type: 'message',
 		created_at
 	};
 	publisher.publish(P2P_CHAT_MESSAGE_CHANNEL, JSON.stringify({ type: 'message', data }));
@@ -89,11 +108,13 @@ const addP2PMessage = (user_id, p2pData) => {
 
 const getP2PStatus = (user_id, p2pData) => {
 	const created_at = moment();
+	const status = P2P_STATUS_VALUES.includes(p2pData && p2pData.status) ? p2pData.status : undefined;
 	const data = {
-		id: p2pData.id,
+		...pickFields(p2pData, P2P_STATUS_FIELDS),
+		status,
+		// Server-set identity, applied after the whitelist so it cannot be spoofed.
 		user_id,
-		status: p2pData.status,
-		...p2pData,
+		sender_id: user_id,
 		created_at
 	};
 	publisher.publish(P2P_CHAT_MESSAGE_CHANNEL, JSON.stringify({ type: 'status', data }));

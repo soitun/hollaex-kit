@@ -7,6 +7,10 @@ const { TemplateEmail } = require('./helpers/common');
 const LINKS = () => GET_KIT_CONFIG().links;
 const LOGO_IMAGE = () => GET_KIT_CONFIG().logo_image;
 const { MAILTYPE, languageFile } = require('../strings');
+// Bundled English templates, used as a fallback when the DB-stored email
+// configuration has not been seeded with a template yet (e.g. a newly added
+// template before `tools/setMailTemplates.js` is run).
+const STATIC_EMAIL_TEMPLATES = require('../strings/en.json').en;
 
 String.prototype.format = function () {
 	let a = this;
@@ -61,7 +65,9 @@ const generateMessageContent = (
 		}
 
 
-		let MAILTYPE_CONFIGURATIONS = EMAIL_CONFIGURATIONS[language][new_type.toUpperCase()];
+		let MAILTYPE_CONFIGURATIONS =
+			(EMAIL_CONFIGURATIONS[language] && EMAIL_CONFIGURATIONS[language][new_type.toUpperCase()]) ||
+			STATIC_EMAIL_TEMPLATES[new_type.toUpperCase()];
 
 		title = getTitle(new_type, MAILTYPE_CONFIGURATIONS['title'], data);
 		message = {
@@ -619,7 +625,17 @@ const replaceHTMLContent = (type, html = '', email, data, language, domain) => {
 			);
 		}
 	}
-	else if (type === MAILTYPE.RESET_PASSWORD_CODE) { 
+	else if (type === MAILTYPE.ADDRESSBOOK_WHITELIST_REQUEST) {
+		html = html.replace(/\$\{name\}/g, email || '');
+		html = html.replace(/\$\{api_name\}/g, API_NAME() || '');
+		html = html.replace(/\$\{label\}/g, data.label || '');
+		html = html.replace(/\$\{address\}/g, data.address || '');
+		html = html.replace(/\$\{network\}/g, (data.network || '').toUpperCase());
+		html = html.replace(/\$\{currency\}/g, (data.currency || '').toUpperCase());
+		html = html.replace(/\$\{ip\}/g, data.ip || '');
+		html = html.replace(/\$\{confirmation_code\}/g, data.code);
+	}
+	else if (type === MAILTYPE.RESET_PASSWORD_CODE) {
 		html = html.replace(/\$\{name\}/g, email || '');
 		html = html.replace(/\$\{ip\}/g, data.ip || '');
 		html = html.replace(/\$\{api_name\}/g, API_NAME() || '');
