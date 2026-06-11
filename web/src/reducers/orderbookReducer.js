@@ -5,6 +5,10 @@ import {
 	SET_ORDER_ENTRY,
 } from '../actions/orderbookAction';
 
+// Maximum number of live public trades kept in the store per pair.
+// Without a cap these arrays grow unbounded for the whole session.
+const MAX_TRADES_PER_PAIR = 200;
+
 const INITIAL_QUICK_TRADE = {
 	fetching: false,
 	data: {
@@ -138,7 +142,9 @@ export default function reducer(state = INITIAL_STATE, { payload, type }) {
 				...state,
 				fetching: false,
 				fetched: true,
-				trades: trades.concat(state.trades), // TODO store trades by currency
+				trades: trades
+					.concat(state.trades)
+					.slice(0, MAX_TRADES_PER_PAIR), // TODO store trades by currency
 				price,
 				prices,
 			};
@@ -290,11 +296,14 @@ export default function reducer(state = INITIAL_STATE, { payload, type }) {
 						prices[keyPrice] = rest[key][0].price;
 					}
 				});
-			} else if (action === 'update' || 'insert') {
+			} else {
+				// covers 'update' and 'insert' actions
 				pairsTrades = {
 					...state.pairsTrades,
 				};
-				pairsTrades[symbol] = rest[symbol].concat(pairsTrades[symbol]);
+				pairsTrades[symbol] = rest[symbol]
+					.concat(pairsTrades[symbol] || [])
+					.slice(0, MAX_TRADES_PER_PAIR);
 
 				let keyPrice = '';
 				if (pairs[symbol] && pairs[symbol].pair_2 === BASE_CURRENCY) {

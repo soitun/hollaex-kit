@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import _isEqual from 'lodash/isEqual';
 import { connect } from 'react-redux';
 import mathjs from 'mathjs';
 import EventListener from 'react-event-listener';
@@ -222,7 +223,7 @@ class Trade extends PureComponent {
 			}
 		}
 
-		if (JSON.stringify(tools) !== JSON.stringify(nextProps.tools)) {
+		if (!_isEqual(tools, nextProps.tools)) {
 			const { layout } = this.state;
 			const newItemsLayout = [];
 			Object.entries(nextProps.tools)

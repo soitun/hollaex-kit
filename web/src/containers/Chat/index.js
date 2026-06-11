@@ -23,6 +23,9 @@ class Chat extends Component {
 		unreadMessages: 0,
 	};
 
+	unmounted = false;
+	reconnectTimeout = null;
+
 	UNSAFE_componentWillMount() {
 		// if (!this.props.fetchingAuth && isLoggedIn()) {
 		if (!this.props.fetchingAuth) {
@@ -68,6 +71,10 @@ class Chat extends Component {
 	}
 
 	componentWillUnmount() {
+		this.unmounted = true;
+		if (this.reconnectTimeout) {
+			clearTimeout(this.reconnectTimeout);
+		}
 		this.closeChatSocket();
 	}
 
@@ -151,9 +158,11 @@ class Chat extends Component {
 
 		chatWs.onclose = (evt) => {
 			this.setState({ chatSocketInitialized: false });
-			if (!isIntentionalClosure(evt)) {
-				setTimeout(() => {
-					this.initializeChatWs(getToken());
+			if (!isIntentionalClosure(evt) && !this.unmounted) {
+				this.reconnectTimeout = setTimeout(() => {
+					if (!this.unmounted) {
+						this.initializeChatWs(getToken());
+					}
 				}, 1000);
 			}
 		};
