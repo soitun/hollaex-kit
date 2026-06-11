@@ -80,6 +80,7 @@ class Container extends Component {
 		this.reconnectTimeout = null;
 		this.userFetchRetryTimeout = null;
 		this.idleTimer = null;
+		this.unmounted = false;
 	}
 
 	limitTimeOut = null;
@@ -115,12 +116,18 @@ class Container extends Component {
 	}
 
 	componentWillUnmount() {
+		this.unmounted = true;
+
 		if (this.state.publicSocket) {
 			this.state.publicSocket.close();
 		}
 
-		if (this.state.privateSocket) {
-			this.state.privateSocket.close(NORMAL_CLOSURE_CODE);
+		const { privateSocket } = this.state;
+		if (privateSocket) {
+			// Detach onclose so the intentional closure can't be misread
+			// and trigger a reconnect from a dead instance.
+			privateSocket.onclose = null;
+			privateSocket.close(NORMAL_CLOSURE_CODE);
 		}
 
 		this.activityEvents.forEach((event) =>
@@ -861,10 +868,12 @@ class Container extends Component {
 		};
 
 		privateSocket.onclose = (evt) => {
-			if (!isIntentionalClosure(evt)) {
+			if (!isIntentionalClosure(evt) && !this.unmounted) {
 				clearTimeout(this.reconnectTimeout);
 				this.reconnectTimeout = setTimeout(() => {
-					this.setUserSocket();
+					if (!this.unmounted) {
+						this.setUserSocket();
+					}
 				}, 1000);
 			}
 		};
