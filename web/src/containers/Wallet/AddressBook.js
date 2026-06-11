@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { isMobile } from 'react-device-detect';
-import { Input, Button, message, Spin } from 'antd';
+import { Input, message, Spin } from 'antd';
+import { CheckOutlined, CloseOutlined, CopyOutlined } from '@ant-design/icons';
 
 import GenerateAddress from './GenerateAddress';
 import withConfig from 'components/ConfigProvider/withConfig';
@@ -46,7 +47,7 @@ const AddressBook = ({
 		step3: false,
 	});
 	const [userLabel, setUserLabel] = useState('');
-	const [addAsTrusted, setAddAsTrusted] = useState(false);
+	const [addressDetail, setAddressDetail] = useState(null);
 	const [trustFlow, setTrustFlow] = useState({
 		open: false,
 		step: 'otp',
@@ -72,7 +73,11 @@ const AddressBook = ({
 			label: STRINGS['DEVELOPERS_TOKENS_TABLE.NAME'],
 			key: 'name',
 			renderCell: (data, key) => (
-				<td key={key}>
+				<td
+					key={key}
+					className="pointer"
+					onClick={() => setAddressDetail(data)}
+				>
 					<div className="d-flex justify-content-start table_text">
 						{data?.label || '-'}
 					</div>
@@ -84,7 +89,11 @@ const AddressBook = ({
 			label: STRINGS['ASSETS'],
 			key: 'assets',
 			renderCell: (data, key) => (
-				<td key={key}>
+				<td
+					key={key}
+					className="pointer"
+					onClick={() => setAddressDetail(data)}
+				>
 					<div className="d-flex justify-content-center">
 						<div className="asset-label">
 							<Coin iconId={coins[data?.currency]?.icon_id} type="CS7" />
@@ -109,7 +118,11 @@ const AddressBook = ({
 						? getNetworkNameByKey(coins[data?.network]?.network)
 						: coins[data?.currency]?.symbol?.toUpperCase();
 				return (
-					<td key={key}>
+					<td
+						key={key}
+						className="pointer"
+						onClick={() => setAddressDetail(data)}
+					>
 						<div className="d-flex justify-content-center">
 							<span className="network-field">{network}</span>
 							<Coin
@@ -132,24 +145,14 @@ const AddressBook = ({
 			renderCell: (data, key) => {
 				const hasOptionalTag = data?.address?.split(':')[0];
 				return (
-					<td key={key} className="address-field-wrapper">
+					<td
+						key={key}
+						className="address-field-wrapper pointer"
+						onClick={() => setAddressDetail(data)}
+					>
 						<div className="d-flex justify-content-center">
 							<div className="align-items-center address-content">
 								<span>{hasOptionalTag ? hasOptionalTag : data?.address}</span>
-								<CopyToClipboard
-									text={hasOptionalTag ? hasOptionalTag : data?.address}
-									onCopy={() => {
-										handleCopy();
-									}}
-								>
-									<Button className="copy-btn">
-										<div className="remove-btn">
-											<EditWrapper stringId="REFERRAL_LINK.COPY">
-												{STRINGS['REFERRAL_LINK.COPY']}
-											</EditWrapper>
-										</div>
-									</Button>
-								</CopyToClipboard>
 							</div>
 						</div>
 					</td>
@@ -161,7 +164,11 @@ const AddressBook = ({
 			label: STRINGS['ADDRESS_BOOK.DATE_ADDED'],
 			key: 'date added',
 			renderCell: (data, key) => (
-				<td key={key}>
+				<td
+					key={key}
+					className="pointer"
+					onClick={() => setAddressDetail(data)}
+				>
 					<div className="d-flex justify-content-center">
 						{data?.created_at
 							? new Date(data.created_at)
@@ -178,51 +185,17 @@ const AddressBook = ({
 			label: STRINGS['ADDRESS_BOOK.TRUSTED'],
 			key: 'trusted',
 			renderCell: (data, key) => (
-				<td key={key}>
+				<td
+					key={key}
+					className="pointer"
+					onClick={() => setAddressDetail(data)}
+				>
 					<div className="d-flex justify-content-center align-items-center">
 						{data?.whitelisted ? (
-							<>
-								<span className="text-success mr-2">
-									{STRINGS['ADDRESS_BOOK.TRUSTED_YES']}
-								</span>
-								<div
-									className="link-content fs-13 text-uppercase remove-btn"
-									onClick={() => onRevokeTrust(data)}
-								>
-									<EditWrapper stringId="ADDRESS_BOOK.REVOKE_TRUST">
-										{STRINGS['ADDRESS_BOOK.REVOKE_TRUST']}
-									</EditWrapper>
-								</div>
-							</>
+							<CheckOutlined className="address-book-trusted-check" />
 						) : (
-							<div
-								className="blue-link fs-13 text-uppercase pointer"
-								onClick={() => onOpenTrustFlow(data)}
-							>
-								<EditWrapper stringId="ADDRESS_BOOK.MARK_TRUSTED">
-									{STRINGS['ADDRESS_BOOK.MARK_TRUSTED']}
-								</EditWrapper>
-							</div>
+							<CloseOutlined className="address-book-trusted-cross" />
 						)}
-					</div>
-				</td>
-			),
-		},
-		{
-			stringId: 'ADDRESS_BOOK.REMOVE',
-			label: STRINGS['ADDRESS_BOOK.REMOVE'],
-			key: 'remove',
-			renderCell: (data, key) => (
-				<td key={key}>
-					<div className="d-flex justify-content-end">
-						<div
-							className="link-content fs-13 text-uppercase remove-btn"
-							onClick={() => onHandleRemove(data)}
-						>
-							<EditWrapper stringId="ADDRESS_BOOK.REMOVE">
-								{STRINGS['ADDRESS_BOOK.REMOVE']}
-							</EditWrapper>
-						</div>
 					</div>
 				</td>
 			),
@@ -278,9 +251,6 @@ const AddressBook = ({
 		}));
 		setIsValidAddress(null);
 		setUserLabel('');
-		if (currStep === 'step1' || currStep === 'step3') {
-			setAddAsTrusted(false);
-		}
 	};
 
 	const onHandleRemove = (data) => {
@@ -448,12 +418,6 @@ const AddressBook = ({
 					await setUserLabelAndAddress({
 						addresses: [currValue, ...restGetUserData],
 					});
-					// If the user opted to trust this address while adding it, kick off
-					// the verified whitelist flow once the address is saved.
-					if (addAsTrusted) {
-						onOpenTrustFlow(currValue);
-						setAddAsTrusted(false);
-					}
 				} catch (error) {
 					console.error(error);
 				}
@@ -473,11 +437,166 @@ const AddressBook = ({
 
 	return (
 		<div className="address-book-wrapper">
+			{addressDetail && (
+				<Dialog
+					isOpen={!!addressDetail}
+					onCloseDialog={() => setAddressDetail(null)}
+					className="address_book_popup_wrapper address_book_trust_popup_wrapper"
+					label="address-book-detail-popup"
+				>
+					<div className="address-book-popup-wrapper">
+						<div className="address-book-title">
+							<EditWrapper stringId="ADDRESS_BOOK.ADDRESS_DETAILS">
+								{STRINGS['ADDRESS_BOOK.ADDRESS_DETAILS']}
+							</EditWrapper>
+						</div>
+						<div className="mt-3">
+							<div className="d-flex align-items-center">
+								<EditWrapper stringId="DEVELOPERS_TOKENS_TABLE.NAME">
+									{STRINGS['DEVELOPERS_TOKENS_TABLE.NAME']}:
+								</EditWrapper>
+								<span className="ml-2">{addressDetail?.label}</span>
+							</div>
+							<div className="d-flex align-items-center mt-2">
+								<EditWrapper stringId="ASSETS">
+									{STRINGS['ASSETS']}:
+								</EditWrapper>
+								<div className="ml-2 d-flex align-items-center">
+									<Coin
+										iconId={coins[addressDetail?.currency]?.icon_id}
+										type="CS2"
+									/>
+								</div>
+								<span className="ml-1">
+									{`${
+										coins[addressDetail?.currency]?.fullname
+									} (${addressDetail?.currency?.toUpperCase()})`}
+								</span>
+							</div>
+							<div className="d-flex align-items-center">
+								<EditWrapper stringId="WITHDRAWALS_FORM_NETWORK_LABEL">
+									{STRINGS['WITHDRAWALS_FORM_NETWORK_LABEL']}:
+								</EditWrapper>
+								<div className="ml-2 d-flex align-items-center">
+									<Coin
+										iconId={
+											coins[addressDetail?.network]?.icon_id
+												? coins[addressDetail?.network]?.icon_id
+												: coins[addressDetail?.currency]?.icon_id
+										}
+										type="CS2"
+									/>
+								</div>
+								<span className="ml-1">
+									{coins[addressDetail?.network]?.network &&
+									coins[addressDetail?.network]?.network !== 'other'
+										? getNetworkNameByKey(
+												coins[addressDetail?.network]?.network
+										  )
+										: coins[addressDetail?.currency]?.symbol?.toUpperCase()}
+								</span>
+							</div>
+							<div className="d-flex align-items-center mt-2">
+								<EditWrapper stringId="WITHDRAW_PAGE.WITHDRAWAL_CONFIRM_ADDRESS">
+									{STRINGS['WITHDRAW_PAGE.WITHDRAWAL_CONFIRM_ADDRESS']}:
+								</EditWrapper>
+								<span className="ml-2 text-break">
+									{addressDetail?.address?.split(':')[0]}
+								</span>
+								<CopyToClipboard
+									text={addressDetail?.address?.split(':')[0]}
+									onCopy={handleCopy}
+								>
+									<CopyOutlined className="ml-2 pointer blue-link" />
+								</CopyToClipboard>
+							</div>
+							{addressDetail?.address?.split(':')[1] && (
+								<div className="d-flex align-items-center mt-2">
+									<EditWrapper stringId="ACCORDIAN.TAG">
+										{STRINGS['ACCORDIAN.TAG']}:
+									</EditWrapper>
+									<span className="ml-2">
+										{addressDetail?.address?.split(':')[1]}
+									</span>
+								</div>
+							)}
+							<div className="d-flex align-items-center mt-2">
+								<EditWrapper stringId="ADDRESS_BOOK.DATE_ADDED">
+									{STRINGS['ADDRESS_BOOK.DATE_ADDED']}:
+								</EditWrapper>
+								<span className="ml-2">
+									{addressDetail?.created_at
+										? new Date(addressDetail.created_at)
+												.toISOString()
+												.slice(0, 10)
+												.replace(/-/g, '/')
+										: '-'}
+								</span>
+							</div>
+							<div className="d-flex align-items-center mt-2">
+								<EditWrapper stringId="ADDRESS_BOOK.TRUSTED">
+									{STRINGS['ADDRESS_BOOK.TRUSTED']}:
+								</EditWrapper>
+								{addressDetail?.whitelisted ? (
+									<span className="ml-2 address-book-trusted-check">
+										<CheckOutlined className="mr-1" />
+										{STRINGS['ADDRESS_BOOK.TRUSTED_YES']}
+									</span>
+								) : (
+									<span className="ml-2 address-book-trusted-cross">
+										<CloseOutlined className="mr-1" />
+										{STRINGS['ADDRESS_BOOK.NOT_TRUSTED']}
+									</span>
+								)}
+							</div>
+						</div>
+						<div className="mt-3">
+							<span
+								className="link-content fs-13 text-uppercase remove-btn pointer"
+								onClick={() => {
+									onHandleRemove(addressDetail);
+									setAddressDetail(null);
+								}}
+							>
+								<EditWrapper stringId="ADDRESS_BOOK.REMOVE">
+									{STRINGS['ADDRESS_BOOK.REMOVE']}
+								</EditWrapper>
+							</span>
+						</div>
+						<div className="address-book-popup-button-wrapper">
+							<RenderBtn
+								string="REFERRAL_LINK.BACK"
+								buttonClassName="back-btn"
+								onHandleClick={() => setAddressDetail(null)}
+							/>
+							{addressDetail?.whitelisted ? (
+								<RenderBtn
+									string="ADDRESS_BOOK.REVOKE_TRUST"
+									buttonClassName="next-btn"
+									onHandleClick={() => {
+										onRevokeTrust(addressDetail);
+										setAddressDetail(null);
+									}}
+								/>
+							) : (
+								<RenderBtn
+									string="ADDRESS_BOOK.MARK_TRUSTED"
+									buttonClassName="next-btn"
+									onHandleClick={() => {
+										setAddressDetail(null);
+										onOpenTrustFlow(addressDetail);
+									}}
+								/>
+							)}
+						</div>
+					</div>
+				</Dialog>
+			)}
 			{trustFlow.open && (
 				<Dialog
 					isOpen={trustFlow.open}
 					onCloseDialog={onCloseTrustFlow}
-					className="address_book_popup_wrapper"
+					className="address_book_popup_wrapper address_book_trust_popup_wrapper"
 					label="address-book-trust-popup"
 				>
 					<div className="address-book-popup-wrapper">
@@ -494,6 +613,45 @@ const AddressBook = ({
 						<div className="mt-3">
 							<span>{trustFlow.entry?.label}</span>
 							<div className="text-break">{trustFlow.entry?.address}</div>
+							<div className="d-flex align-items-center mt-2">
+								<EditWrapper stringId="ASSETS">
+									{STRINGS['ASSETS']}:
+								</EditWrapper>
+								<div className="ml-2 d-flex align-items-center">
+									<Coin
+										iconId={coins[trustFlow.entry?.currency]?.icon_id}
+										type="CS2"
+									/>
+								</div>
+								<span className="ml-1">
+									{`${
+										coins[trustFlow.entry?.currency]?.fullname
+									} (${trustFlow.entry?.currency?.toUpperCase()})`}
+								</span>
+							</div>
+							<div className="d-flex align-items-center">
+								<EditWrapper stringId="WITHDRAWALS_FORM_NETWORK_LABEL">
+									{STRINGS['WITHDRAWALS_FORM_NETWORK_LABEL']}:
+								</EditWrapper>
+								<div className="ml-2 d-flex align-items-center">
+									<Coin
+										iconId={
+											coins[trustFlow.entry?.network]?.icon_id
+												? coins[trustFlow.entry?.network]?.icon_id
+												: coins[trustFlow.entry?.currency]?.icon_id
+										}
+										type="CS2"
+									/>
+								</div>
+								<span className="ml-1">
+									{coins[trustFlow.entry?.network]?.network &&
+									coins[trustFlow.entry?.network]?.network !== 'other'
+										? getNetworkNameByKey(
+												coins[trustFlow.entry?.network]?.network
+										  )
+										: coins[trustFlow.entry?.currency]?.symbol?.toUpperCase()}
+								</span>
+							</div>
 						</div>
 						{trustFlow.step === 'otp' ? (
 							<div className="mt-3">
@@ -774,8 +932,6 @@ const AddressBook = ({
 					onHandleClose={onHandleClose}
 					onHandlePopUpBtn={onHandlePopUpBtn}
 					onHandleAddressBookDetails={onHandleAddressBookDetails}
-					addAsTrusted={addAsTrusted}
-					setAddAsTrusted={setAddAsTrusted}
 				/>
 			)}
 			<div className="address-book-form">
@@ -871,8 +1027,6 @@ const AddressBook = ({
 						onHandleAddressBookDetails={onHandleAddressBookDetails}
 						setRenderPopUps={setRenderPopUps}
 						onHandleRemove={onHandleRemove}
-						addAsTrusted={addAsTrusted}
-						setAddAsTrusted={setAddAsTrusted}
 					/>
 				</div>
 			</div>
