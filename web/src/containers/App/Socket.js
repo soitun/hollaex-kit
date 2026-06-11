@@ -68,7 +68,6 @@ class Container extends Component {
 		this.state = {
 			publicSocket: undefined,
 			privateSocket: undefined,
-			idleTimer: undefined,
 			ordersQueued: [],
 			limitFilledOnOrder: '',
 			isUserFetched: false,
@@ -78,14 +77,28 @@ class Container extends Component {
 		this.orderCache = {};
 		this.wsInterval = null;
 		this.openNotifications = [];
+		this.reconnectTimeout = null;
+		this.userFetchRetryTimeout = null;
+		this.idleTimer = null;
 	}
 
 	limitTimeOut = null;
+
+	activityEvents = [
+		'mousemove',
+		'mousedown',
+		'keydown',
+		'scroll',
+		'touchstart',
+	];
 
 	componentDidMount() {
 		if (!this.props.fetchingAuth) {
 			this.initSocketConnections();
 		}
+		this.activityEvents.forEach((event) =>
+			document.addEventListener(event, this.resetTimer, true)
+		);
 	}
 
 	UNSAFE_componentWillReceiveProps(nextProps) {
@@ -93,7 +106,9 @@ class Container extends Component {
 			!nextProps.fetchingAuth &&
 			nextProps.fetchingAuth !== this.props.fetchingAuth
 		) {
-			if (!this.state.publicSocket) {
+			// publicSocket is never set; guarding on privateSocket prevents
+			// opening a duplicate stream when fetchingAuth toggles again
+			if (!this.state.privateSocket) {
 				this.initSocketConnections();
 			}
 		}
@@ -108,25 +123,26 @@ class Container extends Component {
 			this.state.privateSocket.close(NORMAL_CLOSURE_CODE);
 		}
 
-		if (this.state.idleTimer) {
-			clearTimeout(this.state.idleTimer);
-		}
+		this.activityEvents.forEach((event) =>
+			document.removeEventListener(event, this.resetTimer, true)
+		);
+		this.resetTimer.cancel();
+		clearTimeout(this.idleTimer);
 		clearTimeout(this.limitTimeOut);
+		clearTimeout(this.reconnectTimeout);
+		clearTimeout(this.userFetchRetryTimeout);
 		if (this.wsInterval) {
 			clearInterval(this.wsInterval);
 		}
 	}
 
 	_resetTimer = () => {
-		if (this.state.idleTimer) {
-			clearTimeout(this.idleTimer);
-		}
-		if (this.state.appLoaded) {
-			const idleTimer = setTimeout(
+		clearTimeout(this.idleTimer);
+		if (this.state.appLoaded && isLoggedIn()) {
+			this.idleTimer = setTimeout(
 				() => this.props.logout('Inactive'),
 				SESSION_TIME
 			); // no activity will log the user out automatically
-			this.setState({ idleTimer });
 		}
 	};
 
@@ -309,6 +325,13 @@ class Container extends Component {
 						reason?.message ||
 						JSON.stringify(reason);
 					this.props.setNotification(NOTIFICATIONS.ERROR, message);
+					// transient failure (network error, 5xx): without a retry the
+					// session would keep running on default user settings
+					clearTimeout(this.userFetchRetryTimeout);
+					this.userFetchRetryTimeout = setTimeout(
+						() => this.getUserDetails(),
+						5000
+					);
 				}
 			})
 			.finally(() => this.setState({ isUserFetched: true }));
@@ -501,13 +524,16 @@ class Container extends Component {
 					if (data.action === 'partial') {
 						this.props.setUserOrders(data.data);
 					} else if (data.action === 'insert') {
+						// this.props.user.fetched guards against showing toasts based on
+						// default settings before the real user settings have loaded
 						const isNotification =
-							(data?.data?.status === 'new' &&
+							this.props.user.fetched &&
+							((data?.data?.status === 'new' &&
 								this.props.settings.notification.popup_order_new) ||
-							(data?.data?.status === 'filled' &&
-								(this.state.selectedPair !== data?.data?.symbol ||
-									!this.state.isOrderStatus) &&
-								this.props.settings.notification.popup_order_completed);
+								(data?.data?.status === 'filled' &&
+									(this.state.selectedPair !== data?.data?.symbol ||
+										!this.state.isOrderStatus) &&
+									this.props.settings.notification.popup_order_completed));
 						if (isNotification) {
 							this.toastNotification(data);
 						}
@@ -538,6 +564,7 @@ class Container extends Component {
 							});
 							this.props.updateOrder(data.data);
 							if (
+								this.props.user.fetched &&
 								this.props.settings.notification &&
 								this.props.settings.notification.popup_order_partially_filled
 							) {
@@ -577,6 +604,7 @@ class Container extends Component {
 							});
 							this.props.removeOrder(data.data);
 							if (
+								this.props.user.fetched &&
 								this.props.settings.notification &&
 								this.props.settings.notification.popup_order_completed
 							) {
@@ -834,7 +862,8 @@ class Container extends Component {
 
 		privateSocket.onclose = (evt) => {
 			if (!isIntentionalClosure(evt)) {
-				setTimeout(() => {
+				clearTimeout(this.reconnectTimeout);
+				this.reconnectTimeout = setTimeout(() => {
 					this.setUserSocket();
 				}, 1000);
 			}
