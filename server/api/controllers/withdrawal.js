@@ -77,7 +77,8 @@ const requestWithdrawal = (req, res) => {
 		amount,
 		currency,
 		network,
-		version
+		version,
+		verification_method
 	} = req.swagger.params.data.value;
 	const domain = req.headers['x-real-origin'];
 	const ip = req.headers['x-real-ip'];
@@ -95,14 +96,43 @@ const requestWithdrawal = (req, res) => {
 		network
 	);
 
-	toolsLib.wallet.sendRequestWithdrawalEmail(id, address, amount, currency, version, {
-		network,
-		otpCode: otp_code,
-		ip,
-		domain
-	})
-		.then(() => {
-			return res.json({ message: 'Success' });
+	toolsLib.user.isAddressWhitelisted(id, address, currency, network)
+		.then((whitelisted) => {
+			// Trusted (whitelisted) addresses skip the email confirmation and the
+			// 2FA/OTP prompt — the withdrawal is processed immediately. All other
+			// validation (limits, balance, blacklist) still runs inside
+			// performDirectWithdrawal -> validateWithdrawal.
+			if (whitelisted) {
+				return toolsLib.wallet.performDirectWithdrawal(id, address, currency, amount, {
+					network,
+					additionalHeaders: {
+						'x-forwarded-for': req.headers['x-forwarded-for']
+					}
+				})
+					.then((data) => {
+						return res.json({
+							message: 'Withdrawal request is in the queue and will be processed.',
+							direct: true,
+							id: data.id,
+							transaction_id: data.transaction_id,
+							amount: data.amount,
+							currency: data.currency,
+							fee: data.fee,
+							fee_coin: data.fee_coin
+						});
+					});
+			}
+
+			return toolsLib.wallet.sendRequestWithdrawalEmail(id, address, amount, currency, version, {
+				network,
+				otpCode: otp_code,
+				ip,
+				domain,
+				verification_method
+			})
+				.then(() => {
+					return res.json({ message: 'Success' });
+				});
 		})
 		.catch((err) => {
 			loggerWithdrawals.error(
@@ -130,7 +160,27 @@ const performWithdrawal = (req, res) => {
 		token
 	);
 
-	toolsLib.wallet.validateWithdrawalToken(token)
+	// This endpoint is intentionally unauthenticated so the v1 email-link flow
+	// still works when the user is logged out. The in-app code flow (v3/v4)
+	// always carries the user's bearer token though, so when it's present we
+	// verify it and pass the authenticated user_id down to namespace the redis
+	// lookup. That way a short 6-digit code can only ever be confirmed by the
+	// user who requested it — no random user can confirm someone else's token,
+	// and codes that collide live in separate per-user buckets. A missing or
+	// invalid bearer simply falls back to the global (long-token) lookup.
+	const authorization = req.headers['authorization'];
+	const ip = req.headers['x-real-ip'];
+
+	Promise.resolve()
+		.then(() => {
+			if (!authorization) {
+				return undefined;
+			}
+			return toolsLib.security.verifyBearerTokenPromise(authorization, ip)
+				.then((decodedToken) => decodedToken?.sub?.id)
+				.catch(() => undefined);
+		})
+		.then((user_id) => toolsLib.wallet.validateWithdrawalToken(token, user_id))
 		.then((withdrawal) => {
 			return all([ withdrawal, toolsLib.user.getUserByKitId(withdrawal.user_id) ]);
 		})
@@ -342,6 +392,7 @@ const getAdminWithdrawals = (req, res) => {
 		rejected,
 		processing,
 		waiting,
+		onhold,
 		transaction_id,
 		address,
 		description
@@ -368,6 +419,7 @@ const getAdminWithdrawals = (req, res) => {
 		description.value,
 		null,
 		{
+			onhold: onhold.value,
 			additionalHeaders: {
 				'x-forwarded-for': req.headers['x-forwarded-for']
 			}
@@ -503,6 +555,7 @@ const downloadWithdrawalsCsv = (req, res) => {
 		rejected,
 		processing,
 		waiting,
+		onhold,
 		transaction_id,
 		address,
 		description
@@ -527,6 +580,7 @@ const downloadWithdrawalsCsv = (req, res) => {
 		description.value,
 		'csv',
 		{
+			onhold: onhold.value,
 			additionalHeaders: {
 				'x-forwarded-for': req.headers['x-forwarded-for']
 			}

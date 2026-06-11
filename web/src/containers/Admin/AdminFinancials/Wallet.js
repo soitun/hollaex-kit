@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { message, Table, Button, Spin } from 'antd';
+import { message, Table, Button, Spin, Tabs } from 'antd';
 import MultiFilter from './TableFilter';
+import BlacklistedAddresses from './BlacklistedAddresses';
 import { getExchangeWallet, getExchangeWalletCsv } from './action';
+
+const TabPane = Tabs.TabPane;
 
 const columns = [
 	{
@@ -143,32 +146,41 @@ const Wallet = () => {
 	};
 
 	return (
-		<div className="asset-exchange-wallet-wrapper">
-			<div className="header-txt">Exchange wallets</div>
-			<div className="wallet-filter-wrapper mt-4">
-				<MultiFilter
-					fields={filterFields}
-					filterOptions={filterOptions}
-					onHandle={getWallet}
-					setIsLoading={setIsLoading}
-					isLoading={isLoading}
-				/>
-			</div>
-			<div className="mt-5">
-				<span
-					onClick={(e) => {
-						requestDownload();
-					}}
-					className="mb-2 underline-text cursor-pointer"
-				>
-					Download below CSV table
-				</span>
-				<div className="mt-4">
-					<Spin spinning={isLoading}>
-						<Table columns={columns} dataSource={userData} />
-					</Spin>
-				</div>
-			</div>
+		<div className="admin-wallet-tabs-wrapper">
+			<Tabs defaultActiveKey="wallets">
+				<TabPane tab="Exchange Wallets" key="wallets">
+					<div className="asset-exchange-wallet-wrapper">
+						<div className="header-txt">Exchange wallets</div>
+						<div className="wallet-filter-wrapper mt-4">
+							<MultiFilter
+								fields={filterFields}
+								filterOptions={filterOptions}
+								onHandle={getWallet}
+								setIsLoading={setIsLoading}
+								isLoading={isLoading}
+							/>
+						</div>
+						<div className="mt-5">
+							<span
+								onClick={(e) => {
+									requestDownload();
+								}}
+								className="mb-2 underline-text cursor-pointer"
+							>
+								Download below CSV table
+							</span>
+							<div className="mt-4">
+								<Spin spinning={isLoading}>
+									<Table columns={columns} dataSource={userData} />
+								</Spin>
+							</div>
+						</div>
+					</div>
+				</TabPane>
+				<TabPane tab="Blacklisted Addresses" key="blacklist">
+					<BlacklistedAddresses />
+				</TabPane>
+			</Tabs>
 		</div>
 	);
 };

@@ -23,6 +23,7 @@ const getFilters = (coinOptions) => [
 			{ value: 'false', text: 'Pending' },
 			{ value: 'dismissed', text: 'Dismissed' },
 			{ value: 'rejected', text: 'Rejected' },
+			{ value: 'onhold', text: 'On Hold' },
 		],
 	},
 ];
@@ -32,6 +33,7 @@ const getStatusValue = (key, params) => {
 		key === 'status' &&
 		params.dismissed === undefined &&
 		params.rejected === undefined &&
+		params.onhold === undefined &&
 		params[key] === undefined
 	) {
 		return '';
@@ -47,6 +49,12 @@ const getStatusValue = (key, params) => {
 		params[key] === undefined
 	) {
 		return 'rejected';
+	} else if (
+		key === 'status' &&
+		params.onhold !== undefined &&
+		params[key] === undefined
+	) {
+		return 'onhold';
 	} else {
 		return params[key];
 	}

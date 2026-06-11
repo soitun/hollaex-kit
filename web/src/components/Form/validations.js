@@ -24,6 +24,11 @@ export const onlyNumbers = (value = '') =>
 	validator.isNumeric(value) ? undefined : STRINGS['VALIDATIONS.ONLY_NUMBERS'];
 export const email = (value = '') =>
 	!validator.isEmail(value) ? STRINGS['VALIDATIONS.INVALID_EMAIL'] : undefined;
+export const emailOrPhone = (value = '') =>
+	!validator.isEmail(value) &&
+	!validator.isMobilePhone(value, 'any', { strictMode: true })
+		? STRINGS['VALIDATIONS.INVALID_EMAIL']
+		: undefined;
 
 export const password = (value = '') =>
 	!passwordRegEx.test(value)
@@ -43,7 +48,12 @@ export const validAddress = (symbol = '', message, network, key = '') => {
 		let valid;
 
 		try {
-			if (currency === 'bnb' || currency === 'klay' || currency === 'matic' || currency === 'pol')
+			if (
+				currency === 'bnb' ||
+				currency === 'klay' ||
+				currency === 'matic' ||
+				currency === 'pol'
+			)
 				currency = 'eth';
 
 			const supported = WAValidator.findCurrency(currency);

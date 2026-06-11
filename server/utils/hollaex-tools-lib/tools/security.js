@@ -4,7 +4,7 @@ const rp = require('request-promise');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { intersection, has } = require('lodash');
-const { isEmail } = require('validator');
+const { isEmail, isMobilePhone } = require('validator');
 const ipRangeCheck = require('ip-range-check');
 const { SERVER_PATH } = require('../constants');
 const {
@@ -141,18 +141,30 @@ const getPasskeyConfig = (req) => {
 	return { rpName, rpID, allowedOrigins };
 };
 
-const getCountryFromIp = (ip) => {
-	const geo = geoip.lookup(ip);
-	if (!geo) {
+// CF-IPCountry is only trusted when the operator explicitly enables it for
+// deployments whose origin is protected by Cloudflare/proxy rules.
+const getCountryFromHeaders = (headers = {}) => {
+	if (!getKitConfig()?.cloudflare_ipcountry?.active) {
 		return '';
 	}
-	return geo.country;
+	const cf = headers?.['cf-ipcountry'];
+	if (typeof cf === 'string' && cf && cf !== 'XX' && cf !== 'T1') {
+		return cf.toUpperCase();
+	}
+	return '';
 };
 
-const checkIp = async (remoteip = '') => {
+const getCountryFromIp = (ip, headers = {}) => {
+	const fromHeader = getCountryFromHeaders(headers);
+	if (fromHeader) return fromHeader;
+	const geo = geoip.lookup(ip);
+	return geo?.country || '';
+};
+
+const checkIp = async (remoteip = '', headers = {}) => {
 	const dataGeofence = getKitConfig().black_list_countries;
 	if (dataGeofence && dataGeofence.length > 0 && remoteip) {
-		if (dataGeofence.includes(getCountryFromIp(remoteip))) {
+		if (dataGeofence.includes(getCountryFromIp(remoteip, headers))) {
 			throw new Error('ERROR IP LOCATION');
 		}
 	}
@@ -231,7 +243,8 @@ const resetUserPassword = (resetPasswordCode, newPassword) => {
 		})
 		.then(async ([user]) => {
 			const updated = await user.update({ password: newPassword }, { fields: ['password'] });
-			const { disableUserWithdrawal } = require('./user');
+			const { revokeAllUserSessions, disableUserWithdrawal } = require('./user');
+			await revokeAllUserSessions(user.id);
 			await disableUserWithdrawal(user.id, { expiry_date: moment().add(24, 'hours').toISOString() });
 			return updated;
 		});
@@ -301,7 +314,7 @@ const confirmChangeUserPassword = (code, domain) => {
 		});
 };
 
-const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode, version) => {
+const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode, version, verification_method) => {
 	if (oldPassword === newPassword) {
 		return reject(new Error(SAME_PASSWORD));
 	}
@@ -349,6 +362,7 @@ const changeUserPassword = (email, oldPassword, newPassword, ip, domain, otpCode
 				emailData: isShortCodeVersion
 					? { code, ip, freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true` }
 					: { code, ip },
+				requestVerificationMethod: verification_method,
 				domain
 			});
 			return;
@@ -453,12 +467,32 @@ const createResetPasswordCode = (userId, version) => {
 		});
 };
 
-const sendResetPasswordCode = (email, captcha, ip, domain, version, headers = {}) => {
-	if (typeof email !== 'string' || !isEmail(email)) {
+const normalizeResetPasswordPhone = (raw) => {
+	const value = String(raw || '').trim();
+	if (!isMobilePhone(value, 'any', { strictMode: true })) {
+		return null;
+	}
+	const digits = value.slice(1).replace(/\D/g, '');
+	if (!digits || digits.length < 8 || digits.length > 15) {
+		return null;
+	}
+	return `+${digits}`;
+};
+
+const sendResetPasswordCode = (identifier, captcha, ip, domain, version, headers = {}, verification_method) => {
+	if (typeof identifier !== 'string') {
 		return reject(new Error(USER_NOT_FOUND));
 	}
 
-	return dbQuery.findOne('user', { where: { email } })
+	const value = identifier.trim();
+	const email = isEmail(value) ? value.toLowerCase() : null;
+	const phone_number = email ? null : normalizeResetPasswordPhone(value);
+
+	if (!email && !phone_number) {
+		return reject(new Error(USER_NOT_FOUND));
+	}
+
+	return dbQuery.findOne('user', { where: email ? { email } : { phone_number } })
 		.then((user) => {
 			if (!user) {
 				throw new Error(USER_NOT_FOUND);
@@ -494,6 +528,7 @@ const sendResetPasswordCode = (email, captcha, ip, domain, version, headers = {}
 						ip,
 						freeze_account_link: `${domain}/confirm-login?token=${code}&prompt=false&freeze_account=true`
 					},
+					requestVerificationMethod: verification_method,
 					domain
 				});
 			});
@@ -1623,6 +1658,7 @@ module.exports = {
 	verifyBearerTokenExpressMiddleware,
 	getPasskeyConfig,
 	getCountryFromIp,
+	getCountryFromHeaders,
 	checkIp,
 	sendConfirmationEmail,
 	confirmByEmail,

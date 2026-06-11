@@ -5,7 +5,7 @@ const { SERVER_PATH } = require('../constants');
 const { getModel } = require('./database/model');
 const { fetchBrokerQuote, generateRandomToken, isFairPriceForBroker } = require('./broker');
 const { getNodeLib } = require(`${SERVER_PATH}/init`);
-const { INVALID_SYMBOL, INVALID_NUMBER, NO_DATA_FOR_CSV, USER_NOT_FOUND, USER_NOT_REGISTERED_ON_NETWORK, TOKEN_EXPIRED, BROKER_NOT_FOUND, BROKER_PAUSED, BROKER_SIZE_EXCEED, QUICK_TRADE_ORDER_CAN_NOT_BE_FILLED, QUICK_TRADE_ORDER_CURRENT_PRICE_ERROR, QUICK_TRADE_VALUE_IS_TOO_SMALL, FAIR_PRICE_BROKER_ERROR, AMOUNT_NEGATIVE_ERROR, QUICK_TRADE_CONFIG_NOT_FOUND, QUICK_TRADE_TYPE_NOT_SUPPORTED, PRICE_NOT_FOUND, INVALID_PRICE, INVALID_SIZE, BALANCE_NOT_AVAILABLE, FEATURE_NOT_ACTIVE, QUICK_TRADE_INSUFFICIENT_BALANCE } = require(`${SERVER_PATH}/messages`);
+const { INVALID_SYMBOL, INVALID_NUMBER, NO_DATA_FOR_CSV, USER_NOT_FOUND, USER_NOT_REGISTERED_ON_NETWORK, TOKEN_EXPIRED, BROKER_NOT_FOUND, BROKER_PAUSED, BROKER_SIZE_EXCEED, QUICK_TRADE_ORDER_CAN_NOT_BE_FILLED, QUICK_TRADE_ORDER_CURRENT_PRICE_ERROR, QUICK_TRADE_VALUE_IS_TOO_SMALL, FAIR_PRICE_BROKER_ERROR, TIER_NOT_FOUND, AMOUNT_NEGATIVE_ERROR, QUICK_TRADE_CONFIG_NOT_FOUND, QUICK_TRADE_TYPE_NOT_SUPPORTED, PRICE_NOT_FOUND, INVALID_PRICE, INVALID_SIZE, BALANCE_NOT_AVAILABLE, FEATURE_NOT_ACTIVE, QUICK_TRADE_INSUFFICIENT_BALANCE } = require(`${SERVER_PATH}/messages`);
 const { parse } = require('json2csv');
 const { BASE_SCOPES } = require(`${SERVER_PATH}/constants`);
 const { subscribedToPair, getKitTier, getMinFees, getAssetsPrices, getPublicTrades, getQuickTrades, getKitPairsConfig, getTradePaths, getKitConfig, getKitCoin, removeRepeatingDecimals } = require('./common');
@@ -201,6 +201,10 @@ const executeUserOrder = async (user_id, opts, token, req) => {
 		const tierBroker = getKitTier(broker.verification_level);
 		const tierUser = getKitTier(user.verification_level);
 
+		if (!tierBroker || !tierBroker.fees || !tierUser || !tierUser.fees) {
+			throw new Error(TIER_NOT_FOUND);
+		}
+
 		const makerFee = tierBroker.fees.maker[symbol];
 		const takerFee = tierUser.fees.taker[symbol];
 		loggerOrders.verbose(
@@ -234,6 +238,9 @@ const executeUserOrder = async (user_id, opts, token, req) => {
 	else if (type === 'network') {
 		const user = await getUserByKitId(user_id);
 		const tierUser = getKitTier(user.verification_level);
+		if (!tierUser || !tierUser.fees) {
+			throw new Error(TIER_NOT_FOUND);
+		}
 		const fee = tierUser.fees.taker[symbol];
 		loggerOrders.verbose(
 			'hollaex-tools-lib/order/executeUserOrder/network init',

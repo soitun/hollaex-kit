@@ -689,6 +689,118 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+  /admin/blacklist/address:
+    x-swagger-router-controller: admin
+    get:
+      operationId: getBlacklistedAddresses
+      description: Get the list of blacklisted withdrawal addresses
+      tags:
+        - Admin
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+        - name: page
+          in: query
+          required: false
+          type: integer
+          format: int32
+          minimum: 1
+        - name: order_by
+          in: query
+          required: false
+          type: string
+          enum: [id, address, network, label, reason, created_by, created_at, updated_at]
+        - name: order
+          in: query
+          required: false
+          type: string
+          enum: [asc, desc]
+        - name: search
+          in: query
+          required: false
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+    post:
+      operationId: postBlacklistedAddress
+      description: Blacklist a withdrawal address
+      tags:
+        - Admin
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - address
+            properties:
+              address:
+                type: string
+                maxLength: 256
+              network:
+                type: string
+                maxLength: 64
+              label:
+                type: string
+                maxLength: 256
+              reason:
+                type: string
+                maxLength: 256
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+    delete:
+      operationId: deleteBlacklistedAddress
+      description: Remove a blacklisted withdrawal address
+      tags:
+        - Admin
+      parameters:
+        - name: id
+          in: query
+          description: Id of the blacklisted address
+          required: true
+          type: integer
+          format: int32
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
   /admin/upload:
     x-swagger-router-controller: admin
     post:
@@ -1227,16 +1339,6 @@ paths:
                 properties:
                   status:
                     type: number
-              verification_method:
-                type: string
-                enum:
-                  - email
-                  - sms
-                description: >-
-                  Channel used to deliver the user's verification codes. Setting
-                  to "sms" requires the user to have a phone_number, the
-                  sms_verification exchange feature to be enabled, and an active
-                  SMS plugin.
       responses:
         200:
           description: Success
@@ -2484,6 +2586,11 @@ paths:
           type: boolean
           description: Waiting status of the deposit.
         - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
+        - in: query
           name: format
           description: Specify data format
           required: false
@@ -2610,6 +2717,11 @@ paths:
           required: false
           type: boolean
           description: Waiting status of the deposit.
+        - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
         - in: query
           name: format
           description: Specify data format
@@ -5693,6 +5805,11 @@ paths:
           type: boolean
           description: Waiting status of the deposit.
         - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
+        - in: query
           name: format
           description: Specify data format
           required: false
@@ -5818,6 +5935,11 @@ paths:
           required: false
           type: boolean
           description: Waiting status of the deposit.
+        - in: query
+          name: onhold
+          required: false
+          type: boolean
+          description: On hold status of the transaction.
         - in: query
           name: format
           description: Specify data format

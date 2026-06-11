@@ -68,6 +68,7 @@ const KIT_CONFIG_KEYS = [
 	'auto_trade_config',
 	'apps',
 	'timezone',
+	'blockchain',
 ];
 
 const KIT_SECRETS_KEYS = [

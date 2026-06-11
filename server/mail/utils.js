@@ -40,14 +40,19 @@ const formatDate = (
 	return formatedDate;
 };
 
-const getCountryFromIp = (ip) => {
-	const geo = geoip.lookup(ip);
-	if (!geo) {
-		return '';
-	}
-	return `${geo.city ? `${geo.city}, ` : ''}${
-		geo.country ? `${geo.country}` : ''
-	}`;
+// CF-IPCountry is only trusted when the operator explicitly enables it for
+// deployments whose origin is protected by Cloudflare/proxy rules.
+const getCountryFromIp = (ip, headers = {}) => {
+	const geo = geoip.lookup(ip) || {};
+	const cf = GET_KIT_CONFIG()?.cloudflare_ipcountry?.active
+		? headers?.['cf-ipcountry']
+		: '';
+	const cfCountry = (typeof cf === 'string' && cf && cf !== 'XX' && cf !== 'T1')
+		? cf.toUpperCase()
+		: '';
+	const country = cfCountry || geo.country || '';
+	if (!geo.city && !country) return '';
+	return `${geo.city ? `${geo.city}, ` : ''}${country}`;
 };
 
 const nodemailer = require('nodemailer');

@@ -15,6 +15,7 @@ const broker = require('./broker');
 const stake = require('./stake');
 const p2p = require('./p2p');
 const verification = require('./verification');
+const blockchain = require('./blockchain');
 
 module.exports = {
 	...common,
@@ -22,7 +23,7 @@ module.exports = {
 	order,
 	plugin,
 	user,
-	wallet,
+	wallet: { ...wallet, ...blockchain },
 	tier,
 	security,
 	coin,

@@ -102,10 +102,16 @@ class Login extends Component {
 	resetCaptcha = () => {
 		// Clear the stored captcha token and remount the Turnstile widget to force a fresh token
 		this.props.change(FORM_NAME, 'captcha', '');
-		this.setState({ captchaToken: '' });
 		this.setState((prevState) => ({
+			captchaToken: '',
 			turnstileNonce: (prevState.turnstileNonce || 0) + 1,
 		}));
+	};
+
+	isTurnstileEnabled = () => {
+		const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
+			?.site_key;
+		return !!turnstileSiteKey && turnstileSiteKey !== 'null';
 	};
 
 	getServiceParam = () => {
@@ -136,9 +142,7 @@ class Login extends Component {
 	// };
 
 	onSubmitLogin = (values) => {
-		const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
-			?.site_key;
-		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
+		const turnstileEnabled = this.isTurnstileEnabled();
 		if (turnstileEnabled && !values?.captcha) {
 			throw new SubmissionError({ _error: STRINGS['INVALID_CAPTCHA'] });
 		}
@@ -202,6 +206,10 @@ class Login extends Component {
 	};
 
 	onSubmitLoginOtp = (values) => {
+		if (this.isTurnstileEnabled() && !this.state.captchaToken) {
+			throw new SubmissionError({ _error: STRINGS['INVALID_CAPTCHA'] });
+		}
+
 		// Route the OTP submission to the same login API the user started
 		// with. Google ID tokens are valid for ~1 hour, so reusing the
 		// stashed `google_token` for the follow-up is safe.
@@ -234,10 +242,7 @@ class Login extends Component {
 				const data = err?.response?.data || {};
 				const code = data?.code;
 				const _error = data?.message || err?.message;
-				const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
-					?.site_key;
-				const turnstileEnabled =
-					!!turnstileSiteKey && turnstileSiteKey !== 'null';
+				const turnstileEnabled = this.isTurnstileEnabled();
 
 				// A POST /login was made, always refresh captcha token for the next request
 				this.resetCaptcha();
@@ -264,7 +269,6 @@ class Login extends Component {
 					this.props.reset('OtpForm');
 					this.props.stopSubmit('OtpForm', {});
 					this.props.change(FORM_NAME, 'password', '');
-					this.resetCaptcha();
 					this.props.stopSubmit(FORM_NAME, { _error });
 					throw new SubmissionError({ _error });
 				}
@@ -275,7 +279,6 @@ class Login extends Component {
 					this.setState({ otpDialogIsOpen: false });
 					this.props.reset('OtpForm');
 					this.props.stopSubmit('OtpForm', {});
-					this.resetCaptcha();
 					this.props.stopSubmit(FORM_NAME, { _error });
 					throw new SubmissionError({ _error });
 				}
@@ -313,9 +316,7 @@ class Login extends Component {
 	};
 
 	handleGoogleLogin = async (token) => {
-		const turnstileSiteKey = this.props.constants?.cloudflare_turnstile
-			?.site_key;
-		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
+		const turnstileEnabled = this.isTurnstileEnabled();
 
 		// Mirror the email login flow: when Turnstile is configured we must
 		// send a fresh token with every Google submission too. Without this,
@@ -398,7 +399,18 @@ class Login extends Component {
 		} = this.props;
 		const { otpDialogIsOpen, logoutDialogIsOpen } = this.state;
 		const turnstileSiteKey = constants?.cloudflare_turnstile?.site_key;
-		const turnstileEnabled = !!turnstileSiteKey && turnstileSiteKey !== 'null';
+		const turnstileEnabled = this.isTurnstileEnabled();
+		const renderTurnstile = (keyPrefix) => (
+			<CloudflareTurnstile
+				key={`${keyPrefix}-turnstile-${this.state.turnstileNonce}`}
+				siteKey={turnstileSiteKey}
+				theme={activeTheme}
+				onToken={(token) => {
+					this.setState({ captchaToken: token });
+					this.props.change(FORM_NAME, 'captcha', token);
+				}}
+			/>
+		);
 
 		return (
 			<div className={classnames(...FLEX_CENTER_CLASSES, 'flex-column', 'f-1')}>
@@ -445,17 +457,9 @@ class Login extends Component {
 							theme={activeTheme}
 							turnstileEnabled={turnstileEnabled}
 							extraContent={
-								turnstileEnabled ? (
-									<CloudflareTurnstile
-										key={`turnstile-${this.state.turnstileNonce}`}
-										siteKey={turnstileSiteKey}
-										theme={activeTheme}
-										onToken={(token) => {
-											this.setState({ captchaToken: token });
-											this.props.change(FORM_NAME, 'captcha', token);
-										}}
-									/>
-								) : null
+								turnstileEnabled && !otpDialogIsOpen
+									? renderTurnstile('login')
+									: null
 							}
 						/>
 						{isMobile && <BottomLink />}
@@ -488,7 +492,15 @@ class Login extends Component {
 					useFullScreen={isMobile}
 					showBar={otpDialogIsOpen}
 				>
-					{otpDialogIsOpen && <OtpForm onSubmit={this.onSubmitLoginOtp} />}
+					{otpDialogIsOpen && (
+						<React.Fragment>
+							<OtpForm
+								onSubmit={this.onSubmitLoginOtp}
+								isCaptchaPending={turnstileEnabled && !this.state.captchaToken}
+							/>
+							{turnstileEnabled && renderTurnstile('otp')}
+						</React.Fragment>
+					)}
 					{logoutDialogIsOpen && (
 						<Notification
 							type={NOTIFICATIONS.LOGOUT}

@@ -1517,6 +1517,72 @@ const deleteKitUserMeta = (req, res) => {
 		});
 };
 
+const getBlacklistedAddresses = (req, res) => {
+	loggerAdmin.verbose(req.uuid, 'controllers/admin/getBlacklistedAddresses', req.auth.sub);
+
+	const { limit, page, order_by, order, search } = req.swagger.params;
+
+	toolsLib.wallet.getBlacklistedAddresses({
+		limit: limit.value,
+		page: page.value,
+		order_by: order_by.value,
+		order: order.value,
+		search: search.value
+	})
+		.then((data) => {
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(req.uuid, 'controllers/admin/getBlacklistedAddresses', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const postBlacklistedAddress = (req, res) => {
+	loggerAdmin.verbose(req.uuid, 'controllers/admin/postBlacklistedAddress', req.auth.sub);
+
+	const { address, network, label, reason } = req.swagger.params.data.value;
+
+	loggerAdmin.info(req.uuid, 'controllers/admin/postBlacklistedAddress', 'address', address, 'network', network);
+
+	toolsLib.wallet.createBlacklistedAddress({
+		address,
+		network,
+		label,
+		reason,
+		created_by: req?.auth?.sub?.id
+	})
+		.then((result) => {
+			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], req?.swagger?.params?.data?.value);
+			return res.json(result);
+		})
+		.catch((err) => {
+			loggerAdmin.error(req.uuid, 'controllers/admin/postBlacklistedAddress', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const deleteBlacklistedAddress = (req, res) => {
+	loggerAdmin.verbose(req.uuid, 'controllers/admin/deleteBlacklistedAddress', req.auth.sub);
+
+	const id = req.swagger.params.id.value;
+
+	loggerAdmin.info(req.uuid, 'controllers/admin/deleteBlacklistedAddress', 'id', id);
+
+	toolsLib.wallet.deleteBlacklistedAddress(id)
+		.then((result) => {
+			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], { id });
+			return res.json(result);
+		})
+		.catch((err) => {
+			loggerAdmin.error(req.uuid, 'controllers/admin/deleteBlacklistedAddress', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 const adminCheckTransaction = (req, res) => {
 	loggerAdmin.verbose(
 		req.uuid,
@@ -2122,8 +2188,7 @@ const putUserInfo = (req, res) => {
 			'phone_number',
 			'dob',
 			'address',
-			'id_data',
-			'verification_method'
+			'id_data'
 		]
 	);
 
@@ -3900,6 +3965,9 @@ module.exports = {
 	deleteKitUserMeta,
 	postKitUserMeta,
 	putKitUserMeta,
+	getBlacklistedAddresses,
+	postBlacklistedAddress,
+	deleteBlacklistedAddress,
 	putUserMeta,
 	adminCheckTransaction,
 	createPair,

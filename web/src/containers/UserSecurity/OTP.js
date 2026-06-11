@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QRCode from 'qrcode.react';
-import { Button } from 'antd';
 import { CloseCircleOutlined } from '@ant-design/icons';
-import { CheckboxButton, IconTitle, EditWrapper } from 'components';
+import { Button, CheckboxButton, IconTitle, EditWrapper } from 'components';
 import STRINGS from 'config/localizedStrings';
 import { Image } from 'hollaex-web-lib';
 import { RenderBtn, RenderBackBtn } from './utils_logins';
@@ -263,11 +262,10 @@ const OtpFormSteps = ({
 								handleOTPCheckbox(false);
 							}}
 							className="proceed-btn"
-						>
-							<EditWrapper stringId="ACCOUNT_SECURITY.OTP.NEXT">
-								{STRINGS['ACCOUNT_SECURITY.OTP.NEXT']}
-							</EditWrapper>
-						</Button>
+							label={STRINGS['ACCOUNT_SECURITY.OTP.NEXT']}
+							stringId="ACCOUNT_SECURITY.OTP.NEXT"
+							type="button"
+						/>
 					</div>
 				</div>
 			)}

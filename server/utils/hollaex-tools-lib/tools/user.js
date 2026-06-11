@@ -69,6 +69,10 @@ const {
 	ADDRESSBOOK_MISSING_FIELDS,
 	PAYMENT_DETAIL_NOT_FOUND,
 	ADDRESSBOOK_ALREADY_EXISTS,
+	ADDRESS_NOT_IN_ADDRESSBOOK,
+	ADDRESS_ALREADY_WHITELISTED,
+	INVALID_WHITELIST_TOKEN,
+	EXPIRED_WHITELIST_TOKEN,
 	UNAUTHORIZED_UPDATE_METHOD,
 	INVALID_AUTOTRADE_CONFIG,
 	GOOGLE_TOKEN_INVALID_ISSUER,
@@ -85,7 +89,9 @@ const {
 	VERIFICATION_EMAIL_REQUIRES_REAL_EMAIL,
 	USER_HAS_NO_PHONE,
 	USER_PHONE_ALREADY_VERIFIED,
-	PASSWORD_NOT_SET
+	PASSWORD_NOT_SET,
+	INVALID_COIN,
+	INVALID_NETWORK
 } = require(`${SERVER_PATH}/messages`);
 const { publisher, client } = require('./database/redis');
 const {
@@ -94,9 +100,10 @@ const {
 	USER_FIELD_ADMIN_LOG,
 	ADDRESS_FIELDS,
 	CRYPTO_ADDRESS_FIELDS,
+	TRAVEL_RULE_INFO_FIELDS,
+	ADDRESSBOOK_WHITELIST_REQUEST_KEY,
 	ID_FIELDS,
 	SETTING_KEYS,
-	VERIFICATION_METHODS,
 	OMITTED_USER_FIELDS,
 	DEFAULT_ORDER_RISK_PERCENTAGE,
 	AFFILIATION_CODE_LENGTH,
@@ -111,13 +118,18 @@ const {
 	KIT_CONFIG_KEYS,
 	KIT_SECRETS_KEYS,
 	NUMBER_OF_ALLOWED_ATTEMPTS,
+	USER_DATE_FORMATS,
+	USER_TIME_FORMATS
 } = require(`${SERVER_PATH}/constants`);
 const { sendEmail } = require(`${SERVER_PATH}/mail`);
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { getKitConfig, isValidTierLevel, getKitTier, isDatetime, getAssetsPrices, getRoles, getKitSecrets, sendCustomEmail, emailHtmlBoilerplate, updateKitConfigSecrets, sleep, getKitCoins, getKitCoin, subscribedToCoin, getQuickTrades } = require('./common');
 const { isSmsPluginActive } = require('./plugin');
-const { sendVerificationCode } = require('./verification');
-const { isValidPassword, createSession } = require('./security');
+const {
+	sendVerificationCode,
+	assertSmsVerificationEligible
+} = require('./verification');
+const { isValidPassword, createSession, getCountryFromIp } = require('./security');
 const { getNodeLib } = require(`${SERVER_PATH}/init`);
 const { all, reject } = require('bluebird');
 const { Op, fn, col, literal } = require('sequelize');
@@ -126,7 +138,6 @@ const { parse } = require('json2csv');
 const flatten = require('flat');
 const uuid = require('uuid/v4');
 const { checkCaptcha, validatePassword, verifyOtpBeforeAction } = require('./security');
-const geoip = require('geoip-lite');
 const moment = require('moment');
 const mathjs = require('mathjs');
 const { loggerUser } = require('../../../config/logger');
@@ -279,10 +290,7 @@ const signUpUser = async (email, password, opts = {}, version) => {
 				}
 			}
 			user = await getModel('sequelize').transaction(async (transaction) => {
-				const userSettings = {
-					...INITIAL_SETTINGS(),
-					...(isPhoneSignup ? { verification_method: 'sms' } : {})
-				};
+				const userSettings = INITIAL_SETTINGS();
 				const userMeta = isPhoneSignup
 					? { ...(isPlainObject(opts.meta) ? opts.meta : {}), phone_signup: true }
 					: (isPlainObject(opts.meta) ? opts.meta : {});
@@ -327,7 +335,8 @@ const signUpUser = async (email, password, opts = {}, version) => {
 			await sendVerificationCode(user, {
 				action_type: 'signup',
 				verification_code: verificationCode,
-				emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP
+				emailType: version === 'v3' || version === 'v4' ? MAILTYPE.SIGNUP_CODE : MAILTYPE.SIGNUP,
+				requestVerificationMethod: opts.verification_method
 			});
 		} else {
 			sendEmail(
@@ -605,8 +614,10 @@ const registerUserLogin = (
 		login.country = opts.country;
 	}
 
-	const geo = geoip.lookup(ip);
-	if (geo?.country && !opts?.country) login.country = geo.country;
+	if (!opts?.country) {
+		const country = getCountryFromIp(ip, opts?.headers);
+		if (country) login.country = country;
+	}
 	return getModel('login').create(login)
 		.then((loginData) => {
 			if (opts.token && opts.status) {
@@ -639,7 +650,7 @@ const updateLoginStatus = (loginId) => {
 	return getModel('login').update({ status: true }, { where: { id: loginId } });
 };
 
-const createUserLogin = async (user, ip, device, domain, origin, referer, token, long_term, status) => {
+const createUserLogin = async (user, ip, device, domain, origin, referer, token, long_term, status, headers) => {
 	const loginData = status == false && await findUserLatestLogin(user, status);
 
 	if (!loginData) {
@@ -650,7 +661,8 @@ const createUserLogin = async (user, ip, device, domain, origin, referer, token,
 			referer,
 			token,
 			status,
-			expiry: long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL
+			expiry: long_term ? TOKEN_TIME_LONG : TOKEN_TIME_NORMAL,
+			headers
 		});
 	}
 	else if (loginData.status == false) {
@@ -984,9 +996,18 @@ const omitUserFields = (user) => {
 			...initialSettings.notification,
 			...filteredUser.settings.notification
 		};
+		filteredUser.settings.interface = {
+			...initialSettings.interface,
+			...filteredUser.settings.interface
+		};
 		Object.keys(initialSettings.notification).forEach((key) => {
 			if (isNil(filteredUser.settings.notification[key])) {
 				filteredUser.settings.notification[key] = initialSettings.notification[key];
+			}
+		});
+		Object.keys(initialSettings.interface).forEach((key) => {
+			if (isNil(filteredUser.settings.interface[key])) {
+				filteredUser.settings.interface[key] = initialSettings.interface[key];
 			}
 		});
 		filteredUser.settings.risk = {
@@ -998,6 +1019,7 @@ const omitUserFields = (user) => {
 				filteredUser.settings.risk[key] = initialSettings.risk[key];
 			}
 		});
+		delete filteredUser.settings.verification_method;
 	}
 	return filteredUser;
 };
@@ -1169,8 +1191,9 @@ const getAllUsersAdmin = (opts = {
 	}
 
 	if (opts.bank_key != null && opts.bank_value != null) {
+		const sequelize = getModel('sequelize');
 		const jsonStr = JSON.stringify([{ [opts.bank_key]: opts.bank_value }]);
-		const condition = getModel('sequelize').literal(`bank_account @> '${jsonStr}'`);
+		const condition = sequelize.literal(`bank_account @> ${sequelize.escape(jsonStr)}::jsonb`);
 		query.where[Op.and] = [
 			...query.where[Op.and],
 			condition
@@ -1534,6 +1557,10 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 			...initialSettings.notification,
 			...userSettings.notification
 		},
+		interface: {
+			...initialSettings.interface,
+			...userSettings.interface
+		},
 		risk: {
 			...initialSettings.risk,
 			...userSettings.risk
@@ -1542,6 +1569,11 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 	Object.keys(initialSettings.notification).forEach((key) => {
 		if (isNil(userSettings.notification[key])) {
 			userSettings.notification[key] = initialSettings.notification[key];
+		}
+	});
+	Object.keys(initialSettings.interface).forEach((key) => {
+		if (isNil(userSettings.interface[key])) {
+			userSettings.interface[key] = initialSettings.interface[key];
 		}
 	});
 	Object.keys(initialSettings.risk).forEach((key) => {
@@ -1561,15 +1593,23 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 				(!isString(newSettings[key]) || getKitConfig().valid_languages.indexOf(newSettings[key]) === -1)
 			) {
 				throw new Error('Invalid language given');
-			} else if (
-				key === 'verification_method' &&
-				(!isString(newSettings[key]) || VERIFICATION_METHODS.indexOf(newSettings[key]) === -1)
-			) {
-				throw new Error(`verification_method must be one of: ${VERIFICATION_METHODS.join(', ')}`);
+			} else if (key === 'interface' && isPlainObject(newSettings[key])) {
+				if (
+					has(newSettings[key], 'date_format') &&
+					(!isString(newSettings[key].date_format) || USER_DATE_FORMATS.indexOf(newSettings[key].date_format) === -1)
+				) {
+					throw new Error(`date_format must be one of: ${USER_DATE_FORMATS.join(', ')}`);
+				}
+				if (
+					has(newSettings[key], 'time_format') &&
+					(!isString(newSettings[key].time_format) || USER_TIME_FORMATS.indexOf(newSettings[key].time_format) === -1)
+				) {
+					throw new Error(`time_format must be one of: ${USER_TIME_FORMATS.join(', ')}`);
+				}
 			}
 			if (isPlainObject(userSettings[key]) && isPlainObject(newSettings[key])) {
 				joinedSettings[key] = { ...userSettings[key], ...newSettings[key] };
-				if (key === 'notification' || key === 'risk') {
+				if (key === 'notification' || key === 'risk' || key === 'interface') {
 					Object.keys(initialSettings[key]).forEach((settingKey) => {
 						if (isNil(joinedSettings[key][settingKey])) {
 							joinedSettings[key][settingKey] = initialSettings[key][settingKey];
@@ -1588,17 +1628,12 @@ const joinSettings = (userSettings = {}, newSettings = {}) => {
 	return joinedSettings;
 };
 
-const validateSmsVerificationEligibility = async (user) => {
-	if (!user.phone_number) {
-		throw new Error('A verified phone number is required to use SMS verification');
-	}
-	if (!getKitConfig()?.features?.sms_verification) {
-		throw new Error('SMS verification feature is not enabled on this exchange');
-	}
-	const active = await isSmsPluginActive();
-	if (!active) {
-		throw new Error(NO_ACTIVE_SMS_PLUGIN_ON_EXCHANGE);
-	}
+const validateSmsVerificationEligibility = async (user, action_type = 'signup') => {
+	return assertSmsVerificationEligible(user, {
+		requireVerified: action_type !== 'signup' &&
+			action_type !== 'reset_password' &&
+			action_type !== 'confirm_email'
+	});
 };
 
 const updateUserSettings = async (userOpts = {}, settings = {}) => {
@@ -1607,20 +1642,15 @@ const updateUserSettings = async (userOpts = {}, settings = {}) => {
 		throw new Error(USER_NOT_FOUND);
 	}
 
-	if (has(settings, 'verification_method') && settings.verification_method === 'email') {
-		if (isPhoneSignupSyntheticUser(user.dataValues)) {
-			throw new Error(VERIFICATION_EMAIL_REQUIRES_REAL_EMAIL);
-		}
+	const settingsUpdate = { ...settings };
+	delete settingsUpdate.verification_method;
+
+	if (Object.keys(settingsUpdate).length === 0) {
+		return omitUserFields(user.dataValues);
 	}
 
-	if (has(settings, 'verification_method') && settings.verification_method === 'sms') {
-		await validateSmsVerificationEligibility(user.dataValues);
-	}
-
-	let nextSettings = settings;
-	if (Object.keys(settings).length > 0) {
-		nextSettings = joinSettings(user.dataValues.settings, settings);
-	}
+	let nextSettings = joinSettings(user.dataValues.settings, settingsUpdate);
+	delete nextSettings.verification_method;
 
 	const updated = await user.update({ settings: nextSettings }, {
 		fields: ['settings'],
@@ -1640,7 +1670,9 @@ const INITIAL_SETTINGS = () => {
 		},
 		interface: {
 			order_book_levels: 10,
-			theme: getKitConfig().defaults.theme
+			theme: getKitConfig().defaults.theme,
+			date_format: 'MM/DD/YYYY',
+			time_format: '12h'
 		},
 		language: getKitConfig().defaults.language,
 		audio: {
@@ -1654,8 +1686,7 @@ const INITIAL_SETTINGS = () => {
 		chat: {
 			set_username: false
 		},
-		watchlist: [],
-		verification_method: 'email'
+		watchlist: []
 	};
 };
 
@@ -2563,7 +2594,6 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 	}
 
 	const updateData = { user_id: userId };
-	let verificationMethodUpdate = null;
 
 	for (const field in data) {
 		const value = data[field];
@@ -2602,31 +2632,13 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 					};
 				}
 				break;
-			case 'verification_method':
-				if (isString(value) && VERIFICATION_METHODS.indexOf(value) !== -1) {
-					verificationMethodUpdate = value;
-				}
-				break;
 			default:
 				break;
 		}
 	}
 
-	if (Object.keys(updateData).length <= 1 && verificationMethodUpdate === null) {
+	if (Object.keys(updateData).length <= 1) {
 		throw new Error('No fields to update');
-	}
-
-	const isClearingPhoneNumber =
-		has(updateData, 'phone_number') && !updateData.phone_number;
-
-	if (verificationMethodUpdate === 'sms') {
-		const phoneAfterUpdate = has(updateData, 'phone_number')
-			? updateData.phone_number
-			: user.dataValues.phone_number;
-		await validateSmsVerificationEligibility({
-			...user.dataValues,
-			phone_number: phoneAfterUpdate
-		});
 	}
 
 	const oldValues = { user_id: userId };
@@ -2638,19 +2650,6 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 			updateData,
 			{ fields: Object.keys(updateData).filter((k) => k !== 'user_id') }
 		);
-	}
-
-	if (verificationMethodUpdate !== null || isClearingPhoneNumber) {
-		const nextMethod = isClearingPhoneNumber
-			? 'email'
-			: verificationMethodUpdate;
-		if (nextMethod) {
-			await updateUserSettings(
-				{ kit_id: userId },
-				{ verification_method: nextMethod }
-			);
-			await user.reload();
-		}
 	}
 
 	publisher.publish(EVENTS_CHANNEL, JSON.stringify({
@@ -2799,11 +2798,14 @@ const getAllBalancesAdmin = async (opts = {
 };
 
 // set all active sessions of the user to false and remove them from redis
-const revokeAllUserSessions = async (userId) => {
+const revokeAllUserSessions = async (userId, excludedSessionId = null) => {
 
 	const sessions = await getModel('session').findAll(
 		{
-			where: { status: true },
+			where: {
+				status: true,
+				...(excludedSessionId && { id: { [Op.ne]: excludedSessionId } })
+			},
 			include: [
 				{
 					model: getModel('login'),
@@ -3951,12 +3953,53 @@ const updateUserAddresses = async (user_id, data) => {
 			}
 		});
 
+		// the asset symbol must correspond to a coin configured on the exchange,
+		// and the network must be one of that coin's supported networks.
+		const coinConfiguration = getKitCoin(addressObj.currency);
+		if (!coinConfiguration) {
+			throw new Error(INVALID_COIN(addressObj.currency));
+		}
+		if (coinConfiguration.network) {
+			if (!coinConfiguration.network.split(',').includes(addressObj.network)) {
+				throw new Error(INVALID_NETWORK(addressObj.network, coinConfiguration.network));
+			}
+		} else if (addressObj.network !== addressObj.currency) {
+			throw new Error(INVALID_NETWORK(addressObj.network, addressObj.currency));
+		}
+
+		// sanitize the optional travel_rule beneficiary info: keep only the
+		// allowed sub-fields, drop the key entirely if no info is provided.
+		if (addressObj.travel_rule != null) {
+			if (typeof addressObj.travel_rule !== 'object' || Array.isArray(addressObj.travel_rule)) {
+				throw new Error(ADDRESSBOOK_MISSING_FIELDS);
+			}
+			const sanitized = pick(addressObj.travel_rule, ...TRAVEL_RULE_INFO_FIELDS);
+			if (Object.keys(sanitized).length === 0) {
+				delete addressObj.travel_rule;
+			} else {
+				addressObj.travel_rule = sanitized;
+			}
+		}
+
 		const hasCreatedAt = userAddressBook?.addresses?.find?.(address => address.label === addressObj.label)?.created_at;
 		if (!hasCreatedAt) {
 			addressObj.created_at = moment().toISOString();
 		} else {
 			addressObj.created_at = hasCreatedAt;
 		}
+
+		// Trust can never be granted through this endpoint — it is only set via the
+		// verified whitelist flow (requestAddressWhitelist/confirmAddressWhitelist).
+		// A new/edited address is always untrusted; an existing address keeps its
+		// stored trust only if the client still wants it true; clients may revoke.
+		const existing = userAddressBook?.addresses?.find?.(address =>
+			address.address === addressObj.address &&
+			address.network === addressObj.network &&
+			address.currency === addressObj.currency
+		);
+		addressObj.whitelisted = addressObj.whitelisted === true
+			? existing?.whitelisted === true
+			: false;
 	});
 
 	// Check for duplicate labels in the payload
@@ -3991,6 +4034,117 @@ const updateUserAddresses = async (user_id, data) => {
 	}
 
 	return userAddressBook;
+};
+
+const findAddressBookEntry = (addresses, address, currency, network) =>
+	(addresses || []).find(entry =>
+		entry.address === address &&
+		entry.currency === currency &&
+		entry.network === network
+	);
+
+const isAddressWhitelisted = async (user_id, address, currency, network) => {
+	const userAddressBook = await getModel('userAddressBook').findOne({ where: { user_id } });
+	if (!userAddressBook) {
+		return false;
+	}
+	const entry = findAddressBookEntry(userAddressBook.addresses, address, currency, network);
+	return entry?.whitelisted === true;
+};
+
+const requestAddressWhitelist = async (user_id, { address, currency, network }, opts = {
+	otpCode: null,
+	domain: null,
+	ip: null,
+	version: null,
+	verification_method: null
+}) => {
+	const user = await getUserByKitId(user_id);
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	const userAddressBook = await getModel('userAddressBook').findOne({ where: { user_id } });
+	const entry = findAddressBookEntry(userAddressBook?.addresses, address, currency, network);
+	if (!entry) {
+		throw new Error(ADDRESS_NOT_IN_ADDRESSBOOK);
+	}
+	if (entry.whitelisted === true) {
+		throw new Error(ADDRESS_ALREADY_WHITELISTED);
+	}
+
+	const validOtp = await verifyOtpBeforeAction(user_id, opts.otpCode);
+	if (!validOtp) {
+		throw new Error(INVALID_OTP_CODE);
+	}
+
+	const token = generateVerificationCode(opts.version);
+
+	// Namespace the redis field by user_id so a token only ever matches the
+	// authenticated user who requested it. This prevents one user's token value
+	// (which is short, e.g. a 6-digit v4 code) from colliding with or deleting
+	// another user's pending request, and confines brute-force attempts to the
+	// attacker's own bucket.
+	await client.hsetAsync(
+		ADDRESSBOOK_WHITELIST_REQUEST_KEY,
+		`${user_id}:${token}`,
+		JSON.stringify({ user_id, address, currency, network, timestamp: Date.now() })
+	);
+
+	await sendVerificationCode(user, {
+		action_type: 'addressbook_whitelist',
+		verification_code: token,
+		emailType: MAILTYPE.ADDRESSBOOK_WHITELIST_REQUEST,
+		emailData: {
+			address,
+			currency,
+			network,
+			label: entry.label,
+			code: token,
+			ip: opts.ip
+		},
+		requestVerificationMethod: opts.verification_method,
+		domain: opts.domain
+	});
+
+	return { message: 'Success' };
+};
+
+const confirmAddressWhitelist = async (user_id, token) => {
+	// The field is namespaced by the authenticated user_id, so a token can only
+	// ever resolve to a request the same user created — no cross-user lookup or
+	// deletion is possible.
+	const field = `${user_id}:${token}`;
+	const stored = await client.hgetAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, field);
+	if (!stored) {
+		throw new Error(INVALID_WHITELIST_TOKEN);
+	}
+
+	await client.hdelAsync(ADDRESSBOOK_WHITELIST_REQUEST_KEY, field);
+
+	const request = JSON.parse(stored);
+	if (request.user_id !== user_id) {
+		throw new Error(INVALID_WHITELIST_TOKEN);
+	}
+	if (Date.now() - request.timestamp > getKitSecrets().security.withdrawal_token_expiry) {
+		throw new Error(EXPIRED_WHITELIST_TOKEN);
+	}
+
+	const userAddressBook = await getModel('userAddressBook').findOne({ where: { user_id } });
+	const entry = findAddressBookEntry(userAddressBook?.addresses, request.address, request.currency, request.network);
+	if (!entry) {
+		throw new Error(ADDRESS_NOT_IN_ADDRESSBOOK);
+	}
+
+	const addresses = userAddressBook.addresses.map(address =>
+		address.address === request.address &&
+		address.currency === request.currency &&
+		address.network === request.network
+			? { ...address, whitelisted: true }
+			: address
+	);
+
+	return userAddressBook.update({ addresses }, { fields: ['addresses'] });
 };
 
 const getPaymentDetails = async (user_id, opts = {
@@ -5343,7 +5497,8 @@ const issueSubaccountToken = async ({ masterKitId, subKitId, ip, headers = {} })
 			origin: headers.origin,
 			referer: headers.referer,
 			token,
-			status: true
+			status: true,
+			headers
 		}
 	);
 
@@ -5523,6 +5678,7 @@ const issueSharedaccountToken = async ({ sharedKitId, sharedaccountId, ip, heade
 			referer: headers.referer,
 			token,
 			status: true,
+			headers,
 			meta: {
 				is_sharedaccount: true,
 				sharedaccount_id: link.id,
@@ -5718,6 +5874,10 @@ module.exports = {
 	fetchUserTradingVolume,
 	updateUserAddresses,
 	fetchUserAddressBook,
+	findAddressBookEntry,
+	isAddressWhitelisted,
+	requestAddressWhitelist,
+	confirmAddressWhitelist,
 	getPaymentDetails,
 	createPaymentDetail,
 	updatePaymentDetail,

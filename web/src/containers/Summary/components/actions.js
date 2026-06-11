@@ -39,3 +39,11 @@ export const postReferralCode = (values) => {
 	};
 	return requestAuthenticated(`/user/referral/code`, options);
 };
+
+export const onHandleAddReferralCode = (value) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify(value),
+	};
+	return requestAuthenticated(`/user/referral/connect`, options);
+};
