@@ -546,6 +546,20 @@
 	}
 }
 
+.address_book_popup_wrapper.address_book_trust_popup_wrapper {
+	.address-book-popup-wrapper {
+		width: 100% !important;
+	}
+}
+
+.address-book-trusted-check {
+	color: $colors-notifications-green;
+}
+
+.address-book-trusted-cross {
+	color: $colors-notifications-red;
+}
+
 .layout-mobile {
 	.address-book-popup-wrapper {
 		width: 100% !important;

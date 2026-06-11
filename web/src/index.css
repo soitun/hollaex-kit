@@ -12281,6 +12281,15 @@ table th {
 .add_withdrawal_address_wrapper .ReactModal__Content {
   width: 60rem; }
 
+.address_book_popup_wrapper.address_book_trust_popup_wrapper .address-book-popup-wrapper {
+  width: 100% !important; }
+
+.address-book-trusted-check {
+  color: var(--specials_checks-okay-done); }
+
+.address-book-trusted-cross {
+  color: var(--specials_notifications-alerts-warnings); }
+
 .layout-mobile .address-book-popup-wrapper {
   width: 100% !important;
   height: max-content;
