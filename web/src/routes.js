@@ -7,7 +7,14 @@ import { PATHS } from './containers';
 import { verifyToken } from './actions/authAction';
 import { setLanguage } from './actions/appActions';
 import { SmartTarget, NotLoggedIn } from 'components';
-import { isLoggedIn, getToken, removeToken, isAdmin } from './utils/token';
+import {
+	isLoggedIn,
+	getToken,
+	setToken,
+	removeToken,
+	isAdmin,
+	getSharedCookieToken,
+} from './utils/token';
 import {
 	getLanguage,
 	getInterfaceLanguage,
@@ -362,6 +369,16 @@ if (getLanguageFromLocal()) {
 }
 
 let token = getToken();
+
+// The shared session cookie (written by a sibling subdomain's quick
+// login/signup) takes priority over the local session, so a fresh login there
+// wins over a stale one here. Persist it so the rest of the app sees a normal
+// logged-in session.
+const sharedToken = getSharedCookieToken();
+if (sharedToken && sharedToken !== token) {
+	setToken(sharedToken);
+	token = sharedToken;
+}
 
 if (token) {
 	store.dispatch(verifyToken(token));
