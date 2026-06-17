@@ -33,7 +33,6 @@ const requestOtp = (req, res) => {
 			return toolsLib.security.createOtp(id);
 		})
 		.then((secret) => {
-			loggerOtp.verbose(req.uuid, 'controllers/otp/requestOtp', secret);
 			return res.json({ secret });
 		})
 		.catch((err) => {
@@ -79,12 +78,6 @@ const activateOtp = (req, res) => {
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
 
-	loggerOtp.verbose(
-		req.uuid,
-		'controllers/otp/activateOtp/code',
-		code
-	);
-
 	toolsLib.security.checkOtp(id)
 		.then((otpCode) => {
 			return toolsLib.security.verifyOtp(otpCode.secret, code);
@@ -97,11 +90,6 @@ const activateOtp = (req, res) => {
 			return toolsLib.security.setActiveUserOtp(id);
 		})
 		.then(async (user) => {
-			loggerOtp.verbose(
-				req.uuid,
-				'controllers/otp/activateOtp',
-				user.dataValues
-			);
 			await toolsLib.user.revokeAllUserSessions(id, req.session_id);
 			sendOtpEmailNotification(id, true, ip, domain, req.headers);
 			publisher.publish(EVENTS_CHANNEL, JSON.stringify({
@@ -127,12 +115,6 @@ const deactivateOtp = (req, res) => {
 	const { code } = req.swagger.params.data.value;
 	const ip = req.headers['x-real-ip'];
 	const domain = req.headers['x-real-origin'];
-
-	loggerOtp.verbose(
-		req.uuid,
-		'controllers/otp/deactivateOtp/code',
-		code
-	);
 
 	toolsLib.security.hasUserOtpEnabled(id)
 		.then((otp_enabled) => {
