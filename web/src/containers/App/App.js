@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import classnames from 'classnames';
-import EventListener from 'react-event-listener';
 import { Helmet } from 'react-helmet';
 import { FIT_SCREEN_HEIGHT } from 'config/constants';
 import { isBrowser, isMobile } from 'react-device-detect';
@@ -91,7 +90,6 @@ class App extends Component {
 		chatIsClosed: false,
 		publicSocket: undefined,
 		privateSocket: undefined,
-		idleTimer: undefined,
 		ordersQueued: [],
 		limitFilledOnOrder: '',
 		sidebarFitHeight: false,
@@ -299,9 +297,6 @@ class App extends Component {
 			this.state.privateSocket.close();
 		}
 
-		if (this.state.idleTimer) {
-			clearTimeout(this.state.idleTimer);
-		}
 		clearTimeout(this.limitTimeOut);
 		clearInterval(this.assetsPrice);
 		window.removeEventListener('online', this.updateNetworkStatus);
@@ -917,14 +912,6 @@ class App extends Component {
 								}
 							)}
 						>
-							<EventListener
-								target="window"
-								onResize={this.resetTimer}
-								onScroll={this.resetTimer}
-								onMouseMove={this.resetTimer}
-								onClick={this.resetTimer}
-								onKeyPress={this.resetTimer}
-							/>
 							<div className="d-flex flex-column f-1 w-100">
 								{!isChartEmbed && (
 									<div>

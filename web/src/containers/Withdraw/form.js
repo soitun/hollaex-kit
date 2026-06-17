@@ -237,8 +237,13 @@ class Form extends Component {
 					amount: math.eval(values.amount),
 				})
 				.then((response) => {
+					// onSubmitWithdrawReq already resolves to the unwrapped
+					// withdrawal body (including `direct` for trusted addresses),
+					// so spread `response` directly — `response.data` is undefined
+					// here and would drop `direct`, forcing the email-confirmation
+					// popup even for trusted (direct) withdrawals.
 					this.props.onSubmitSuccess(
-						{ ...response.data, currency: currentCurrency },
+						{ ...response, currency: currentCurrency },
 						this.props.dispatch
 					);
 					return response;
@@ -315,8 +320,10 @@ class Form extends Component {
 			})
 			.then((response) => {
 				this.onCloseDialog();
+				// `response` is the already-unwrapped withdrawal body; spread it
+				// directly so `direct` is preserved (see onAcceptDialog above).
 				this.props.onSubmitSuccess(
-					{ ...response.data, currency: this.props.currency },
+					{ ...response, currency: this.props.currency },
 					this.props.dispatch
 				);
 				return response;

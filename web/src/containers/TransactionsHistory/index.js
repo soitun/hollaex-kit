@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import _isEqual from 'lodash/isEqual';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { isMobile } from 'react-device-detect';
@@ -187,7 +188,7 @@ class TransactionsHistory extends Component {
 		const { coins, pairs, prices, quicktradePairs, orders } = this.props;
 		if (
 			nextProps.activeLanguage !== this.props.activeLanguage ||
-			JSON.stringify(nextProps.prices) !== JSON.stringify(prices)
+			!_isEqual(nextProps.prices, prices)
 		) {
 			this.generateHeaders(
 				nextProps.symbol,
@@ -204,7 +205,7 @@ class TransactionsHistory extends Component {
 			this.requestData(nextProps.symbol);
 		}
 		if (
-			JSON.stringify(nextProps.orders?.data) !== JSON.stringify(orders?.data)
+			!_isEqual(nextProps.orders?.data, orders?.data)
 		) {
 			this.generateHeaders(
 				nextProps.symbol,
@@ -214,10 +215,9 @@ class TransactionsHistory extends Component {
 			);
 		}
 		if (
-			JSON.stringify(nextProps.pairs) !== JSON.stringify(pairs) ||
-			JSON.stringify(nextProps.quicktradePairs) !==
-				JSON.stringify(quicktradePairs) ||
-			JSON.stringify(nextProps.coins) !== JSON.stringify(coins)
+			!_isEqual(nextProps.pairs, pairs) ||
+			!_isEqual(nextProps.quicktradePairs, quicktradePairs) ||
+			!_isEqual(nextProps.coins, coins)
 		) {
 			this.generateFilters();
 		}

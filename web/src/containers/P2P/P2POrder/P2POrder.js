@@ -25,6 +25,7 @@ import {
 } from '../actions/p2pActions';
 import { formatToCurrency } from 'utils/currency';
 import { getToken } from 'utils/token';
+import { NORMAL_CLOSURE_CODE, isIntentionalClosure } from 'utils/webSocket';
 import { WS_URL } from 'config/constants';
 import { renderFeedback, Timer } from '../Utilis';
 import classnames from 'classnames';
@@ -174,10 +175,14 @@ const P2POrder = ({
 
 	useEffect(() => {
 		let pingInterval;
+		let reconnectTimeout;
+		let activeWs;
+		let unmounted = false;
 
 		const connectWebSocket = () => {
 			const url = `${WS_URL}/stream?authorization=Bearer ${getToken()}`;
 			const p2pWs = new WebSocket(url);
+			activeWs = p2pWs;
 
 			p2pWs.onopen = () => {
 				setWs(p2pWs);
@@ -213,7 +218,9 @@ const P2POrder = ({
 
 			p2pWs.onclose = (event) => {
 				clearInterval(pingInterval);
-				setTimeout(connectWebSocket, 3000);
+				if (!unmounted && !isIntentionalClosure(event)) {
+					reconnectTimeout = setTimeout(connectWebSocket, 3000);
+				}
 			};
 
 			p2pWs.onerror = (error) => {
@@ -224,11 +231,15 @@ const P2POrder = ({
 			return p2pWs;
 		};
 
-		const p2pWs = connectWebSocket();
+		connectWebSocket();
 
 		return () => {
+			unmounted = true;
 			clearInterval(pingInterval);
-			p2pWs.close();
+			clearTimeout(reconnectTimeout);
+			if (activeWs) {
+				activeWs.close(NORMAL_CLOSURE_CODE);
+			}
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);

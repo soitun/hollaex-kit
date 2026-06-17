@@ -371,7 +371,9 @@ const getSortFunction = (mode) => {
 const sortedMarketsSelector = createSelector(
 	[unsortedMarketsSelector, getSortMode, getSortDir],
 	(markets, mode, is_descending) => {
-		const sortedMarkets = markets.sort(getSortFunction(mode, is_descending));
+		// copy before sorting: Array.sort mutates in place, which would
+		// corrupt the memoized output of unsortedMarketsSelector
+		const sortedMarkets = [...markets].sort(getSortFunction(mode, is_descending));
 		return is_descending ? sortedMarkets : [...sortedMarkets].reverse();
 	}
 );

@@ -133,7 +133,6 @@ class AppWrapper extends React.Component {
 			isLoaded: false,
 			appLoaded: false,
 			publicSocket: undefined,
-			idleTimer: undefined,
 			setupCompleted: true,
 			myPlugins: [],
 			isConfigure: false,
@@ -142,7 +141,16 @@ class AppWrapper extends React.Component {
 			priceSocket: null,
 		};
 		this.pingInterval = null;
+		this.idleTimer = null;
 	}
+
+	activityEvents = [
+		'mousemove',
+		'mousedown',
+		'keydown',
+		'scroll',
+		'touchstart',
+	];
 
 	onHandleRoleDetails = async () => {
 		try {
@@ -251,6 +259,9 @@ class AppWrapper extends React.Component {
 			this.props.router.push('/init');
 		}
 		this._resetTimer();
+		this.activityEvents.forEach((event) =>
+			document.addEventListener(event, this.resetTimer, true)
+		);
 		// this.props.requestAvailPlugins();
 		this.setState({
 			setupCompleted:
@@ -293,9 +304,10 @@ class AppWrapper extends React.Component {
 	}
 
 	componentWillUnmount() {
-		if (this.state.idleTimer) {
-			clearTimeout(this.state.idleTimer);
-		}
+		this.activityEvents.forEach((event) =>
+			document.removeEventListener(event, this.resetTimer, true)
+		);
+		clearTimeout(this.idleTimer);
 		this.resetTimer && this.resetTimer.cancel();
 		if (this.pingInterval) {
 			clearInterval(this.pingInterval);
@@ -354,12 +366,9 @@ class AppWrapper extends React.Component {
 	};
 
 	_resetTimer = () => {
-		if (this.state.idleTimer) {
-			clearTimeout(this.idleTimer);
-		}
-		if (this.state.appLoaded) {
-			const idleTimer = setTimeout(() => this.logout('Inactive'), SESSION_TIME); // no activity will log the user out automatically
-			this.setState({ idleTimer });
+		clearTimeout(this.idleTimer);
+		if (this.state.appLoaded && isLoggedIn()) {
+			this.idleTimer = setTimeout(() => this.logout('Inactive'), SESSION_TIME); // no activity will log the user out automatically
 		}
 	};
 
