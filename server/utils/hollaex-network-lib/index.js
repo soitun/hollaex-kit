@@ -2687,6 +2687,9 @@ class HollaExNetwork {
 	 * Reallocate an on-hold deposit to a different user ("block"). Voids the
 	 * original (never-credited) deposit and credits the chosen receiver instead.
 	 * @param {string} transactionId - Transaction id of the on-hold deposit.
+	 * @param {string} address - Deposit address of the on-hold deposit. Required
+	 *   because one transaction id can map to multiple deposit rows (one per
+	 *   credited address); (address, transaction_id, type) is unique.
 	 * @param {number} receiverId - Network id of the user to credit instead.
 	 * @param {object} opts - Optional parameters.
 	 * @param {string} opts.description - Description for the reallocated deposit.
@@ -2695,6 +2698,7 @@ class HollaExNetwork {
 	 */
 	reallocateDeposit(
 		transactionId,
+		address,
 		receiverId,
 		opts = {
 			description: null,
@@ -2707,6 +2711,10 @@ class HollaExNetwork {
 			return reject(parameterError('transactionId', 'cannot be null'));
 		}
 
+		if (!address) {
+			return reject(parameterError('address', 'cannot be null'));
+		}
+
 		if (!receiverId) {
 			return reject(parameterError('receiverId', 'cannot be null'));
 		}
@@ -2715,6 +2723,7 @@ class HollaExNetwork {
 		const path = `${this.baseUrl}/network/${this.exchange_id}/deposit/reallocate`;
 		const data = {
 			transaction_id: transactionId,
+			address,
 			receiver_id: receiverId
 		};
 

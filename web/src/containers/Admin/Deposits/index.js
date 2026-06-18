@@ -327,6 +327,9 @@ class Deposits extends Component {
 		if (statusType === 'block') {
 			requestReallocate({
 				transaction_id: formValues.transaction_id,
+				// address disambiguates which deposit row to reallocate, since one
+				// transaction_id can map to multiple rows (one per credited address)
+				address: formValues.address,
 				receiver_id: Number(formValues.receiver_id),
 				...(formValues.description
 					? { description: formValues.description }

@@ -1239,6 +1239,7 @@ const updatePendingMint = (
 
 const reallocateDepositByKitId = async (
 	transactionId,
+	address,
 	receiverKitId,
 	opts = {
 		description: null,
@@ -1251,7 +1252,7 @@ const reallocateDepositByKitId = async (
 	} else if (!idDictionary[receiverKitId]) {
 		throw new Error('User not registered on network');
 	}
-	return getNodeLib().reallocateDeposit(transactionId, idDictionary[receiverKitId], opts);
+	return getNodeLib().reallocateDeposit(transactionId, address, idDictionary[receiverKitId], opts);
 };
 
 const burnAssetByKitId = async (

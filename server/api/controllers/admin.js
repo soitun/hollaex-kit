@@ -1146,18 +1146,20 @@ const reallocateDeposit = (req, res) => {
 		req.auth
 	);
 
-	const { transaction_id, receiver_id, description } = req.swagger.params.data.value;
+	const { transaction_id, address, receiver_id, description } = req.swagger.params.data.value;
 
 	loggerAdmin.info(
 		req.uuid,
 		'controllers/admin/reallocateDeposit',
 		'transaction_id',
 		transaction_id,
+		'address',
+		address,
 		'receiver_id',
 		receiver_id
 	);
 
-	toolsLib.wallet.reallocateDepositByKitId(transaction_id, receiver_id, {
+	toolsLib.wallet.reallocateDepositByKitId(transaction_id, address, receiver_id, {
 		description,
 		additionalHeaders: {
 			'x-forwarded-for': req.headers['x-forwarded-for']
