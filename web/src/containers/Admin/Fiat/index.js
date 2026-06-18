@@ -41,7 +41,7 @@ const Fiatmarkets = ({
 	const [offRampData, setOffRamp] = useState(offramp);
 	const [onrampData, setOnRamp] = useState(onramp);
 	const [userPaymentsData, setOnuserPaymentsData] = useState([]);
-	const [featureEnable, setFeatureEnable] = useState(ultimate_fiat);
+	const [featureEnable] = useState(ultimate_fiat);
 
 	const isSummaryActive = permissions?.some((data) =>
 		data?.includes('/admin/exchange:')
@@ -121,9 +121,6 @@ const Fiatmarkets = ({
 							onramp={onrampData}
 							offramp={offRampData}
 							isGetExchange={isGetExchange}
-							ultimateFiat={ultimate_fiat}
-							constants={constants}
-							setFeatureEnable={setFeatureEnable}
 						/>
 					</TabPane>
 				)}

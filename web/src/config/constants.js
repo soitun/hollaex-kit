@@ -277,6 +277,566 @@ export const DEFAULT_CUSTOM_PAYMENT_CUSTOM = [
 	{ key: 'payment_info', label: 'Payment Info', required: true },
 ];
 
+// Ready-made payment-method presets the operator can add with one click.
+// Each preset becomes a custom payment account pre-filled with the fields below.
+// `icon` points to a placeholder monogram SVG — replace with an official brand
+// asset (same path) once you have the rights to use it.
+const PRESET_ICON_PATH = '/assets/images/payment-presets';
+export const DEFAULT_PAYMENT_PRESETS = [
+	{
+		name: 'Bank (United States)',
+		region: 'United States',
+		icon: `${PRESET_ICON_PATH}/bank-us.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'bank_name', label: 'Bank name', required: true },
+			{ key: 'routing_number', label: 'Routing number (ABA)', required: true },
+			{ key: 'account_number', label: 'Account number', required: true },
+			{
+				key: 'account_type',
+				label: 'Account type (Checking/Savings)',
+				required: false,
+			},
+		],
+	},
+	{
+		name: 'Bank (Europe)',
+		region: 'Eurozone',
+		icon: `${PRESET_ICON_PATH}/bank-europe.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'bank_name', label: 'Bank name', required: false },
+			{ key: 'iban', label: 'IBAN', required: true },
+			{ key: 'bic_swift', label: 'BIC / SWIFT', required: false },
+		],
+	},
+	{
+		name: 'Bank (United Kingdom)',
+		region: 'United Kingdom',
+		icon: `${PRESET_ICON_PATH}/bank-united-kingdom.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'bank_name', label: 'Bank name', required: false },
+			{ key: 'sort_code', label: 'Sort code', required: true },
+			{ key: 'account_number', label: 'Account number', required: true },
+		],
+	},
+	{
+		name: 'Bank (Canada)',
+		region: 'Canada',
+		icon: `${PRESET_ICON_PATH}/bank-canada.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'bank_name', label: 'Bank name', required: true },
+			{
+				key: 'institution_number',
+				label: 'Institution number',
+				required: true,
+			},
+			{ key: 'transit_number', label: 'Transit number', required: true },
+			{ key: 'account_number', label: 'Account number', required: true },
+		],
+	},
+	{
+		name: 'Bank (Australia)',
+		region: 'Australia',
+		icon: `${PRESET_ICON_PATH}/bank-australia.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'bank_name', label: 'Bank name', required: false },
+			{ key: 'bsb', label: 'BSB number', required: true },
+			{ key: 'account_number', label: 'Account number', required: true },
+		],
+	},
+	{
+		name: 'Bank (International / SWIFT)',
+		region: 'Global',
+		icon: `${PRESET_ICON_PATH}/bank-international.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'bank_name', label: 'Bank name', required: true },
+			{ key: 'swift_bic', label: 'SWIFT / BIC', required: true },
+			{
+				key: 'iban_or_account_number',
+				label: 'IBAN / Account number',
+				required: true,
+			},
+			{ key: 'bank_address', label: 'Bank address', required: false },
+			{
+				key: 'bank_location',
+				label: 'Bank location (country)',
+				required: false,
+			},
+		],
+	},
+	{
+		name: 'Wise',
+		region: 'Global',
+		icon: `${PRESET_ICON_PATH}/wise.svg`,
+		data: [
+			{ key: 'email', label: 'Email', required: true },
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{
+				key: 'iban_or_account_number',
+				label: 'IBAN / Account number',
+				required: false,
+			},
+		],
+	},
+	{
+		name: 'Skrill',
+		region: 'Global',
+		icon: `${PRESET_ICON_PATH}/skrill.svg`,
+		data: [{ key: 'email', label: 'Email', required: true }],
+	},
+	{
+		name: 'Neteller',
+		region: 'Global',
+		icon: `${PRESET_ICON_PATH}/neteller.svg`,
+		data: [{ key: 'account_id', label: 'Account ID / Email', required: true }],
+	},
+	{
+		name: 'Payoneer',
+		region: 'Global',
+		icon: `${PRESET_ICON_PATH}/payoneer.svg`,
+		data: [
+			{ key: 'email', label: 'Email', required: true },
+			{ key: 'payee_id', label: 'Payee ID', required: false },
+		],
+	},
+	{
+		name: 'Revolut',
+		region: 'UK, EEA, US, AU, SG',
+		icon: `${PRESET_ICON_PATH}/revolut.svg`,
+		data: [
+			{ key: 'revtag', label: 'Revtag (@username)', required: true },
+			{ key: 'phone', label: 'Phone number', required: false },
+		],
+	},
+	{
+		name: 'SEPA',
+		region: 'Eurozone',
+		icon: `${PRESET_ICON_PATH}/sepa.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'iban', label: 'IBAN', required: true },
+			{ key: 'bic', label: 'BIC / SWIFT', required: false },
+		],
+	},
+	{
+		name: 'Faster Payments',
+		region: 'United Kingdom',
+		icon: `${PRESET_ICON_PATH}/faster-payments.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'sort_code', label: 'Sort code', required: true },
+			{ key: 'account_number', label: 'Account number', required: true },
+		],
+	},
+	{
+		name: 'Zelle',
+		region: 'United States',
+		icon: `${PRESET_ICON_PATH}/zelle.svg`,
+		data: [
+			{ key: 'email_or_phone', label: 'Email or US phone', required: true },
+			{ key: 'recipient_name', label: 'Recipient name', required: true },
+		],
+	},
+	{
+		name: 'Venmo',
+		region: 'United States',
+		icon: `${PRESET_ICON_PATH}/venmo.svg`,
+		data: [
+			{ key: 'username', label: 'Username (@handle)', required: true },
+			{ key: 'phone_last4', label: 'Phone (last 4 digits)', required: false },
+		],
+	},
+	{
+		name: 'Cash App',
+		region: 'US, UK',
+		icon: `${PRESET_ICON_PATH}/cash-app.svg`,
+		data: [{ key: 'cashtag', label: 'Cashtag ($)', required: true }],
+	},
+	{
+		name: 'Interac',
+		region: 'Canada',
+		icon: `${PRESET_ICON_PATH}/interac.svg`,
+		data: [
+			{ key: 'email', label: 'Email', required: true },
+			{ key: 'security_question', label: 'Security question', required: false },
+			{ key: 'security_answer', label: 'Security answer', required: false },
+		],
+	},
+	{
+		name: 'PayID',
+		region: 'Australia',
+		icon: `${PRESET_ICON_PATH}/payid.svg`,
+		data: [
+			{ key: 'payid', label: 'PayID (email or phone)', required: true },
+			{ key: 'account_name', label: 'Account name', required: true },
+		],
+	},
+	{
+		name: 'UPI',
+		region: 'India',
+		icon: `${PRESET_ICON_PATH}/upi.svg`,
+		data: [
+			{ key: 'upi_id', label: 'UPI ID (VPA)', required: true },
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: false,
+			},
+		],
+	},
+	{
+		name: 'Paytm',
+		region: 'India',
+		icon: `${PRESET_ICON_PATH}/paytm.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'registered_name', label: 'Registered name', required: false },
+		],
+	},
+	{
+		name: 'Pix',
+		region: 'Brazil',
+		icon: `${PRESET_ICON_PATH}/pix.svg`,
+		data: [
+			{ key: 'pix_key', label: 'Pix key', required: true },
+			{
+				key: 'key_type',
+				label: 'Key type (CPF/email/phone/random)',
+				required: false,
+			},
+			{ key: 'full_name', label: 'Full name', required: false },
+		],
+	},
+	{
+		name: 'Mercado Pago',
+		region: 'Latin America',
+		icon: `${PRESET_ICON_PATH}/mercado-pago.svg`,
+		data: [
+			{ key: 'email', label: 'Email', required: true },
+			{ key: 'cvu_or_alias', label: 'CVU / alias', required: false },
+		],
+	},
+	{
+		name: 'M-Pesa',
+		region: 'East Africa',
+		icon: `${PRESET_ICON_PATH}/mpesa.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'registered_name', label: 'Registered name', required: false },
+		],
+	},
+	{
+		name: 'Alipay',
+		region: 'China',
+		icon: `${PRESET_ICON_PATH}/alipay.svg`,
+		data: [
+			{ key: 'account', label: 'Account (phone/email)', required: true },
+			{ key: 'real_name', label: 'Real name', required: true },
+			{ key: 'qr_code', label: 'QR code', required: false },
+		],
+	},
+	{
+		name: 'WeChat Pay',
+		region: 'China',
+		icon: `${PRESET_ICON_PATH}/wechat-pay.svg`,
+		data: [
+			{ key: 'wechat_id', label: 'WeChat ID', required: true },
+			{ key: 'phone', label: 'Phone number', required: false },
+			{ key: 'qr_code', label: 'QR code', required: false },
+		],
+	},
+	{
+		name: 'GCash',
+		region: 'Philippines',
+		icon: `${PRESET_ICON_PATH}/gcash.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'iDEAL',
+		region: 'Netherlands',
+		icon: `${PRESET_ICON_PATH}/ideal.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'iban', label: 'IBAN', required: true },
+		],
+	},
+	{
+		name: 'Bancontact',
+		region: 'Belgium',
+		icon: `${PRESET_ICON_PATH}/bancontact.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'iban', label: 'IBAN', required: true },
+		],
+	},
+	{
+		name: 'BLIK',
+		region: 'Poland',
+		icon: `${PRESET_ICON_PATH}/blik.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'Swish',
+		region: 'Sweden',
+		icon: `${PRESET_ICON_PATH}/swish.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'MobilePay',
+		region: 'Denmark, Finland',
+		icon: `${PRESET_ICON_PATH}/mobilepay.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'Vipps',
+		region: 'Norway',
+		icon: `${PRESET_ICON_PATH}/vipps.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'TWINT',
+		region: 'Switzerland',
+		icon: `${PRESET_ICON_PATH}/twint.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'Bizum',
+		region: 'Spain',
+		icon: `${PRESET_ICON_PATH}/bizum.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'PayNow',
+		region: 'Singapore',
+		icon: `${PRESET_ICON_PATH}/paynow.svg`,
+		data: [
+			{ key: 'phone_or_uen', label: 'Phone or UEN', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'DuitNow',
+		region: 'Malaysia',
+		icon: `${PRESET_ICON_PATH}/duitnow.svg`,
+		data: [
+			{ key: 'phone_or_id', label: 'Phone or NRIC', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'PromptPay',
+		region: 'Thailand',
+		icon: `${PRESET_ICON_PATH}/promptpay.svg`,
+		data: [
+			{ key: 'phone_or_id', label: 'Phone or national ID', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'Touch n Go',
+		region: 'Malaysia',
+		icon: `${PRESET_ICON_PATH}/touch-n-go.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'MoMo',
+		region: 'Vietnam',
+		icon: `${PRESET_ICON_PATH}/momo.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'DANA',
+		region: 'Indonesia',
+		icon: `${PRESET_ICON_PATH}/dana.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'OVO',
+		region: 'Indonesia',
+		icon: `${PRESET_ICON_PATH}/ovo.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'Maya',
+		region: 'Philippines',
+		icon: `${PRESET_ICON_PATH}/maya.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'KakaoPay',
+		region: 'South Korea',
+		icon: `${PRESET_ICON_PATH}/kakaopay.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'bKash',
+		region: 'Bangladesh',
+		icon: `${PRESET_ICON_PATH}/bkash.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'Easypaisa',
+		region: 'Pakistan',
+		icon: `${PRESET_ICON_PATH}/easypaisa.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'JazzCash',
+		region: 'Pakistan',
+		icon: `${PRESET_ICON_PATH}/jazzcash.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+	{
+		name: 'MTN MoMo',
+		region: 'Africa',
+		icon: `${PRESET_ICON_PATH}/mtn-momo.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'registered_name', label: 'Registered name', required: false },
+		],
+	},
+	{
+		name: 'Airtel Money',
+		region: 'Africa',
+		icon: `${PRESET_ICON_PATH}/airtel-money.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'registered_name', label: 'Registered name', required: false },
+		],
+	},
+	{
+		name: 'Orange Money',
+		region: 'Africa, Middle East',
+		icon: `${PRESET_ICON_PATH}/orange-money.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'registered_name', label: 'Registered name', required: false },
+		],
+	},
+	{
+		name: 'STC Pay',
+		region: 'Saudi Arabia',
+		icon: `${PRESET_ICON_PATH}/stc-pay.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'Fawry',
+		region: 'Egypt',
+		icon: `${PRESET_ICON_PATH}/fawry.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'Nequi',
+		region: 'Colombia',
+		icon: `${PRESET_ICON_PATH}/nequi.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'Yape',
+		region: 'Peru',
+		icon: `${PRESET_ICON_PATH}/yape.svg`,
+		data: [{ key: 'phone', label: 'Phone number', required: true }],
+	},
+	{
+		name: 'SPEI',
+		region: 'Mexico',
+		icon: `${PRESET_ICON_PATH}/spei.svg`,
+		data: [
+			{
+				key: 'account_holder_name',
+				label: 'Account holder name',
+				required: true,
+			},
+			{ key: 'clabe', label: 'CLABE', required: true },
+		],
+	},
+	{
+		name: 'OPay',
+		region: 'Nigeria',
+		icon: `${PRESET_ICON_PATH}/opay.svg`,
+		data: [
+			{ key: 'phone', label: 'Phone number', required: true },
+			{ key: 'account_name', label: 'Account name', required: false },
+		],
+	},
+];
+
+export const getPaymentPreset = (name) =>
+	DEFAULT_PAYMENT_PRESETS.find((preset) => preset.name === name);
+
 export const DEFAULT_PINNED_COINS = [
 	'xht',
 	'btc',

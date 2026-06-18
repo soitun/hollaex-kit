@@ -2,6 +2,7 @@ import React from 'react';
 import { InfoCircleOutlined } from '@ant-design/icons';
 
 import { STATIC_ICONS } from 'config/icons';
+import { getPaymentPreset } from 'config/constants';
 
 const PaymentDetails = ({
 	activeTab = '',
@@ -16,9 +17,12 @@ const PaymentDetails = ({
 			return STATIC_ICONS.BANK_FIAT_PILLARS;
 		} else if (type === 'paypal') {
 			return STATIC_ICONS.PAYPAL_FIAT_ICON;
-		} else {
-			return STATIC_ICONS.MPESA_ICON;
 		}
+		const preset = getPaymentPreset(type);
+		if (preset) {
+			return preset.icon;
+		}
+		return STATIC_ICONS.MPESA_ICON;
 	};
 
 	if (!user_payments) {

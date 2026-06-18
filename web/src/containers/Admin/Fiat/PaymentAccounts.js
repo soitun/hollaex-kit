@@ -1,10 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Modal, Tooltip, Select, message, Spin } from 'antd';
-import {
-	CaretDownOutlined,
-	CaretUpOutlined,
-	QuestionCircleOutlined,
-} from '@ant-design/icons';
+import { Button, Modal, Tooltip, message, Spin } from 'antd';
+import { PlusOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import _get from 'lodash/get';
 
 import { STATIC_ICONS } from 'config/icons';
@@ -16,13 +12,12 @@ import {
 	DEFAULT_BANK_PAYMENT_ACCOUNTS,
 	DEFAULT_CUSTOM_PAYMENT_CUSTOM,
 	DEFAULT_PAYPAL_PAYMENT_PAYPAL,
+	getPaymentPreset,
 } from 'config/constants';
 import { PaymentWay } from './PaymentWay';
 import { constractPaymentOption } from 'utils/utils';
 
 import './index.css';
-
-const { Option } = Select;
 
 const PaymentAccounts = ({
 	router,
@@ -36,7 +31,6 @@ const PaymentAccounts = ({
 	const [currentTab, setCurrentTab] = useState('payment');
 	const [paymenttype, setPaymentType] = useState('initial');
 	const [paymentSelect, setPaymentSelect] = useState('');
-	const [isOpen, setIsOpen] = useState(false);
 	const [payOption, setPayOption] = useState(true);
 	const [isDisplayForm, setIsDisplayForm] = useState(true);
 	const [formData, setFormData] = useState({});
@@ -132,10 +126,21 @@ const PaymentAccounts = ({
 					: constructedData(paymentType)
 			);
 		} else if (type === 'customForm') {
-			const test =
-				currentType === 'add'
-					? getCustomDefaultValues(paymentType)
-					: constructedData(paymentType);
+			let test;
+			if (currentType === 'add') {
+				const preset = getPaymentPreset(paymentType);
+				if (preset) {
+					let temp = {};
+					preset.data.forEach((item, index) => {
+						temp = { ...temp, [`section_${index + 1}`]: item };
+					});
+					test = temp;
+				} else {
+					test = getCustomDefaultValues(paymentType);
+				}
+			} else {
+				test = constructedData(paymentType);
+			}
 			setCustomInitValue(test);
 		}
 	};
@@ -364,8 +369,19 @@ const PaymentAccounts = ({
 		setIsDisplayForm(false);
 	};
 
-	const handleOpenPayment = () => {
-		setIsOpen(!isOpen);
+	const renderPaymentIcon = (item) => {
+		if (typeof item?.data === 'string') {
+			return STATIC_ICONS.FIAT_PLUGIN;
+		} else if (item?.name === 'bank') {
+			return STATIC_ICONS.BANK_FIAT_PILLARS;
+		} else if (item?.name === 'paypal') {
+			return STATIC_ICONS.PAYPAL_FIAT_ICON;
+		}
+		const preset = getPaymentPreset(item?.name);
+		if (preset) {
+			return preset.icon;
+		}
+		return STATIC_ICONS.MPESA_ICON;
 	};
 
 	const handleBack = () => {
@@ -458,34 +474,51 @@ const PaymentAccounts = ({
 
 				<div className="onramp-payment-acc-wrapper">
 					<div className={!isUpgrade ? 'disableall ' : ''}>
-						{payOption && formValues.length && formValues.length > 1 ? (
+						{payOption && formValues.length ? (
 							<div className="mt-4">
 								<div>Payment accounts ({formValues.length} method saved)</div>
-								<div className="mb-3">
-									<Select
-										className="paymentSelect"
-										dropdownClassName="blue-admin-select-dropdown"
-										defaultValue={formValues[0]}
-										value={paymentSelect}
-										suffixIcon={
-											isOpen ? (
-												<CaretDownOutlined className="downarrow" />
-											) : (
-												<CaretUpOutlined className="downarrow" />
-											)
+								<div className="payment-cards-wrapper mb-3 mt-2">
+									{formValues.map((item, index) => {
+										const isSelected = paymentSelect === item.name;
+										return (
+											<div
+												className={
+													isSelected
+														? 'payment-card payment-card-selected'
+														: 'payment-card'
+												}
+												key={index}
+												onClick={() => setPaymentMethod(item.name)}
+											>
+												<img
+													src={renderPaymentIcon(item)}
+													alt="pay-icon"
+													className="payment-card-icon"
+												/>
+												<div className="payment-card-title">
+													User payment account {item.orderBy}
+												</div>
+												<div className="payment-card-name">{item.name}</div>
+											</div>
+										);
+									})}
+									<div
+										className={
+											!isUpgrade || isDisplayDetails || isLoading
+												? 'payment-card payment-card-add disableall'
+												: 'payment-card payment-card-add'
 										}
-										onClick={handleOpenPayment}
-										onChange={setPaymentMethod}
-										getPopupContainer={(triggerNode) => triggerNode.parentNode}
+										onClick={() => {
+											if (isUpgrade && !isDisplayDetails && !isLoading) {
+												handleClosePlugin(true);
+											}
+										}}
 									>
-										{formValues.map((item, index) => {
-											return (
-												<Option value={item.name} key={index}>
-													User payment account {item.orderBy}: {item.name}
-												</Option>
-											);
-										})}
-									</Select>
+										<PlusOutlined className="payment-card-plus" />
+										<div className="payment-card-title">
+											Add payment account
+										</div>
+									</div>
 								</div>
 							</div>
 						) : null}

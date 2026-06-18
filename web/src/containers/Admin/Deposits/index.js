@@ -11,6 +11,7 @@ import {
 	requestDepositDownload,
 	requestBurn,
 	requestMint,
+	requestReallocate,
 } from './actions';
 import { renderRowContent, COLUMNS, SELECT_KEYS } from './utils';
 import { Filters } from './Filters';
@@ -320,6 +321,29 @@ class Deposits extends Component {
 
 	handleConfirm = (formValues) => {
 		const { statusType, queryType } = this.state;
+
+		// Block an on-hold deposit: reject it for the original user and reallocate
+		// the funds to an admin-chosen recipient (category 'block', no email).
+		if (statusType === 'block') {
+			requestReallocate({
+				transaction_id: formValues.transaction_id,
+				receiver_id: Number(formValues.receiver_id),
+				...(formValues.description
+					? { description: formValues.description }
+					: {}),
+			})
+				.then(() => {
+					this.requestDeposits(this.state.queryParams, this.props.queryParams);
+					this.onCancelModal();
+				})
+				.catch((error) => {
+					const message = error.data ? error.data.message : error.message;
+					this.setState({ error: message });
+					this.onCancelModal();
+				});
+			return;
+		}
+
 		let body = {
 			transaction_id: formValues.transaction_id,
 			updated_transaction_id: formValues.updated_transaction_id,
@@ -347,6 +371,23 @@ class Deposits extends Component {
 				rejected: false,
 				status: false,
 				waiting: false,
+			};
+		} else if (statusType === 'release') {
+			// Take off hold -> back to pending so it gets processed automatically.
+			body = {
+				...body,
+				status: false,
+				dismissed: false,
+				rejected: false,
+				processing: false,
+				waiting: false,
+			};
+		} else if (statusType === 'reject') {
+			// On-hold withdrawal rejection -> dismissed.
+			body = {
+				...body,
+				dismissed: true,
+				status: false,
 			};
 		} else {
 			body = {

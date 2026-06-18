@@ -1,462 +1,165 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { connect } from 'react-redux';
 import { STATIC_ICONS } from 'config/icons';
 import { Link } from 'react-router';
+import { Button, Spin } from 'antd';
 import {
-	Alert,
-	Button,
-	Modal,
-	Select,
-	Spin,
-	Table,
-	message,
-	Switch,
-} from 'antd';
-// import { Icon as LegacyIcon } from '@ant-design/compatible';
-// import { RightOutlined } from '@ant-design/icons';
-// import moment from 'moment';
+	CheckCircleFilled,
+	MinusCircleOutlined,
+	RightOutlined,
+} from '@ant-design/icons';
 
 import { Image } from 'components';
-// import IconToolTip from '../IconToolTip';
 import Coins from '../Coins';
-import { requestDeposits, requestBurn, requestMint } from '../Deposits/actions';
-import {
-	renderAsset,
-	renderContent,
-	renderRowContent,
-	renderStatus,
-	renderUser,
-} from '../Deposits/utils';
 
 import './index.css';
-import ValidateDismiss from '../Deposits/ValidateDismiss';
-import { updateConstants } from '../General/action';
-import { requestAdminData } from 'actions/appActions';
 
 const Summarycontent = ({
 	handleTabChange,
 	coins,
+	appCoins = {},
 	isUpgrade,
 	user_payments = {},
 	exchange = {},
 	onramp = {},
 	offramp = {},
 	isGetExchange = true,
-	ultimateFiat,
-	constants,
-	setFeatureEnable,
 }) => {
-	const [page, setPage] = useState(1);
-	const [limit] = useState(50);
-	const [currentTablePage, setCurrentTablePage] = useState(1);
-	const [isRemaining, setIsRemaining] = useState(true);
-	const [queryParams, setQueryParams] = useState({});
-	const [deposits, setDeposits] = useState([]);
-	const [withdrawal, setWithdrawal] = useState([]);
 	const [fiatCoins, setFiatCoins] = useState([]);
-	const [selectedDepositAsset, setSelectedDepositAsset] = useState('');
-	const [selectedWithdrawalAsset, setSelectedWithdrawalAsset] = useState('');
-	const [isOpen, setIsOpen] = useState(false);
-	const [statusType, setStatusType] = useState('');
-	const [validateData, setValidateData] = useState({});
-	const [queryType, setQueryType] = useState('');
-	const [error, setError] = useState('');
-	const [enable, setEnable] = useState(false);
-	let onRampData = Object.values(onramp).filter((d) => Object.keys(d).length);
-	let offRampData = Object.values(offramp).filter((d) => Object.keys(d).length);
+
+	const hasPaymentAccounts =
+		user_payments && Object.keys(user_payments).length > 0;
 
 	useEffect(() => {
-		let exchangeCoins =
-			coins &&
-			coins.filter(
-				(val) =>
-					exchange && exchange.coins && exchange.coins.includes(val.symbol)
-			);
-		let filteredFiatCoins = [];
-		exchangeCoins &&
-			exchangeCoins.forEach((item) => {
-				if (item.type === 'fiat') {
-					filteredFiatCoins = [
-						...filteredFiatCoins,
-						{ symbol: item?.symbol, color: item?.meta?.color },
-					];
-				}
-			});
+		const exchangeCoins =
+			(coins &&
+				coins.filter(
+					(val) =>
+						exchange && exchange.coins && exchange.coins.includes(val.symbol)
+				)) ||
+			[];
+		const filteredFiatCoins = exchangeCoins
+			.filter((item) => item.type === 'fiat')
+			.map((item) => ({
+				symbol: item?.symbol,
+				color: item?.meta?.color,
+				fullname: item?.fullname,
+			}));
 		setFiatCoins(filteredFiatCoins);
-		setSelectedDepositAsset(filteredFiatCoins[0]?.symbol);
-		setSelectedWithdrawalAsset(filteredFiatCoins[0]?.symbol);
 	}, [coins, exchange]);
 
-	const requestDepositData = useCallback(
-		(values = {}, queryParams = { type: 'deposit' }, page = 1, limit = 50) => {
-			if (Object.keys(queryParams).length === 0) {
-				setQueryParams({});
-			}
-			setQueryType(queryParams.type);
-			requestDeposits({
-				...values,
-				...queryParams,
-				page,
-				limit,
-			})
-				.then((data) => {
-					if (queryParams.type === 'deposit') {
-						setDeposits(page === 1 ? data.data : [...deposits, ...data.data]);
-					} else {
-						setWithdrawal(
-							page === 1 ? data.data : [...withdrawal, ...data.data]
-						);
-					}
-					setPage(page);
-					setCurrentTablePage(page === 1 ? 1 : currentTablePage);
-					setIsRemaining(data.count > page * limit);
-				})
-				.catch((error) => {
-					const message = error.data ? error.data.message : error.message;
-					console.log('message', message);
-				});
-		},
-		[currentTablePage, deposits, withdrawal]
-	);
-
-	const getHistory = useCallback(async () => {
-		if (fiatCoins.length) {
-			await requestDepositData(
-				{
-					currency: fiatCoins && fiatCoins[0]?.symbol,
-					dismissed: false,
-					rejected: false,
-				},
-				{ type: 'deposit' },
-				page,
-				limit
-			);
-			await requestDepositData(
-				{
-					currency: fiatCoins && fiatCoins[0]?.symbol,
-					dismissed: false,
-					rejected: false,
-				},
-				{ type: 'withdrawal' },
-				page,
-				limit
-			);
+	// Prefer the asset's uploaded logo, then the bundled coin icon.
+	const getCoinLogo = (symbol) => {
+		const coin = appCoins?.[symbol];
+		if (coin && coin.logo) {
+			return coin.logo;
+		} else if (STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()]) {
+			return STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()];
 		}
-		// eslint-disable-next-line
-	}, [page, limit, fiatCoins]);
-
-	useEffect(() => {
-		getHistory();
-	}, [getHistory]);
-
-	useEffect(() => {
-		setEnable(ultimateFiat);
-		// eslint-disable-next-line
-	}, []);
-
-	const pageChange = (count, pageSize) => {
-		const pageCount = count % 5 === 0 ? 5 : count % 5;
-		const apiPageTemp = Math.floor(count / 5);
-		if (limit === pageSize * pageCount && apiPageTemp >= page && isRemaining) {
-			requestDeposits(queryParams, queryParams, page + 1, limit);
-		}
-		setCurrentTablePage(count);
+		return '';
 	};
 
-	// const renderVerification = (value) => (
-	// 	<LegacyIcon type={value ? 'check-circle-o' : 'close-circle'} />
-	// );
-
-	const handleSelect = async (currency, type) => {
-		if (type === 'deposit') {
-			setSelectedDepositAsset(currency);
-			await requestDepositData(
-				{ currency, dismissed: false, rejected: false },
-				{ type: 'deposit' },
-				page,
-				limit
-			);
-		} else {
-			setSelectedWithdrawalAsset(currency);
-			await requestDepositData(
-				{ currency, dismissed: false, rejected: false },
-				{ type: 'withdrawal' },
-				page,
-				limit
-			);
-		}
-	};
-
-	// const renderLink = (value) => (
-	// 	<Button type="primary" className="green-btn">
-	// 		<Link to={`/admin/user?id=${value}`}>
-	// 			GO
-	// 			<RightOutlined />
-	// 		</Link>
-	// 	</Button>
-	// );
-
-	const onOpenModal = (validateData, statusType, type) => {
-		setIsOpen(true);
-		setStatusType(statusType);
-		setValidateData(validateData);
-		setQueryType(type);
-	};
-
-	const onCancelModal = () => {
-		setIsOpen(false);
-		setStatusType('');
-	};
-
-	const handleConfirm = (formValues) => {
-		let body = {
-			transaction_id: formValues.transaction_id,
-			updated_transaction_id: formValues.updated_transaction_id,
-			rejected: false,
-			processing: false,
-			waiting: false,
+	const getRampStats = (symbol) => {
+		const onRampMethods = onramp?.[symbol] ? Object.keys(onramp[symbol]) : [];
+		const offRampMethods = Array.isArray(offramp?.[symbol])
+			? offramp[symbol].filter((method) => user_payments?.[method])
+			: [];
+		return {
+			onCount: onRampMethods.length,
+			offCount: offRampMethods.length,
 		};
-		if (formValues.description) {
-			body = {
-				...body,
-				description: formValues.description,
-			};
-		}
-		if (statusType === 'validate') {
-			body = {
-				...body,
-				status: true,
-				dismissed: false,
-			};
-		} else {
-			body = {
-				...body,
-				dismissed: true,
-				status: false,
-			};
-		}
-		if (queryType === 'deposit') {
-			requestMint(body)
-				.then((data) => {
-					onSuccess(queryParams, queryType);
-				})
-				.catch((error) => {
-					onFailure(error);
-				});
-		} else {
-			requestBurn(body)
-				.then((data) => {
-					onSuccess(queryParams, queryType);
-				})
-				.catch((error) => {
-					onFailure(error);
-				});
-		}
 	};
 
-	const onFailure = (errObj) => {
-		const message = errObj.data ? errObj.data.message : errObj.message;
-		setError(message);
-		onCancelModal();
-	};
-
-	const onSuccess = (queryParams, queryType) => {
-		requestDeposits(queryParams, { type: queryType });
-		onCancelModal();
-	};
-
-	const onCloseErrorAlert = () => {
-		setError('');
-	};
-
-	const renderSelect = (type) => {
-		return (
-			<Select
-				onChange={(e) => handleSelect(e, type)}
-				size="small"
-				value={
-					type === 'deposit' ? selectedDepositAsset : selectedWithdrawalAsset
-				}
-				className="ml-3 mb-2"
-				dropdownClassName="blue-admin-select-dropdown"
-				getPopupContainer={(triggerNode) => triggerNode.parentNode}
+	const renderStatusBadge = (count, onClick) =>
+		count > 0 ? (
+			<span
+				className="ramp-status-badge configured clickable"
+				onClick={onClick}
 			>
-				{fiatCoins.map((option, index) => (
-					<Select.Option value={option.symbol} key={index}>
-						<div className="d-flex align-items-center mt-1 summary-coin">
-							<Coins
-								type={option?.symbol?.toLowerCase()}
-								small={true}
-								color={option?.color || ''}
-							/>
-							<div className="ml-2">{option?.symbol}</div>
-						</div>
-					</Select.Option>
-				))}
-			</Select>
+				<CheckCircleFilled className="mr-1" />
+				{count} configured
+			</span>
+		) : (
+			<span
+				className="ramp-status-badge not-configured clickable"
+				onClick={onClick}
+			>
+				<MinusCircleOutlined className="mr-1" />
+				Not configured
+			</span>
+		);
+
+	const renderCurrencyCard = (coin) => {
+		const symbol = coin?.symbol;
+		const { onCount, offCount } = getRampStats(symbol);
+		return (
+			<div className="fiat-currency-card" key={symbol}>
+				<div className="fiat-currency-card-header">
+					{getCoinLogo(symbol) ? (
+						<img
+							src={getCoinLogo(symbol)}
+							alt={symbol}
+							className="fiat-currency-logo"
+						/>
+					) : (
+						<Coins
+							type={symbol?.toLowerCase()}
+							small={true}
+							color={coin?.color || ''}
+						/>
+					)}
+					<div className="ml-2">
+						<div className="fiat-currency-symbol">{symbol?.toUpperCase()}</div>
+						<div className="fiat-currency-name">{coin?.fullname}</div>
+					</div>
+				</div>
+				<div className="fiat-currency-card-body">
+					<div className="ramp-status-row">
+						<span className="ramp-status-label">On-ramp (deposits)</span>
+						{renderStatusBadge(onCount, () => handleTabChange('2'))}
+					</div>
+					<div className="ramp-status-row">
+						<span className="ramp-status-label">Off-ramp (withdrawals)</span>
+						{renderStatusBadge(offCount, () => handleTabChange('3'))}
+					</div>
+				</div>
+			</div>
 		);
 	};
 
-	const baseColumns = [
-		{
-			title: 'User Id',
-			dataIndex: 'user_id',
-			key: 'user_id',
-			render: renderUser,
-		},
-		{
-			title: 'Transaction Id',
-			dataIndex: 'transaction_id',
-			key: 'transaction_id',
-		},
-		{
-			title: 'Currency',
-			dataIndex: 'currency',
-			key: 'currency',
-			render: (currency) => renderAsset(currency, coins),
-		},
-		{
-			title: 'Status',
-			key: 'status',
-			render: renderStatus,
-		},
-		{ title: 'Amount', dataIndex: 'amount', key: 'amount' },
-	];
-	const depositColumns = [
-		...baseColumns,
-		{
-			title: 'Validate/dismiss',
-			render: (renderData) =>
-				renderContent(renderData, (data, statusType) =>
-					onOpenModal(data, statusType, 'deposit')
-				),
-		},
-	];
-	const withdrawalColumns = [
-		...baseColumns,
-		{
-			title: 'Validate/dismiss',
-			render: (renderData) =>
-				renderContent(renderData, (data, statusType) =>
-					onOpenModal(data, statusType, 'withdrawal')
-				),
-		},
-	];
-
-	// const kycColumns = [
-	// 	{
-	// 		title: '',
-	// 		dataIndex: 'tooltip',
-	// 		key: 'tooltip',
-	// 		render: () => (
-	// 			<IconToolTip
-	// 				type="warning"
-	// 				tip="This market is in pending verification"
-	// 			/>
-	// 		),
-	// 	},
-	// 	{
-	// 		title: 'Account created',
-	// 		dataIndex: 'actcreated',
-	// 		key: 'actcreated',
-	// 		render: (date) => (
-	// 			<span>
-	// 				Created at:{' '}
-	// 				{moment(date).format('DD/MMM/YYYY, hh:mmA ').toUpperCase() +
-	// 					new Date(date).toTimeString().slice(9)}
-	// 			</span>
-	// 		),
-	// 	},
-	// 	{
-	// 		title: 'ID',
-	// 		dataIndex: 'id',
-	// 		key: 'id',
-	// 	},
-	// 	{
-	// 		title: 'Username',
-	// 		dataIndex: 'username',
-	// 		key: 'username',
-	// 	},
-	// 	{
-	// 		title: 'Email',
-	// 		dataIndex: 'email',
-	// 		key: 'email',
-	// 	},
-	// 	{
-	// 		title: 'Verification Level',
-	// 		dataIndex: 'vlevel',
-	// 		key: 'vlevel',
-	// 	},
-	// 	{
-	// 		title: 'Activated',
-	// 		dataIndex: 'ac',
-	// 		key: 'act',
-	// 		render: renderVerification,
-	// 	},
-	// 	{
-	// 		title: 'See Data',
-	// 		dataIndex: 'seedata',
-	// 		key: 'seedata',
-	// 		render: renderLink,
-	// 	},
-	// ];
-	let locale = {
-		emptyText: (
-			<span className="gray-txt">
-				<div>
-					<Image
-						icon={STATIC_ICONS['DEPOSIT_TIERS_SECTION']}
-						wrapperClassName="limit-status-icon"
-					/>
+	const renderMiniStat = (type) => {
+		const isDeposit = type === 'deposit';
+		return (
+			<div className="fiat-mini-stat-card">
+				<Image
+					icon={
+						isDeposit
+							? STATIC_ICONS['DEPOSIT_TIERS_SECTION']
+							: STATIC_ICONS['WITHDRAW_TIERS_SECTION']
+					}
+					wrapperClassName="fiat-mini-stat-icon"
+				/>
+				<div className="fiat-mini-stat-text">
+					<div className="fiat-mini-stat-title">
+						Fiat {isDeposit ? 'deposits' : 'withdrawals'}
+					</div>
+					<div className="fiat-mini-stat-sub">
+						Review pending & completed {isDeposit ? 'deposits' : 'withdrawals'}
+					</div>
 				</div>
-				There seems to be no fiat deposits that are pending yet. Connect a fiat
-				on-ramp{' '}
-				<span onClick={() => handleTabChange('2')} className="underline">
-					here
-				</span>
-				.
-			</span>
-		),
+				<Link
+					to={
+						isDeposit
+							? '/admin/financials?deposits'
+							: '/admin/financials?withdrawals'
+					}
+					className="fiat-mini-stat-link underline"
+				>
+					View <RightOutlined />
+				</Link>
+			</div>
+		);
 	};
-	let withDrawalLocale = {
-		emptyText: (
-			<span className="gray-txt">
-				<div>
-					<Image
-						icon={STATIC_ICONS['WITHDRAW_TIERS_SECTION']}
-						wrapperClassName="limit-status-icon mr-2"
-					/>
-				</div>
-				There seems to be no fiat withdrawals that are pending yet. Connect a
-				fiat off-ramp{' '}
-				<span onClick={() => handleTabChange('3')} className="underline">
-					here
-				</span>
-				.
-			</span>
-		),
-	};
-	// let kycLocale = {
-	// 	emptyText: (
-	// 		<span className="gray-txt">
-	// 			<div>
-	// 				<Image
-	// 					icon={STATIC_ICONS['FIAT_KYC_ICON']}
-	// 					wrapperClassName="limit-status-icon mr-2"
-	// 				/>
-	// 			</div>
-	// 			<div>No pending KYC information here yet.</div>
-	// 			<div>Invite users to your exchange and/or turn on KYC plugins.</div>
-	// 			<div>
-	// 				{' '}
-	// 				<Link to="/admin/fiat?tab=4" className="underline">
-	// 					Visit KYC section
-	// 				</Link>
-	// 			</div>
-	// 		</span>
-	// 	),
-	// };
-
-	// const kycData = [];
 
 	if (!isGetExchange) {
 		return (
@@ -473,48 +176,13 @@ const Summarycontent = ({
 					icon={STATIC_ICONS['CURRENCY_SYMBOL']}
 					wrapperClassName="fiatcurrency"
 				/>
-				<div
-					style={{
-						display: 'flex',
-						justifyContent: 'space-between',
-						width: '100%',
-					}}
-				>
-					<div className="centercontent" style={{ flex: 1 }}>
-						Fiat currencies like USD, EUR, YEN, etc can be managed here. To
-						allow your users to make fiat deposits and withdrawals you must add
-						payment system account details.
-					</div>
-					<div style={{ flex: 1 }}>
-						<div style={{ fontSize: 17, float: 'right' }}>
-							{' '}
-							<span style={{ marginRight: 5 }}>Enable</span>
-							<Switch
-								checked={enable}
-								onChange={async (e) => {
-									try {
-										await updateConstants({
-											kit: {
-												features: {
-													...constants?.features,
-													ultimate_fiat: e,
-												},
-											},
-										});
-										requestAdminData().then((res) => {
-											const result = res?.data?.kit?.features?.ultimate_fiat;
-											setEnable(result);
-											setFeatureEnable(result);
-										});
-									} catch (error) {
-										message.error(error.data.message);
-									}
-								}}
-							/>
-						</div>
-					</div>
+				<div className="centercontent">
+					Fiat currencies like USD, EUR, YEN, etc can be managed here. To allow
+					your users to make fiat deposits and withdrawals you must add payment
+					system account details.
 				</div>
 			</div>
+
 			{!isUpgrade ? (
 				<div className="d-flex mb-4">
 					<div className="d-flex align-items-center justify-content-between upgrade-section my-4">
@@ -538,336 +206,88 @@ const Summarycontent = ({
 					</div>
 				</div>
 			) : null}
-			<div className={!isUpgrade || !enable ? 'disableall' : ''}>
-				{!user_payments ? (
-					<div>
-						<div className="payment mt-5">
-							<div className="d-flex align-items-center justify-content-between">
-								<div className="d-flex align-items-center">
-									<Image
-										icon={STATIC_ICONS['DOLLAR_GEAR']}
-										wrapperClassName="fiatcurrency"
-									/>
-									<div>
-										We've noticed that there hasn't been any Payment Accounts
-										added yet. To start it is recommended to{' '}
-										<Link to="/admin/fiat?tab=1" className="underline">
-											add a Payment Account
-										</Link>
-										.
-									</div>
+
+			<div className={!isUpgrade ? 'disableall' : ''}>
+				{!hasPaymentAccounts ? (
+					<div className="payment mt-4">
+						<div className="d-flex align-items-center justify-content-between">
+							<div className="d-flex align-items-center">
+								<Image
+									icon={STATIC_ICONS['DOLLAR_GEAR']}
+									wrapperClassName="fiatcurrency"
+								/>
+								<div>
+									We've noticed that there hasn't been any Payment Accounts
+									added yet. To start it is recommended to{' '}
+									<span
+										className="underline"
+										onClick={() => handleTabChange('1')}
+									>
+										add a Payment Account
+									</span>
+									.
 								</div>
-								<Button type="primary" className="green-btn">
-									<Link to="/admin/fiat?tab=1">Add payment account</Link>
-								</Button>
 							</div>
+							<Button
+								type="primary"
+								className="green-btn"
+								onClick={() => handleTabChange('1')}
+							>
+								Add payment account
+							</Button>
 						</div>
 					</div>
 				) : null}
-				<div className="body-container mt-3">
-					<div className="box-outerDesign">
-						<div className="d-flex justify-content-between ramp-heading">
-							<span>
-								<b>On-ramps </b>(exchange banks and payment processors)
-							</span>
-							<span className="d-flex">
-								<Image
-									icon={STATIC_ICONS['ONRAMP_SIMPLE_DOLLAR']}
-									wrapperClassName="withdrawalIcon"
-								/>
-								<Link to="/admin/fiat?tab=2" className="underline  ml-1">
-									View on-ramps
-								</Link>
-							</span>
-						</div>
-						<div className="box-content">
-							{onRampData.length ? (
-								<div>
-									{Object.keys(onramp).map((key, ind) => {
-										return Object.keys(onramp[key]).length ? (
-											<div className="d-flex" key={ind}>
-												<div>Fiat {key && key.toUpperCase()}:</div>
-												<div className="ml-3 text-left">
-													<div className="text-capitalize">
-														{Object.keys(onramp[key]).map((name, index) => {
-															return (
-																<div key={index}>
-																	on-ramp {index + 1} : {name}
-																</div>
-															);
-														})}
-													</div>
-												</div>
-											</div>
-										) : null;
-									})}
-								</div>
-							) : (
-								<>
-									<Image
-										icon={STATIC_ICONS['ONRAMP_DOLLAR_ICON']}
-										wrapperClassName="withdrawalIcon green"
-									/>
-									<div className="txtpad">
-										There seems to be no fiat on-ramp systems connected to your
-										exchange yet. Connect a way for your users to deposit fiat{' '}
-										<Link to="/admin/fiat?tab=2" className="underline">
-											here
-										</Link>
-										.
-									</div>
-								</>
-							)}
-							{/* <div  className="d-flex">
-							<div className="small-circle mr-2 d-flex"></div>
-							<div className='d-flex'>
-							<div className='mr-5'>PUBLISHED </div>
-							<div><b>On-ramp 1: NMB (National Mongolian Bank)</b></div>
-							</div>
-						</div>
-						<div className="d-flex">
-							<div className="small-circle mr-2 d-flex"></div>
-							<div className='d-flex'>
-							<div className='mr-4 mb-5'>UNPUBLISHED </div>
-							<div><b>On-ramp 2: PayPal</b></div>
-							</div>
-						</div> */}
-						</div>
-					</div>
-					<div className="box-outerDesign">
-						<div className="d-flex justify-content-between ramp-heading">
-							<span>
-								<b>Off-ramps </b>(user banks and payment processors)
-							</span>
-							<span style={{ display: 'flex' }}>
-								<Image
-									icon={STATIC_ICONS['OFFRAMP_SIMPLE_DOLLAR']}
-									wrapperClassName="withdrawalIcon"
-								/>{' '}
-								<Link to="/admin/fiat?tab=3" className="underline  ml-1">
-									View off-ramps
-								</Link>
-							</span>
-						</div>
-						<div className="box-content">
-							{offRampData.length ? (
-								<div>
-									{Object.keys(offramp).map((key, ind) => {
-										return Object.keys(offramp[key])?.length &&
-											key &&
-											key !== 'undefined' ? (
-											<div className="d-flex" key={ind}>
-												<div>Fiat {key && key.toUpperCase()}:</div>
-												<div className="ml-3 text-left">
-													<div className="text-capitalize">
-														{offramp[key].map((name, index) => {
-															return (
-																<div key={index}>
-																	off-ramp {index + 1} : {name}
-																</div>
-															);
-														})}
-													</div>
-												</div>
-											</div>
-										) : null;
-									})}
-								</div>
-							) : (
-								<>
-									<Image
-										icon={STATIC_ICONS['OFFRAMP_DOLLAR_ICON']}
-										wrapperClassName="withdrawalIcon"
-									/>
-									<div className="txtpad">
-										There seems to be no fiat off-ramp systems connected to your
-										exchange yet. Connect a way for your users to withdraw fiat{' '}
-										<Link to="/admin/fiat?tab=3" className="underline">
-											here
-										</Link>
-										.
-									</div>
-								</>
-							)}
-							{/* <div  className="d-flex">
-							<div className="small-circle mr-2 d-flex"></div>
-							<div className='d-flex'>
-							<div className='mr-5'>PUBLISHED </div>
-							<div><b>On-ramp 1: NMB (National Mongolian Bank)</b></div>
-							</div>
-						</div>
-						<div className="d-flex">
-							<div className="small-circle mr-2 d-flex"></div>
-							<div className='d-flex'>
-							<div className='mr-4 mb-5'>UNPUBLISHED </div>
-							<div><b>On-ramp 2: PayPal</b></div>
-							</div>
-						</div> */}
-						</div>
-					</div>
-				</div>
-				<div className="body-container flex-column">
-					<div className="box-outerDesign w-100">
-						<div className="d-flex justify-content-between align-items-center ramp-heading">
-							<span className="d-flex align-items-center">
-								<b>Recent fiat pending deposits</b>
-								{!fiatCoins.length ? (
-									<Spin size="small" className="ml-2" />
-								) : (
-									<span>{renderSelect('deposit')}</span>
-								)}
-							</span>
-							<span className="d-flex align-items-center">
-								<Image
-									icon={STATIC_ICONS['DEPOSIT_TIERS_SECTION']}
-									wrapperClassName="withdrawalIcon"
-								/>
-								<Link
-									to="/admin/financials?deposits"
-									className="underline ml-1"
-								>
-									View fiat deposits
-								</Link>
-							</span>
-						</div>
-						<div
-							className={
-								deposits.length
-									? 'fiattable mb-5 blue-admin-table'
-									: 'fiattable1 mb-5'
-							}
-						>
-							<Table
-								columns={depositColumns}
-								locale={locale}
-								dataSource={deposits.map((deposit) => {
-									return { ...deposit };
-								})}
-								rowKey={(data) => {
-									return data.id;
-								}}
-								pagination={{
-									current: currentTablePage,
-									onChange: pageChange,
-								}}
-								expandedRowRender={(vals) =>
-									renderRowContent({ ...vals, coins })
-								}
-								expandRowByClick={true}
-							/>
-						</div>
-					</div>
-					<div className="box-outerDesign w-100">
-						<div className="d-flex justify-content-between align-items-center ramp-heading">
-							<span className="d-flex align-items-center">
-								<b>Recent fiat pending withdrawals</b>
-								{!fiatCoins.length ? (
-									<Spin size="small" className="ml-2" />
-								) : (
-									<span>{renderSelect('withdrawal')}</span>
-								)}
-							</span>
-							<span className="d-flex align-items-center">
-								<Image
-									icon={STATIC_ICONS['WITHDRAW_TIERS_SECTION']}
-									wrapperClassName="withdrawalIcon "
-								/>
-								<Link
-									to="/admin/financials?withdrawals"
-									className="underline ml-1"
-								>
-									View fiat withdrawals
-								</Link>
-							</span>
-						</div>
-						<div
-							className={
-								withdrawal.length
-									? 'fiattable mb-5 blue-admin-table'
-									: 'fiattable1 mb-5'
-							}
-						>
-							{error && (
-								<Alert
-									message={error}
-									type="error"
-									showIcon
-									onClose={onCloseErrorAlert}
-									closable={true}
-									closeText="Close"
-								/>
-							)}
-							<Table
-								columns={withdrawalColumns}
-								dataSource={withdrawal.map((item) => {
-									return { ...item };
-								})}
-								rowKey={(data) => {
-									return data.id;
-								}}
-								locale={withDrawalLocale}
-								pagination={{
-									current: currentTablePage,
-									onChange: pageChange,
-								}}
-								expandedRowRender={(vals) =>
-									renderRowContent({ ...vals, coins })
-								}
-								expandRowByClick={true}
-							/>
-						</div>
-					</div>
-				</div>
-				{/* <div>
-					<div className="d-flex justify-content-between kyc-heading">
-						<span>
-							<b>KYC - recent pending user verifications </b>
+
+				<div className="fiat-summary-section mt-4">
+					<div className="fiat-summary-section-header">
+						<span className="fiat-summary-section-title">
+							Fiat currencies ({fiatCoins.length})
 						</span>
-						<span className="d-flex">
-							<IconToolTip
-								type="warning"
-								tip="This market is in pending verification"
+						<Link to="/admin/financials?tab=0" className="underline">
+							Manage assets
+						</Link>
+					</div>
+					{fiatCoins.length ? (
+						<div className="fiat-summary-grid">
+							{fiatCoins.map((coin) => renderCurrencyCard(coin))}
+						</div>
+					) : (
+						<div className="fiat-summary-empty">
+							<Image
+								icon={STATIC_ICONS['CURRENCY_SYMBOL']}
+								wrapperClassName="fiat-summary-empty-icon"
 							/>
-							<Link to="/admin/fiat?tab=4" className="underline  ml-1">
-								View KYC page
-							</Link>
+							<div>
+								There are no fiat currencies on your exchange yet. Add a fiat
+								asset from the{' '}
+								<Link to="/admin/financials?tab=0" className="underline">
+									assets page
+								</Link>{' '}
+								to start configuring on-ramps and off-ramps.
+							</div>
+						</div>
+					)}
+				</div>
+
+				<div className="fiat-summary-section mt-4">
+					<div className="fiat-summary-section-header">
+						<span className="fiat-summary-section-title">
+							Deposits & withdrawals
 						</span>
 					</div>
-					<div
-						className={
-							kycData.length ? 'fiattable1 mb-5' : 'fiattable1 mb-5 kyc-table'
-						}
-					>
-						<Table
-							columns={kycColumns}
-							dataSource={kycData}
-							rowKey={(data) => {
-								return data.id;
-							}}
-							locale={kycLocale}
-							pagination={false}
-						/>
+					<div className="fiat-mini-stats">
+						{renderMiniStat('deposit')}
+						{renderMiniStat('withdrawal')}
 					</div>
-				</div> */}
+				</div>
 			</div>
-			<Modal
-				visible={isOpen}
-				footer={null}
-				onCancel={onCancelModal}
-				width="37rem"
-				className="fiat-control-validate-popup-wrapper"
-			>
-				{isOpen ? (
-					<ValidateDismiss
-						validateData={validateData}
-						statusType={statusType}
-						onCancel={onCancelModal}
-						handleConfirm={handleConfirm}
-					/>
-				) : null}
-			</Modal>
 		</div>
 	);
 };
 
-export default Summarycontent;
+const mapStateToProps = (state) => ({
+	appCoins: state.app.coins,
+});
+
+export default connect(mapStateToProps)(Summarycontent);

@@ -12,6 +12,7 @@ import {
 	DEFAULT_BANK_PAYMENT_ACCOUNTS,
 	DEFAULT_CUSTOM_PAYMENT_CUSTOM,
 	DEFAULT_PAYPAL_PAYMENT_PAYPAL,
+	getPaymentPreset,
 } from 'config/constants';
 import { PaymentWay } from './PaymentWay';
 
@@ -145,6 +146,20 @@ const RampPaymentAccounts = ({
 		return temp;
 	};
 
+	// When the operator picks a ready-made preset (Wise, SEPA, …), seed the form
+	// with the preset's own fields instead of the generic custom template.
+	const getCustomInitValues = (paymentType = '') => {
+		const preset = getPaymentPreset(paymentType);
+		if (preset) {
+			let temp = {};
+			preset.data.forEach((item, index) => {
+				temp = { ...temp, [`section_${index + 1}`]: item };
+			});
+			return temp;
+		}
+		return getCustomDefaultValues(paymentType);
+	};
+
 	const generateDefaultInitValue = useCallback(() => {
 		if (DEFAULT_BANK_PAYMENT_ACCOUNTS.length) {
 			let temp = {};
@@ -233,7 +248,7 @@ const RampPaymentAccounts = ({
 		} else if (type === 'customForm') {
 			setCustomInitValue(
 				currentType === 'add'
-					? getCustomDefaultValues(paymentType)
+					? getCustomInitValues(paymentType)
 					: currentActiveTab && currentActiveTab === 'offRamp'
 					? constructedData(paymentType)
 					: integrateFieldValues(paymentType, constructedData(paymentType))
@@ -355,7 +370,7 @@ const RampPaymentAccounts = ({
 							? getStructedDataFromArray(user_payments['paypal'].data)
 							: defaultPaypalInitialValues;
 				} else if (customName.trim() !== '') {
-					tempCustom = getCustomDefaultValues(customName);
+					tempCustom = getCustomInitValues(customName);
 				}
 				setCurrentType('add');
 				setBankInitValue(tempBank);

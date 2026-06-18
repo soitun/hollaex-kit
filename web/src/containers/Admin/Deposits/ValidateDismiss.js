@@ -39,7 +39,32 @@ const ValidateDismiss = ({
 				updated_transaction_id: values.transaction_id,
 			};
 		}
+		if (statusType === 'block') {
+			formProps = {
+				...formProps,
+				receiver_id: values.receiver_id,
+			};
+		}
 		handleConfirm(formProps);
+	};
+
+	const titleMap = {
+		validate: 'Validate',
+		dismiss: 'Dismiss',
+		retry: 'Retry',
+		release: 'Release',
+		block: 'Block',
+		reject: 'Reject',
+	};
+	const descriptionMap = {
+		dismiss: 'Dismissing this transaction will stop it from being processed.',
+		validate: 'Validating this transaction will allow it to get processed.',
+		release:
+			'Releasing will take this transaction off hold so it gets processed automatically.',
+		reject:
+			'Rejecting will dismiss this withdrawal so it will not be processed.',
+		block:
+			'Blocking rejects this deposit for the original user (they receive nothing). The amount is instead credited to the user ID you enter below — tagged as "block", with no email sent — so you can redirect the funds (e.g. to return them to the sender).',
 	};
 	return (
 		<Form
@@ -48,20 +73,8 @@ const ValidateDismiss = ({
 			onFinish={handleSubmit}
 			className="Validate-Dismiss-popup"
 		>
-			<div className="title">
-				{statusType === 'validate'
-					? 'Validate'
-					: statusType === 'dismiss'
-					? 'Dismiss'
-					: 'Retry'}
-			</div>
-			<div className="my-1">
-				{statusType === 'dismiss'
-					? 'Dismissing this transaction will stop it from being processed.'
-					: statusType === 'validate'
-					? 'Validating this transaction will allow it to get processed.'
-					: null}
-			</div>
+			<div className="title">{titleMap[statusType] || 'Confirm'}</div>
+			<div className="my-1">{descriptionMap[statusType] || null}</div>
 			<div className="my-3">Please check and confirm the details below.</div>
 			<span className="legend">Check & Confirm</span>
 			<div className="confirm-container">
@@ -118,6 +131,19 @@ const ValidateDismiss = ({
 			) : (
 				''
 			)}
+			{statusType === 'block' ? (
+				<div className="my-5">
+					<div>Recipient user ID</div>
+					<Item
+						name="receiver_id"
+						rules={[
+							{ required: true, message: 'Please enter a recipient user ID' },
+						]}
+					>
+						<Input type="number" placeholder="User ID to credit" />
+					</Item>
+				</div>
+			) : null}
 			<div className="d-flex align-items-center mt-4">
 				<Button type="ghost" className="f-1" onClick={onCancel}>
 					Back

@@ -3,6 +3,7 @@ import { Button, Tooltip } from 'antd';
 import { QuestionCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
 
 import { STATIC_ICONS } from 'config/icons';
+import { getPaymentPreset } from 'config/constants';
 import PaymentDetails from './PaymentDetails';
 import FormConfig from './PaymentFormUtils/FormConfig';
 import withConfig from 'components/ConfigProvider/withConfig';
@@ -300,7 +301,10 @@ export const PaymentWay = withConfig(
 						</div>
 						<div className="d-flex mt-4 mb-4">
 							<img
-								src={STATIC_ICONS.MPESA_ICON}
+								src={
+									getPaymentPreset(currentPaymentType)?.icon ||
+									STATIC_ICONS.MPESA_ICON
+								}
 								alt="bank-icon"
 								className="fiat-icon mr-3"
 							/>
