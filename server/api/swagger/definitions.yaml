@@ -1515,6 +1515,20 @@ definitions:
       description:
         type: string
         maxLength: 256
+  ReallocateDepositRequest:
+    type: object
+    required:
+      - transaction_id
+      - receiver_id
+    properties:
+      transaction_id:
+        type: string
+        maxLength: 256
+      receiver_id:
+        type: integer
+      description:
+        type: string
+        maxLength: 256
   CoinPostRequest:
     type: object
     required:

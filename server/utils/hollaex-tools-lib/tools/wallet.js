@@ -1237,6 +1237,23 @@ const updatePendingMint = (
 	return getNodeLib().updatePendingMint(transactionId, opts);
 };
 
+const reallocateDepositByKitId = async (
+	transactionId,
+	receiverKitId,
+	opts = {
+		description: null,
+		additionalHeaders: null
+	}
+) => {
+	const idDictionary = await mapKitIdToNetworkId([receiverKitId]);
+	if (!has(idDictionary, receiverKitId)) {
+		throw new Error(USER_NOT_FOUND);
+	} else if (!idDictionary[receiverKitId]) {
+		throw new Error('User not registered on network');
+	}
+	return getNodeLib().reallocateDeposit(transactionId, idDictionary[receiverKitId], opts);
+};
+
 const burnAssetByKitId = async (
 	kitId,
 	currency,
@@ -1518,6 +1535,7 @@ module.exports = {
 	burnAssetByNetworkId,
 	getKitBalance,
 	updatePendingMint,
+	reallocateDepositByKitId,
 	updatePendingBurn,
 	isValidAddress,
 	validateDepositEnabled,
