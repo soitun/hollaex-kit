@@ -260,8 +260,54 @@ const handleCurrencyWithdrawal = (req, res) => {
 		});
 };
 
+const checkDepositAddresses = (req, res) => {
+	const { addresses, network, currency, txid, user_id } = req.swagger.params.data.value;
+
+	loggerNotification.verbose(
+		'controller/notification/checkDepositAddresses data',
+		'network',
+		network,
+		'currency',
+		currency,
+		'txid',
+		txid,
+		'user_id',
+		user_id,
+		'addresses',
+		Array.isArray(addresses) ? addresses.length : 0
+	);
+
+	toolsLib.security.verifyNetworkHmacToken(req)
+		.then(async () => {
+			const blacklisted = await toolsLib.wallet.areAddressesBlacklisted(addresses, network);
+			if (blacklisted.length > 0) {
+				loggerNotification.warn(
+					'controller/notification/checkDepositAddresses blocked',
+					'txid',
+					txid,
+					'user_id',
+					user_id,
+					'matched',
+					blacklisted.join(',')
+				);
+				// kit owns operator alerting for blacklisted deposit sources (throttled)
+				await toolsLib.wallet.alertBlacklistedDeposit(blacklisted, network, user_id);
+			}
+			return res.json({ allowed: blacklisted.length === 0, blacklisted });
+		})
+		.catch((err) => {
+			loggerNotification.error(
+				req.uuid,
+				'controller/notification/checkDepositAddresses',
+				err.message
+			);
+			return res.status(err.statusCode || 400).json({ message: `Fail - ${errorMessageConverter(err, req?.auth?.sub?.lang)?.message}` });
+		});
+};
+
 module.exports = {
 	applyKitChanges,
 	handleCurrencyDeposit,
-	handleCurrencyWithdrawal
+	handleCurrencyWithdrawal,
+	checkDepositAddresses
 };
