@@ -95,6 +95,43 @@ const handleCurrencyDeposit = (req, res) => {
 				coinName = toolsLib.getKitCoin(currency).display_name;
 			}
 			if (rejected || dismissed) {
+				// Live-push the cancellation so the user (and admin) socket reflects it
+				// in real time, mirroring the confirmed-deposit path below. A distinct
+				// status ('REJECTED'/'DISMISSED') plus the raw flags let the web tell a
+				// cancellation apart from a successful deposit.
+				const depositData = {
+					amount,
+					currency: coinName,
+					status: rejected ? 'REJECTED' : 'DISMISSED',
+					rejected: !!rejected,
+					dismissed: !!dismissed,
+					address,
+					transaction_id: txid,
+					network,
+					fee,
+					fee_coin,
+					description,
+					created_at,
+					updated_at
+				};
+
+				publisher.publish(WS_PUBSUB_DEPOSIT_CHANNEL, JSON.stringify({
+					topic: 'deposit',
+					action: 'insert',
+					user_id: user.id,
+					user_network_id: user.network_id,
+					data: depositData,
+					time: moment().unix()
+				}));
+
+				publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+					type: 'deposit',
+					data: {
+						...depositData,
+						user_id: user.id
+					}
+				}));
+
 				sendEmail(
 					MAILTYPE.DEPOSIT_CANCEL,
 					user.email,
@@ -196,6 +233,41 @@ const handleCurrencyWithdrawal = (req, res) => {
 				coinName = toolsLib.getKitCoin(currency).display_name;
 			}
 			if (rejected || dismissed) {
+				// Live-push the cancellation so the user (and admin) socket reflects it
+				// in real time, mirroring the confirmed-withdrawal path below. A distinct
+				// status ('REJECTED'/'DISMISSED') plus the raw flags let the web tell a
+				// cancellation apart from a successful withdrawal.
+				const withdrawalData = {
+					amount,
+					currency: coinName,
+					status: rejected ? 'REJECTED' : 'DISMISSED',
+					rejected: !!rejected,
+					dismissed: !!dismissed,
+					address,
+					fee,
+					fee_coin,
+					transaction_id: txid,
+					network,
+					description
+				};
+
+				publisher.publish(WS_PUBSUB_WITHDRAWAL_CHANNEL, JSON.stringify({
+					topic: 'withdrawal',
+					action: 'insert',
+					user_id: user.id,
+					user_network_id: user.network_id,
+					data: withdrawalData,
+					time: moment().unix()
+				}));
+
+				publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+					type: 'withdrawal',
+					data: {
+						...withdrawalData,
+						user_id: user.id
+					}
+				}));
+
 				sendEmail(
 					MAILTYPE.DEPOSIT_CANCEL,
 					user.email,
