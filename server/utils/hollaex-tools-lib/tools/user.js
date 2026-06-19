@@ -2611,11 +2611,17 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 					updateData[field] = value;
 				}
 				break;
-			case 'dob':
-				if (isDatetime(value)) {
-					updateData[field] = value;
+			case 'dob': {
+				// dob is a calendar date, not an instant. Accept either a
+				// plain 'YYYY-MM-DD' string or a (legacy) ISO datetime from
+				// older clients, and normalize to a date-only string at UTC
+				// so the stored day never shifts with timezone.
+				const dobMoment = moment.utc(value, ['YYYY-MM-DD', moment.ISO_8601], true);
+				if (dobMoment.isValid()) {
+					updateData[field] = dobMoment.format('YYYY-MM-DD');
 				}
 				break;
+			}
 			case 'address':
 				if (isPlainObject(value)) {
 					updateData[field] = {

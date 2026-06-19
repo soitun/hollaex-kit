@@ -51,8 +51,7 @@ const BaseDataFields = {
 	dob: {
 		type: 'date',
 		label: 'Date of birth',
-		showTime: { format: 'HH:mm' },
-		dateFormat: 'YYYY/MM/DD HH:mm',
+		dateFormat: 'YYYY/MM/DD',
 	},
 	phone_number: {
 		type: 'text',
@@ -73,7 +72,8 @@ const onSubmit = (dataFields, onChangeSuccess, handleClose) => (values) => {
 			const momentValue = moment.isMoment(values[key])
 				? values[key]
 				: moment(String(values[key]), dataFields?.dob?.dateFormat);
-			submitData[key] = momentValue.toISOString();
+			// dob is a calendar date — submit as a plain date string, no time/tz.
+			submitData[key] = momentValue.format('YYYY-MM-DD');
 		} else {
 			submitData[key] = values[key];
 		}

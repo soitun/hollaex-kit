@@ -75,7 +75,7 @@ module.exports = function (sequelize, DataTypes) {
 				defaultValue: ''
 			},
 			dob: {
-				type: DataTypes.DATE
+				type: DataTypes.DATEONLY
 			},
 			phone_number: {
 				type: DataTypes.STRING,
