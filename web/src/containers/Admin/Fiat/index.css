@@ -815,11 +815,47 @@
 	background-color: rgba(40, 133, 0, 0.12);
 }
 
+.payment-cards-wrapper .payment-card .payment-card-icon-wrapper {
+	position: relative;
+	display: inline-flex;
+	margin-bottom: 10px;
+}
+
 .payment-cards-wrapper .payment-card .payment-card-icon {
 	width: 42px;
 	height: 42px;
 	object-fit: contain;
-	margin-bottom: 10px;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon-edit,
+.payment-cards-wrapper .payment-card .payment-card-icon-reset {
+	position: absolute;
+	top: -8px;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background-color: #288500;
+	color: #ffffff;
+	font-size: 11px;
+	cursor: pointer;
+	margin: 0;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon-edit {
+	right: -8px;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon-reset {
+	left: -8px;
+	background-color: #707070;
+}
+
+.payment-cards-wrapper .payment-card:hover .payment-card-icon-edit,
+.payment-cards-wrapper .payment-card:hover .payment-card-icon-reset {
+	display: inline-flex;
 }
 
 .payment-cards-wrapper .payment-card .payment-card-title {

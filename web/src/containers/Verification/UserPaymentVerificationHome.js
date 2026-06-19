@@ -9,8 +9,7 @@ import { EditWrapper, Button } from 'components';
 import STRINGS from 'config/localizedStrings';
 import withConfig from 'components/ConfigProvider/withConfig';
 import { generateDynamicStringKey } from 'utils/id';
-import { STATIC_ICONS } from 'config/icons';
-import { getPaymentPreset } from 'config/constants';
+import { getPaymentMethodIcon } from 'config/constants';
 
 // Show this many accounts per method before requiring "view all".
 const VISIBLE_COUNT = 2;
@@ -114,19 +113,10 @@ const UserPaymentVerificationHome = ({
 	};
 
 	// Match the payment-account icon used across the fiat admin flows so each
-	// method card shows its own logo (bank / paypal / preset / generic).
-	const getMethodIcon = (name) => {
-		if (name === 'bank') {
-			return STATIC_ICONS.BANK_FIAT_PILLARS;
-		} else if (name === 'paypal') {
-			return STATIC_ICONS.PAYPAL_FIAT_ICON;
-		}
-		const preset = getPaymentPreset(name);
-		if (preset) {
-			return preset.icon;
-		}
-		return STATIC_ICONS.MPESA_ICON;
-	};
+	// method card shows its own logo. An operator-uploaded custom icon (stored
+	// on user_payments[name].icon) takes precedence over the built-in defaults.
+	const getMethodIcon = (name) =>
+		getPaymentMethodIcon(name, user_payments?.[name]?.icon);
 
 	// Group every submitted account under its resolved payment method so multiple
 	// accounts of the same method render together inside one card.

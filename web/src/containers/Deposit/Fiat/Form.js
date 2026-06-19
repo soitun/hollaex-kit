@@ -43,6 +43,7 @@ const Form = ({
 	router,
 	coins,
 	onramp = {},
+	user_payments = {},
 	fiat_fees,
 	getDepositCurrency,
 }) => {
@@ -83,6 +84,7 @@ const Form = ({
 
 			tabs[key] = {
 				icon:
+					user_payments?.[key]?.icon ||
 					ICONS[iconId] ||
 					getPaymentPreset(key)?.icon ||
 					ICONS['VERIFICATION_BANK_NEW'],
@@ -349,6 +351,7 @@ const mapStateToProps = (store, ownProps) => ({
 	user: store.user,
 	coins: store.app.coins,
 	onramp: store.app.onramp[ownProps.currency],
+	user_payments: store.app.constants.user_payments,
 	fiat_fees: store.app.constants.fiat_fees,
 	getDepositCurrency: store.app.depositFields.depositCurrency,
 });

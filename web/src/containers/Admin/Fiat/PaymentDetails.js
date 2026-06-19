@@ -1,8 +1,7 @@
 import React from 'react';
 import { InfoCircleOutlined } from '@ant-design/icons';
 
-import { STATIC_ICONS } from 'config/icons';
-import { getPaymentPreset } from 'config/constants';
+import { getPaymentMethodIcon } from 'config/constants';
 
 const PaymentDetails = ({
 	activeTab = '',
@@ -12,19 +11,6 @@ const PaymentDetails = ({
 	paymentIndex,
 	isDisable = false,
 }) => {
-	const renderImage = (type) => {
-		if (type === 'bank') {
-			return STATIC_ICONS.BANK_FIAT_PILLARS;
-		} else if (type === 'paypal') {
-			return STATIC_ICONS.PAYPAL_FIAT_ICON;
-		}
-		const preset = getPaymentPreset(type);
-		if (preset) {
-			return preset.icon;
-		}
-		return STATIC_ICONS.MPESA_ICON;
-	};
-
 	if (!user_payments) {
 		return null;
 	}
@@ -48,11 +34,11 @@ const PaymentDetails = ({
 								</div>
 								<div className="d-flex mb-4">
 									<img
-										src={
+										src={getPaymentMethodIcon(
+											item,
+											curData?.icon,
 											typeof curData?.data === 'string'
-												? STATIC_ICONS.FIAT_PLUGIN
-												: renderImage(item)
-										}
+										)}
 										alt="pay-icon"
 										className="pay-icon"
 									/>

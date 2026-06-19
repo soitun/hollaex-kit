@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Modal, Tooltip, message, Spin } from 'antd';
-import { PlusOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import {
+	PlusOutlined,
+	QuestionCircleOutlined,
+	EditOutlined,
+	UndoOutlined,
+} from '@ant-design/icons';
 import _get from 'lodash/get';
 
 import { STATIC_ICONS } from 'config/icons';
@@ -8,11 +13,13 @@ import PaymentAccountPopup from './PaymentPopup';
 import PaymentDetails from './PaymentDetails';
 import { updateConstants } from '../General/action';
 import { getConstants } from '../Settings/action';
+import { upload } from 'actions/operatorActions';
 import {
 	DEFAULT_BANK_PAYMENT_ACCOUNTS,
 	DEFAULT_CUSTOM_PAYMENT_CUSTOM,
 	DEFAULT_PAYPAL_PAYMENT_PAYPAL,
 	getPaymentPreset,
+	getPaymentMethodIcon,
 } from 'config/constants';
 import { PaymentWay } from './PaymentWay';
 import { constractPaymentOption } from 'utils/utils';
@@ -275,6 +282,7 @@ const PaymentAccounts = ({
 				user_payments: {
 					...user_payments,
 					[currentPaymentType]: {
+						...user_payments[currentPaymentType],
 						data: paymentAccData,
 						orderBy: paymentOrderBy,
 					},
@@ -341,7 +349,11 @@ const PaymentAccounts = ({
 		let orderBy = 1;
 		paymentsMethodsData.forEach((item) => {
 			if (item.name !== method) {
-				bodyData[item.name] = { data: item.data, orderBy: orderBy };
+				bodyData[item.name] = {
+					data: item.data,
+					orderBy: orderBy,
+					...(item.icon ? { icon: item.icon } : {}),
+				};
 				orderBy++;
 			}
 		});
@@ -370,19 +382,64 @@ const PaymentAccounts = ({
 		setIsDisplayForm(false);
 	};
 
-	const renderPaymentIcon = (item) => {
-		if (typeof item?.data === 'string') {
-			return STATIC_ICONS.FIAT_PLUGIN;
-		} else if (item?.name === 'bank') {
-			return STATIC_ICONS.BANK_FIAT_PILLARS;
-		} else if (item?.name === 'paypal') {
-			return STATIC_ICONS.PAYPAL_FIAT_ICON;
+	const renderPaymentIcon = (item) =>
+		getPaymentMethodIcon(
+			item?.name,
+			item?.icon,
+			typeof item?.data === 'string'
+		);
+
+	// Uploads a custom icon for a payment account and persists it on the
+	// account's config (user_payments[name].icon) so it shows everywhere the
+	// payment method is rendered (admin & user side).
+	const handleIconUpload = (item, file) => {
+		if (!file) {
+			return;
 		}
-		const preset = getPaymentPreset(item?.name);
-		if (preset) {
-			return preset.icon;
+		if (!file.type.startsWith('image/')) {
+			message.error('Please select an image file');
+			return;
 		}
-		return STATIC_ICONS.MPESA_ICON;
+		setIsLoading(true);
+		const formData = new FormData();
+		const extension = file.name.split('.').pop();
+		const name = `PAYMENT_ICON_${item.name}___${Date.now()}.${extension}`;
+		formData.append('name', name);
+		formData.append('file', file);
+		upload(formData)
+			.then(({ data: { path } }) => {
+				updateConstantsData({
+					kit: {
+						user_payments: {
+							...user_payments,
+							[item.name]: {
+								...user_payments[item.name],
+								icon: path,
+							},
+						},
+					},
+				});
+			})
+			.catch((err) => {
+				const error = err && err.data ? err.data.message : err.message;
+				message.error(error);
+				setIsLoading(false);
+			});
+	};
+
+	// Clears a previously uploaded custom icon so the method falls back to its
+	// default (bank / paypal / preset / generic) icon.
+	const handleIconReset = (item) => {
+		const updatedMethod = { ...user_payments[item.name] };
+		delete updatedMethod.icon;
+		updateConstantsData({
+			kit: {
+				user_payments: {
+					...user_payments,
+					[item.name]: updatedMethod,
+				},
+			},
+		});
 	};
 
 	const handleBack = () => {
@@ -488,11 +545,41 @@ const PaymentAccounts = ({
 												key={index}
 												onClick={() => setPaymentMethod(item.name)}
 											>
-												<img
-													src={renderPaymentIcon(item)}
-													alt="pay-icon"
-													className="payment-card-icon"
-												/>
+												<div className="payment-card-icon-wrapper">
+													<img
+														src={renderPaymentIcon(item)}
+														alt="pay-icon"
+														className="payment-card-icon"
+													/>
+													<label
+														className="payment-card-icon-edit"
+														title="Upload custom icon"
+														onClick={(e) => e.stopPropagation()}
+													>
+														<EditOutlined />
+														<input
+															type="file"
+															accept="image/*"
+															style={{ display: 'none' }}
+															onChange={(e) => {
+																handleIconUpload(item, e.target.files[0]);
+																e.target.value = '';
+															}}
+														/>
+													</label>
+													{item?.icon ? (
+														<span
+															className="payment-card-icon-reset"
+															title="Reset to default icon"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleIconReset(item);
+															}}
+														>
+															<UndoOutlined />
+														</span>
+													) : null}
+												</div>
 												<div className="payment-card-title">
 													User payment account {item.orderBy}
 												</div>

@@ -1,5 +1,6 @@
 import config from './index';
 import STRINGS from './localizedStrings';
+import { default as STATIC_ICONS } from './icons/static';
 export { default as ICONS } from './icons';
 
 export const ENV = process.env.NODE_ENV || 'production';
@@ -836,6 +837,28 @@ export const DEFAULT_PAYMENT_PRESETS = [
 
 export const getPaymentPreset = (name) =>
 	DEFAULT_PAYMENT_PRESETS.find((preset) => preset.name === name);
+
+// Resolves the icon for a payment account/method. A custom icon uploaded by the
+// operator (stored on the payment account config) always takes precedence over
+// the built-in bank/paypal/preset/plugin defaults.
+export const getPaymentMethodIcon = (name, customIcon, isPlugin = false) => {
+	if (customIcon) {
+		return customIcon;
+	}
+	if (isPlugin) {
+		return STATIC_ICONS.FIAT_PLUGIN;
+	}
+	if (name === 'bank') {
+		return STATIC_ICONS.BANK_FIAT_PILLARS;
+	} else if (name === 'paypal') {
+		return STATIC_ICONS.PAYPAL_FIAT_ICON;
+	}
+	const preset = getPaymentPreset(name);
+	if (preset) {
+		return preset.icon;
+	}
+	return STATIC_ICONS.MPESA_ICON;
+};
 
 export const DEFAULT_PINNED_COINS = [
 	'xht',
