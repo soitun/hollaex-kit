@@ -3739,6 +3739,48 @@ table th {
   .layout-mobile .withdrawal-container .withdraw-form-wrapper .withdraw-form .deposit-wrapper-fields .btn-wrapper-deposit .holla-button {
     width: -webkit-fill-available; } }
 
+/* Fiat deposit (on-ramp) layout */
+.fiat-deposit-summary {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--calculated_footer_border);
+  background-color: var(--base_secondary);
+  border-radius: 0.25rem;
+  min-width: 18rem; }
+  .fiat-deposit-summary .fiat-deposit-summary-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem; }
+  .fiat-deposit-summary .fiat-deposit-summary-label {
+    font-weight: bold; }
+
+.fiat-account-card {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--calculated_footer_border);
+  background-color: var(--base_secondary);
+  border-radius: 0.25rem; }
+  .fiat-account-card .fiat-account-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.4rem 0; }
+    .fiat-account-card .fiat-account-row:not(:last-child) {
+      border-bottom: 1px solid var(--calculated_footer_border); }
+  .fiat-account-card .fiat-account-label {
+    font-weight: bold;
+    opacity: 0.85;
+    white-space: nowrap; }
+  .fiat-account-card .fiat-account-value {
+    text-align: right;
+    word-break: break-word; }
+
+/* Taller deposit form panel */
+.withdrawal-container .withdraw-form-wrapper .withdraw-form {
+  min-height: 50rem; }
+
 .transaction-history-wrapper .ant-row,
 .login-history-section-wrapper .ant-row {
   margin-left: 0 !important;

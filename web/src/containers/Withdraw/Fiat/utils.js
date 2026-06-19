@@ -1,4 +1,5 @@
 import { createSelector } from 'reselect';
+import { getOfframpTypes, getOfframpMethodConfig } from 'utils/wallet';
 
 const VERIFIED_BANK_STATUS = 3;
 const normalizeKey = (val = '') =>
@@ -27,7 +28,9 @@ const getBankAccounts = (state) =>
 export const withdrawalOptionsSelector = createSelector(
 	[getOfframp, getBankAccounts, getUserPayments],
 	(offramp = [], bank_account = [], user_payments = {}) => {
-		const offrampList = Array.isArray(offramp) ? offramp : [];
+		// `offramp` may be a legacy array of enabled types or an object keyed by type
+		// holding per-method { min, max, fee }; normalize to the enabled-type list.
+		const offrampList = getOfframpTypes(offramp);
 		const offrampNorm = offrampList.map(normalizeKey);
 
 		const resolveOfframpKey = (type) => {
@@ -85,7 +88,14 @@ export const withdrawalOptionsSelector = createSelector(
 				const resolvedType =
 					resolveOfframpKey(account?.type) ||
 					inferPaymentTypeKeyFromAccount(account);
-				return resolvedType ? { ...account, type: resolvedType } : null;
+				return resolvedType
+					? {
+							...account,
+							type: resolvedType,
+							// per-method withdrawal limits & fee (null when none configured)
+							offrampLimits: getOfframpMethodConfig(offramp, resolvedType),
+					  }
+					: null;
 			})
 			.filter(Boolean);
 

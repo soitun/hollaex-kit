@@ -477,17 +477,6 @@ const Onramp = ({
 													Add payment account
 												</Button>
 											</Link>
-											<div className="small-gray-text">
-												Add an on-ramp anyway{' '}
-												<span
-													className={
-														isDisable ? 'anchor pointer-none' : 'anchor'
-													}
-													onClick={() => handleRamp('onramp', true)}
-												>
-													here
-												</span>
-											</div>
 										</div>
 									</div>
 								</div>
@@ -561,7 +550,13 @@ const Onramp = ({
 					</Fragment>
 				</div>
 			</Spin>
-			<Modal visible={isVisible} footer={null} width={500} onCancel={onCancel}>
+			<Modal
+				visible={isVisible}
+				footer={null}
+				width={500}
+				onCancel={onCancel}
+				className="fiat-popup-modal"
+			>
 				<PaymentAccountPopup
 					handleClosePlugin={onCancel}
 					type={type}

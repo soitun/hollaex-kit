@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Modal, Button } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 
 import Form from './PaymentForm';
 import { AdminHocForm } from 'components';
@@ -478,6 +479,16 @@ class FormConfig extends Component {
 		}
 		return (
 			<div>
+				{this.props.currentActiveTab === 'onRamp' && (
+					<div className="onramp-instruction-note mb-4">
+						<InfoCircleOutlined className="onramp-instruction-note-icon mr-2" />
+						<span>
+							Enter your <b>own</b> bank / payment account details below. These
+							are shown to your users on the fiat deposit page as the account to
+							send their deposit to — so make sure every value is accurate.
+						</span>
+					</div>
+				)}
 				<Form
 					fields={custom_fields}
 					initialValues={constructInitValue}
@@ -489,7 +500,12 @@ class FormConfig extends Component {
 					currentActiveTab={this.props.currentActiveTab}
 					handleBack={this.handleBack}
 				/>
-				<Modal visible={isAddColumn} footer={null} onCancel={this.onCancel}>
+				<Modal
+					visible={isAddColumn}
+					footer={null}
+					onCancel={this.onCancel}
+					className="fiat-popup-modal"
+				>
 					<div>{this.renderModalContent(modalType)}</div>
 				</Modal>
 			</div>

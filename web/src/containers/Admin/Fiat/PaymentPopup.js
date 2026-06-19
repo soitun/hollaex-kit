@@ -12,6 +12,7 @@ import { connect } from 'react-redux';
 
 import { STATIC_ICONS } from 'config/icons';
 import { constractPaymentOption } from 'utils/utils';
+import { getOfframpTypes } from 'utils/wallet';
 import { DEFAULT_PAYMENT_PRESETS, getPaymentPreset } from 'config/constants';
 
 import './index.css';
@@ -102,7 +103,7 @@ const PaymentAccountPopup = ({
 			setPaymentSelect(selectedPaymentType);
 		}
 		let tempArr = Object.keys(user_payments).filter((item, i) => {
-			if (!offramp[singleCoin.symbol]?.includes(item)) {
+			if (!getOfframpTypes(offramp[singleCoin.symbol]).includes(item)) {
 				return item;
 			} else {
 				return null;
@@ -348,11 +349,8 @@ const PaymentAccountPopup = ({
 			offramp &&
 			offramp[singleCoin.symbol]
 		) {
-			setCurrentOfframpIndex(
-				offramp[singleCoin.symbol].length
-					? offramp[singleCoin.symbol].length + 1
-					: 1
-			);
+			const offrampCount = getOfframpTypes(offramp[singleCoin.symbol]).length;
+			setCurrentOfframpIndex(offrampCount ? offrampCount + 1 : 1);
 		}
 	};
 
@@ -817,7 +815,8 @@ const PaymentAccountPopup = ({
 			);
 		case 'offramp':
 			const userPaymentOptions = PaymentMethodData.filter(
-				(item) => !offramp[singleCoin.symbol]?.includes(item.name)
+				(item) =>
+					!getOfframpTypes(offramp[singleCoin.symbol]).includes(item.name)
 			);
 
 			return (
@@ -846,7 +845,7 @@ const PaymentAccountPopup = ({
 						<div>
 							{!offramp?.[singleCoin.symbol] ||
 							(PaymentMethodData.length !==
-								offramp?.[singleCoin.symbol]?.length &&
+								getOfframpTypes(offramp?.[singleCoin.symbol]).length &&
 								selectedPaymentType) ? (
 								<div>
 									<div>
@@ -878,7 +877,7 @@ const PaymentAccountPopup = ({
 																alt=""
 																className="payment-option-icon mr-2"
 															/>
-															User payment account {i + 1}: {item.name}
+															{item.name}
 														</span>
 													</Option>
 												);
@@ -958,7 +957,7 @@ const PaymentAccountPopup = ({
 								!user_payments ||
 								!Object.keys(user_payments).length ||
 								(Object.keys(user_payments)?.length ===
-									offramp?.[singleCoin.symbol]?.length &&
+									getOfframpTypes(offramp?.[singleCoin.symbol]).length &&
 									selectedPaymentType)
 							}
 						>

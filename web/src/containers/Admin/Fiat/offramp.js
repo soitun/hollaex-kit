@@ -1,7 +1,7 @@
 import React, { Fragment, useState, useEffect, useRef, useMemo } from 'react';
 import { connect } from 'react-redux';
 import { STATIC_ICONS } from 'config/icons';
-import { Button, Tooltip, Modal, Select, message, Spin } from 'antd';
+import { Button, Tooltip, Modal, Select, message, Spin, Input } from 'antd';
 import {
 	QuestionCircleOutlined,
 	InfoCircleOutlined,
@@ -11,6 +11,11 @@ import {
 } from '@ant-design/icons';
 import { Link } from 'react-router';
 
+import {
+	getOfframpTypes,
+	getOfframpMethodConfig,
+	toOfframpObject,
+} from 'utils/wallet';
 import Coins from '../Coins';
 import PaymentAccountPopup from './PaymentPopup';
 import RampPaymentAccounts from './RampPaymentAccounts';
@@ -61,6 +66,12 @@ const Offramp = ({
 	const [offrampCurrentType, setOfframpCurrentType] = useState('');
 	const [isDisable, setIsDisable] = useState(false);
 	const [activeRampSymbol, setActiveRampSymbol] = useState('');
+	// per off-ramp method (payment option) withdrawal limits & fee
+	const [offrampLimits, setOfframpLimits] = useState({
+		min: '',
+		max: '',
+		fee: '',
+	});
 	const visibleRef = useRef(null);
 
 	useEffect(() => {
@@ -141,12 +152,12 @@ const Offramp = ({
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					) &&
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					)[0]
 			);
 		}
@@ -173,12 +184,12 @@ const Offramp = ({
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					) &&
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					)[0]
 			);
 		}
@@ -243,25 +254,19 @@ const Offramp = ({
 	};
 
 	const handleOffRampProceed = (type, paymentType, selectedSymbol) => {
-		let kitData = {
+		const existing = toOfframpObject(offramp[selectedSymbol]);
+		const kitData = {
 			kit: {
 				offramp: {
-					[selectedSymbol]: [paymentType],
+					...offramp,
+					[selectedSymbol]: {
+						...existing,
+						// keep any limits already configured for this method
+						[paymentType]: existing[paymentType] || {},
+					},
 				},
 			},
 		};
-		if (Object.keys(offramp).length && selectedSymbol) {
-			kitData = {
-				kit: {
-					offramp: {
-						...offramp,
-						[selectedSymbol]: offramp[selectedSymbol]
-							? [...offramp[selectedSymbol], paymentType]
-							: [paymentType],
-					},
-				},
-			};
-		}
 		setKitOfframpData(kitData);
 		setType(type);
 	};
@@ -372,7 +377,9 @@ const Offramp = ({
 		const validPaymentMethods = new Set(Object.keys(user_payments));
 
 		return Object.entries(offramp)?.reduce((acc, [key, values]) => {
-			const filtered = values?.filter((v) => validPaymentMethods?.has(v));
+			const filtered = getOfframpTypes(values)?.filter((v) =>
+				validPaymentMethods?.has(v)
+			);
 			if (filtered?.length) acc[key] = filtered;
 			return acc;
 		}, {});
@@ -423,10 +430,50 @@ const Offramp = ({
 		(item) => item?.symbol === activeItem?.symbol
 	);
 
+	const getActiveMethod = (symbol) =>
+		selectedPayType[symbol] || validOffRampData[symbol]?.[0];
+
+	// Load the active off-ramp method's saved withdrawal limits & fee into the inputs.
+	useEffect(() => {
+		const symbol = activeItem?.symbol;
+		if (!symbol) return;
+		const method = getActiveMethod(symbol);
+		const cfg = getOfframpMethodConfig(offramp[symbol], method);
+		setOfframpLimits({
+			min: cfg?.min ?? '',
+			max: cfg?.max ?? '',
+			fee: cfg?.fee ?? '',
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [activeItem, selectedPayType, offramp]);
+
+	const handleSaveOfframpLimits = (symbol, method) => {
+		if (!symbol || !method) return;
+		const existing = toOfframpObject(offramp[symbol]);
+		const methodCfg = { ...(existing[method] || {}) };
+		['min', 'max', 'fee'].forEach((key) => {
+			const value = offrampLimits[key];
+			if (value === '' || value == null) {
+				delete methodCfg[key];
+			} else {
+				methodCfg[key] = Number(value);
+			}
+		});
+		updateConstantsData({
+			kit: {
+				offramp: {
+					...offramp,
+					[symbol]: { ...existing, [method]: methodCfg },
+				},
+			},
+		});
+	};
+
 	const renderCoinConfig = (item, index) => {
 		if (!item || !validOffRampData[item?.symbol]?.length) {
 			return null;
 		}
+		const selectedMethod = getActiveMethod(item?.symbol);
 		return (
 			<>
 				<div className="paymentbox2">
@@ -465,7 +512,7 @@ const Offramp = ({
 								'offramp',
 								false,
 								item?.symbol,
-								offramp[item?.symbol],
+								getOfframpTypes(offramp[item?.symbol]),
 								selectedCoin,
 								false
 							)
@@ -540,6 +587,72 @@ const Offramp = ({
 									)}
 								</Select>
 							</div>
+						</div>
+					) : null}
+					{selectedMethod ? (
+						<div className="onramp-method-limits mt-4">
+							<div className="font-weight-bold mb-1">
+								Withdrawal limits & fee
+								{selectedMethod ? ` — ${selectedMethod}` : ''} (optional)
+							</div>
+							<div className="small-gray-text mb-3">
+								Set values specific to this payment method. Leave blank to use
+								the asset / fiat-fee defaults.
+							</div>
+							<div className="onramp-method-limits-fields">
+								<div className="onramp-method-limit-field">
+									<div className="mb-1">Minimum withdrawal</div>
+									<Input
+										type="number"
+										value={offrampLimits.min}
+										placeholder="Minimum"
+										onChange={(e) =>
+											setOfframpLimits({
+												...offrampLimits,
+												min: e.target.value,
+											})
+										}
+									/>
+								</div>
+								<div className="onramp-method-limit-field">
+									<div className="mb-1">Maximum withdrawal</div>
+									<Input
+										type="number"
+										value={offrampLimits.max}
+										placeholder="Maximum"
+										onChange={(e) =>
+											setOfframpLimits({
+												...offrampLimits,
+												max: e.target.value,
+											})
+										}
+									/>
+								</div>
+								<div className="onramp-method-limit-field">
+									<div className="mb-1">Withdrawal fee</div>
+									<Input
+										type="number"
+										value={offrampLimits.fee}
+										placeholder="Fee"
+										onChange={(e) =>
+											setOfframpLimits({
+												...offrampLimits,
+												fee: e.target.value,
+											})
+										}
+									/>
+								</div>
+							</div>
+							<Button
+								type="primary"
+								className="green-btn mt-3"
+								onClick={() =>
+									handleSaveOfframpLimits(item?.symbol, selectedMethod)
+								}
+								disabled={!isUpgrade || isDisable}
+							>
+								Save limits
+							</Button>
 						</div>
 					) : null}
 					{isPaymentForm || item.symbol === coinSymbol ? (
@@ -757,7 +870,13 @@ const Offramp = ({
 					</Fragment>
 				</div>
 			</Spin>
-			<Modal visible={isVisible} footer={null} width={500} onCancel={onCancel}>
+			<Modal
+				visible={isVisible}
+				footer={null}
+				width={500}
+				onCancel={onCancel}
+				className="fiat-popup-modal"
+			>
 				<PaymentAccountPopup
 					handleClosePlugin={onCancel}
 					handleTabChange={handleoffRampTab}

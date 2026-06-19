@@ -43,7 +43,7 @@ const PaymentDetails = ({
 									<div>
 										{activeTab && activeTab === 'paymentAccounts'
 											? `User payment account ${curData.orderBy}`
-											: `${activeTab}  ${paymentIndex}`}
+											: ''}
 									</div>
 								</div>
 								<div className="d-flex mb-4">

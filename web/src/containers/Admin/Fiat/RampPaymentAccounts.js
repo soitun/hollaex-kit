@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { Modal, Select, message } from 'antd';
-import { CaretDownOutlined, CaretUpOutlined } from '@ant-design/icons';
+import { Modal, message, Input } from 'antd';
 import _get from 'lodash/get';
 
+import { STATIC_ICONS } from 'config/icons';
 import PaymentAccountPopup from './PaymentPopup';
 import PaymentDetails from './PaymentDetails';
 import { updateConstants } from '../General/action';
@@ -15,10 +15,9 @@ import {
 	getPaymentPreset,
 } from 'config/constants';
 import { PaymentWay } from './PaymentWay';
+import { getOfframpTypes } from 'utils/wallet';
 
 import './index.css';
-
-const { Option } = Select;
 
 const RampPaymentAccounts = ({
 	router,
@@ -66,8 +65,13 @@ const RampPaymentAccounts = ({
 	const [paymenttype, setPaymentType] = useState('initial');
 	const [savedContent, setSavedContent] = useState(false);
 	const [paymentSelect, setPaymentSelect] = useState('');
-	const [isOpen, setIsOpen] = useState(false);
 	const [payOption, setPayOption] = useState(true);
+	// per on-ramp method (payment option) deposit limits & fee
+	const [methodLimits, setMethodLimits] = useState({
+		min: '',
+		max: '',
+		fee: '',
+	});
 	const [formData, setFormData] = useState({});
 	const [saveType, setSaveType] = useState('');
 	const [bodyData, setBodyData] = useState({});
@@ -121,12 +125,6 @@ const RampPaymentAccounts = ({
 			setIsDisable(false);
 		}
 	}, [isCurrentFormOpen, setIsDisable]);
-
-	useEffect(() => {
-		if (isModalVisible) {
-			setIsOpen({});
-		}
-	}, [isModalVisible]);
 
 	const getCustomDefaultValues = (paymentType = '') => {
 		let temp = {};
@@ -378,7 +376,10 @@ const RampPaymentAccounts = ({
 				setCustomInitValue(tempCustom);
 				setFormValues(onramp);
 				setPayOption(true);
-				if (
+				// select the method being added, not the first existing one
+				if (customName) {
+					setPaymentSelect(customName);
+				} else if (
 					(!paymentSelect || !firstPayment?.includes(paymentSelect)) &&
 					firstPayment?.length
 				) {
@@ -411,6 +412,18 @@ const RampPaymentAccounts = ({
 		}
 		// eslint-disable-next-line
 	}, [onramp, user_payments, currentActiveTab, currentOnrampType]);
+
+	// Load the selected on-ramp method's saved deposit limits & fee into the inputs.
+	useEffect(() => {
+		if (currentActiveTab !== 'onRamp') return;
+		const cfg = onramp?.[currentPaymentType];
+		setMethodLimits({
+			min: cfg?.min ?? '',
+			max: cfg?.max ?? '',
+			fee: cfg?.fee ?? '',
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [currentPaymentType, onramp, currentActiveTab]);
 
 	useEffect(() => {
 		if (
@@ -504,7 +517,7 @@ const RampPaymentAccounts = ({
 							} else {
 								setSelectedPayType({
 									...selectedPayType,
-									[currentsymbol]: offramp[currentsymbol]?.[0],
+									[currentsymbol]: getOfframpTypes(offramp[currentsymbol])?.[0],
 								});
 							}
 						});
@@ -569,6 +582,16 @@ const RampPaymentAccounts = ({
 					type: 'manual',
 				};
 			});
+			// attach per-method deposit limits & fee (only when provided)
+			if (methodLimits.min !== '' && methodLimits.min != null) {
+				onRampData.min = Number(methodLimits.min);
+			}
+			if (methodLimits.max !== '' && methodLimits.max != null) {
+				onRampData.max = Number(methodLimits.max);
+			}
+			if (methodLimits.fee !== '' && methodLimits.fee != null) {
+				onRampData.fee = Number(methodLimits.fee);
+			}
 			userPayment = {
 				kit: {
 					onramp: {
@@ -689,17 +712,23 @@ const RampPaymentAccounts = ({
 				},
 			};
 		} else if (currentActiveTab && currentActiveTab === 'offRamp') {
-			const filteredOfframp = originalofframp[coinSymbol].filter(
-				(item) => item !== method
-			);
+			// `offramp[currency]` may be a legacy array of types or an object keyed by
+			// type holding per-method { min, max, fee }; handle both when removing a method.
+			const cfg = originalofframp[coinSymbol];
+			const remainingTypes = (Array.isArray(cfg)
+				? cfg
+				: Object.keys(cfg || {})
+			).filter((item) => item !== method);
 			let updatedOffRamp = JSON.parse(JSON.stringify(originalofframp));
-			if (filteredOfframp?.length < 1) {
+			if (remainingTypes?.length < 1) {
 				delete updatedOffRamp[currentsymbol];
+			} else if (Array.isArray(cfg)) {
+				updatedOffRamp[currentsymbol] = remainingTypes;
 			} else {
-				updatedOffRamp = {
-					...originalofframp,
-					[currentsymbol]: filteredOfframp,
-				};
+				updatedOffRamp[currentsymbol] = remainingTypes.reduce(
+					(acc, type) => ({ ...acc, [type]: cfg[type] }),
+					{}
+				);
 			}
 			deletedBodyData = {
 				kit: {
@@ -724,11 +753,17 @@ const RampPaymentAccounts = ({
 		setIsDisplayDetails(false);
 		setIsCurrentFormOpen(false);
 	};
-	const handleOpenPayment = (paymentSelect) => {
-		setIsOpen((prevState) => ({
-			...prevState,
-			[paymentSelect]: !prevState[paymentSelect],
-		}));
+	const getMethodIcon = (name) => {
+		if (name === 'bank') {
+			return STATIC_ICONS.BANK_FIAT_PILLARS;
+		} else if (name === 'paypal') {
+			return STATIC_ICONS.PAYPAL_FIAT_ICON;
+		}
+		const preset = getPaymentPreset(name);
+		if (preset) {
+			return preset.icon;
+		}
+		return STATIC_ICONS.MPESA_ICON;
 	};
 
 	const handleBack = () => {
@@ -747,54 +782,37 @@ const RampPaymentAccounts = ({
 		}
 	};
 
-	const handleOpen = (paymentSelect, isOpen) => {
-		setIsOpen((prevState) => ({
-			...prevState,
-			[paymentSelect]: isOpen,
-		}));
-	};
-
 	return (
 		<div className="payment-acc-wrapper">
 			<div>
 				<div className={!isUpgrade ? 'disableall' : ''}>
-					{paymentMethods.length && paymentMethods.length > 1 ? (
+					{paymentMethods.length > 1 && currentOnrampType !== 'add' ? (
 						<div className="mt-4">
 							<div>Payment accounts ({paymentMethods.length} method saved)</div>
-							<div className="mb-3">
-								<Select
-									key={paymentSelect}
-									className="paymentSelect"
-									dropdownClassName="blue-admin-select-dropdown"
-									value={paymentSelect}
-									suffixIcon={
-										!isOpen[paymentSelect] ? (
-											<CaretDownOutlined
-												className="downarrow"
-												onClick={() => handleOpen(paymentSelect, false)}
+							<div className="payment-cards-wrapper mb-3 mt-2">
+								{Object.keys(formValues).map((item, index) => {
+									const value =
+										currentActiveTab === 'offRamp' ? formValues[item] : item;
+									const isSelected = paymentSelect === value;
+									return (
+										<div
+											className={
+												isSelected
+													? 'payment-card payment-card-selected'
+													: 'payment-card'
+											}
+											key={index}
+											onClick={() => setPaymentMethod(value)}
+										>
+											<img
+												src={getMethodIcon(value)}
+												alt=""
+												className="payment-card-icon"
 											/>
-										) : (
-											<CaretUpOutlined
-												className="downarrow"
-												onClick={() => handleOpen(paymentSelect, true)}
-											/>
-										)
-									}
-									open={isOpen[paymentSelect]}
-									onClick={() => handleOpenPayment(paymentSelect)}
-									onChange={setPaymentMethod}
-									getPopupContainer={(triggerNode) => triggerNode.parentNode}
-								>
-									{Object.keys(formValues).map((item, index) => {
-										const value =
-											currentActiveTab === 'offRamp' ? formValues[item] : item;
-										return (
-											<Option value={value} key={index}>
-												User payment account {index + 1}: {value}
-											</Option>
-										);
-									})}
-								</Select>
+											<div className="payment-card-title">{value}</div>
+										</div>
+									);
+								})}
 							</div>
 						</div>
 					) : null}
@@ -845,6 +863,52 @@ const RampPaymentAccounts = ({
 						defaultCustomInitialValues={defaultCustomInitialValues}
 					/>
 				) : null}
+				{currentActiveTab === 'onRamp' && isCurrentFormOpen ? (
+					<div className="onramp-method-limits mt-4">
+						<div className="font-weight-bold mb-1">
+							Deposit limits & fee (optional)
+						</div>
+						<div className="small-gray-text mb-3">
+							Set values specific to this payment method. Leave blank to use the
+							asset / fiat-fee defaults.
+						</div>
+						<div className="onramp-method-limits-fields">
+							<div className="onramp-method-limit-field">
+								<div className="mb-1">Minimum deposit</div>
+								<Input
+									type="number"
+									value={methodLimits.min}
+									placeholder="Minimum"
+									onChange={(e) =>
+										setMethodLimits({ ...methodLimits, min: e.target.value })
+									}
+								/>
+							</div>
+							<div className="onramp-method-limit-field">
+								<div className="mb-1">Maximum deposit</div>
+								<Input
+									type="number"
+									value={methodLimits.max}
+									placeholder="Maximum"
+									onChange={(e) =>
+										setMethodLimits({ ...methodLimits, max: e.target.value })
+									}
+								/>
+							</div>
+							<div className="onramp-method-limit-field">
+								<div className="mb-1">Deposit fee</div>
+								<Input
+									type="number"
+									value={methodLimits.fee}
+									placeholder="Fee"
+									onChange={(e) =>
+										setMethodLimits({ ...methodLimits, fee: e.target.value })
+									}
+								/>
+							</div>
+						</div>
+					</div>
+				) : null}
 				{payOption &&
 				!isDisplayDetails &&
 				(paymentSelect || selectedPaymentType) ? (
@@ -870,7 +934,13 @@ const RampPaymentAccounts = ({
 					/>
 				) : null}
 			</div>
-			<Modal visible={isVisible} footer={null} width={500} onCancel={onCancel}>
+			<Modal
+				visible={isVisible}
+				footer={null}
+				width={500}
+				onCancel={onCancel}
+				className="fiat-popup-modal"
+			>
 				<PaymentAccountPopup
 					handleClosePlugin={handleClosePlugin}
 					type={currentTab}
@@ -894,9 +964,7 @@ const RampPaymentAccounts = ({
 							: paymentmethodIndex
 					}
 					selectedPaymentType={
-						(originalofframp &&
-							originalofframp[currentsymbol] &&
-							originalofframp[currentsymbol][0]) ||
+						getOfframpTypes(originalofframp?.[currentsymbol])?.[0] ||
 						(offramp && offramp[0])
 					}
 					paymentSavedCoins={paymentSavedCoins}

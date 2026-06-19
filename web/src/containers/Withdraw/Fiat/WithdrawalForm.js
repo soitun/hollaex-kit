@@ -297,6 +297,15 @@ class Index extends Component {
 			? fiat_fees?.[getWithdrawCurrency]?.withdrawal_fee
 			: fiat_fees?.[currency]?.withdrawal_fee;
 
+		// per off-ramp method (payment option) fee override for the selected account;
+		// `!= null` so an explicit 0 is honored. Falls back to the fiat-fee default.
+		const selectedMethodFee = banks?.find((bank) => bank.id === data?.bank)
+			?.offrampLimits?.fee;
+		const displayFee =
+			selectedMethodFee != null && selectedMethodFee !== ''
+				? Number(selectedMethodFee)
+				: customFee;
+
 		return (
 			<div className="withdraw-form-wrapper">
 				<div className="withdraw-form">
@@ -347,12 +356,12 @@ class Index extends Component {
 									{STRINGS['WITHDRAW_NOTE']}
 								</EditWrapper>
 							</div>
-							{customFee ? (
+							{displayFee != null && displayFee !== '' ? (
 								<div>
 									<div>
 										Fee:{' '}
 										<span style={{ fontWeight: 'bold' }}>
-											{customFee} {currency?.toUpperCase()}
+											{displayFee} {currency?.toUpperCase()}
 										</span>
 									</div>
 								</div>
@@ -386,7 +395,10 @@ class Index extends Component {
 							banks={banks}
 							coins={coins}
 							currency={currency}
-							data={{ ...data, fee: customFee || fee }}
+							data={{
+								...data,
+								fee: displayFee != null && displayFee !== '' ? displayFee : fee,
+							}}
 							price={currentPrice}
 							onClickAccept={this.onAcceptDialog}
 							onClickCancel={this.onCloseDialog}

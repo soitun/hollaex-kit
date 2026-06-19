@@ -16,6 +16,7 @@ import {
 } from 'config/constants';
 import { PaymentWay } from './PaymentWay';
 import { constractPaymentOption } from 'utils/utils';
+import { getOfframpTypes } from 'utils/wallet';
 
 import './index.css';
 
@@ -350,7 +351,7 @@ const PaymentAccounts = ({
 		};
 
 		let paymentSavedCoins = Object.keys(offramp).filter((item) => {
-			if (offramp[item].includes(method)) {
+			if (getOfframpTypes(offramp[item]).includes(method)) {
 				return item.name;
 			}
 			return null;
@@ -405,14 +406,13 @@ const PaymentAccounts = ({
 						/>
 						<div>
 							<div>
-								Allow your users add their payment method for{' '}
-								{paymenttype === 'initial'
-									? 'withdrawing fiat.'
-									: 'receiving fiat.'}
+								A <b>payment account</b> is a reusable fiat payment method —
+								such as a bank transfer or PayPal — that defines which details
+								to collect (e.g. account holder, IBAN, email).
 							</div>
 							<div className="d-flex align-items-center">
 								<div className="mr-3">
-									The payment account details will be added to the user's
+									Your users fill in these details from their account
 									verification section.
 								</div>
 								<Tooltip
@@ -430,10 +430,8 @@ const PaymentAccounts = ({
 								</Tooltip>
 							</div>
 							<div className="mt-4">
-								These payment details can be reused for{' '}
-								{paymenttype === 'initial'
-									? 'off ramping page.'
-									: 'on and off ramping.'}
+								Once added, a payment account can be reused to set up fiat
+								deposits (On-ramp) and withdrawals (Off-ramp).
 							</div>
 						</div>
 					</div>
@@ -575,7 +573,13 @@ const PaymentAccounts = ({
 					)}
 				</div>
 			</div>
-			<Modal visible={isVisible} footer={null} width={500} onCancel={onCancel}>
+			<Modal
+				visible={isVisible}
+				footer={null}
+				width={500}
+				onCancel={onCancel}
+				className="fiat-popup-modal"
+			>
 				<PaymentAccountPopup
 					handleClosePlugin={handleClosePlugin}
 					type={currentTab}

@@ -86,3 +86,25 @@ export const getNetworkName = (network) => {
 		return network;
 	}
 };
+
+// `offramp[currency]` is backward compatible: it may be a plain array of enabled
+// payment types (legacy, no limits) or an object keyed by type holding { min, max, fee }.
+export const getOfframpTypes = (cfg) => {
+	if (!cfg) return [];
+	return Array.isArray(cfg) ? cfg : Object.keys(cfg);
+};
+
+export const getOfframpMethodConfig = (cfg, type) => {
+	if (!cfg || Array.isArray(cfg)) return null;
+	return cfg[type] || null;
+};
+
+// Normalize a currency's off-ramp config to object form, preserving any existing
+// per-method limits so legacy array configs upgrade in place without data loss.
+export const toOfframpObject = (cfg) => {
+	if (!cfg) return {};
+	if (Array.isArray(cfg)) {
+		return cfg.reduce((acc, type) => ({ ...acc, [type]: {} }), {});
+	}
+	return { ...cfg };
+};

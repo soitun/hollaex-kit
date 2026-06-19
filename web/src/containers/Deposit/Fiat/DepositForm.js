@@ -3,7 +3,13 @@ import math from 'mathjs';
 import { connect } from 'react-redux';
 import { Button, EditWrapper, Dialog } from 'components';
 import renderFields from 'components/Form/factoryFields';
-import { reset, stopSubmit, reduxForm, formValueSelector } from 'redux-form';
+import {
+	reset,
+	stopSubmit,
+	reduxForm,
+	formValueSelector,
+	change,
+} from 'redux-form';
 import {
 	required,
 	minValue,
@@ -48,14 +54,27 @@ const generateFormValues = (
 	const customFee = fiat_fees?.[symbol]?.deposit_fee;
 	const limit = getFiatDepositLimit(symbol);
 
-	const MIN = math.max(fee, min);
-	const MAX = limit && math.larger(limit, 0) ? math.min(limit, max) : max;
-
 	fee = customFee ?? fee;
+
+	let MIN = math.max(fee, min);
+	let MAX = limit && math.larger(limit, 0) ? math.min(limit, max) : max;
+
+	// per on-ramp method (payment option) overrides; `!= null` so an explicit 0 is honored
+	if (onramp?.fee != null && onramp?.fee !== '') {
+		fee = Number(onramp.fee);
+		MIN = math.max(fee, MIN);
+	}
+	if (onramp?.min != null && onramp?.min !== '') {
+		MIN = Number(onramp.min);
+	}
+	if (onramp?.max != null && onramp?.max !== '' && Number(onramp.max) > 0) {
+		MAX = Number(onramp.max);
+	}
+
 	const amountValidate = [required];
 	if (MIN) {
 		amountValidate.push(
-			minValue(min, STRINGS['DEPOSIT_AMOUNT_MIN_VALIDATION'])
+			minValue(MIN, STRINGS['DEPOSIT_AMOUNT_MIN_VALIDATION'])
 		);
 	}
 	if (MAX) {
@@ -85,17 +104,17 @@ const generateFormValues = (
 			);
 
 			preview = (
-				<div className="py-2 field-content_preview">
+				<div className="fiat-account-card field-content_preview">
 					{selectedAccountArray.map(({ key, label, value }) => {
 						const labelId = generateId(key);
 						const defaultText = label || key.replace(/_/g, ' ');
 
 						return (
-							<div className="d-flex">
-								<div className="bold pl-4">
+							<div className="fiat-account-row" key={key}>
+								<span className="fiat-account-label">
 									{STRINGS[labelId] || defaultText}
-								</div>
-								<div className="pl-4">{value}</div>
+								</span>
+								<span className="fiat-account-value">{value}</span>
 							</div>
 						);
 					})}
@@ -235,6 +254,29 @@ const Deposit = ({
 		);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [step, method, account, fiat_fees]);
+
+	// Default the bank dropdown to the first available account.
+	useEffect(() => {
+		if (onramp?.type === 'manual' && onramp?.data?.length) {
+			const ids = onramp.data.map((entry) => entry?.[0]?.id);
+			if (!ids.includes(account)) {
+				dispatch(change(FORM_NAME, 'account', ids[0]));
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [onramp, account]);
+
+	// Keep the fee in sync with the selected method's per-method fee (if set).
+	useEffect(() => {
+		const perMethodFee = onramp?.fee;
+		const nextFee =
+			perMethodFee != null && perMethodFee !== ''
+				? Number(perMethodFee)
+				: fiat_fees?.[currency]?.deposit_fee ??
+				  getFiatDepositFee(currency).rate;
+		dispatch(change(FORM_NAME, 'fee', nextFee));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [onramp, currency, fiat_fees]);
 
 	const onSubmitPaymentReq = (data) => {
 		const { increment_unit } = coins[currency] || DEFAULT_COIN_DATA;

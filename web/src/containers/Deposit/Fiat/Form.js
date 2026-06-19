@@ -18,7 +18,7 @@ import STRINGS from 'config/localizedStrings';
 import { generateInitialValues } from './DepositForm';
 import math from 'mathjs';
 import classnames from 'classnames';
-import { DEFAULT_COIN_DATA } from 'config/constants';
+import { DEFAULT_COIN_DATA, getPaymentPreset } from 'config/constants';
 import DepositForm from './DepositForm';
 import {
 	getFiatDepositFee,
@@ -82,7 +82,10 @@ const Form = ({
 			const defaultText = key.replace(/_/g, ' ');
 
 			tabs[key] = {
-				icon: ICONS[iconId] || ICONS['VERIFICATION_BANK_NEW'],
+				icon:
+					ICONS[iconId] ||
+					getPaymentPreset(key)?.icon ||
+					ICONS['VERIFICATION_BANK_NEW'],
 				iconId,
 				stringId,
 				title: STRINGS[stringId] || defaultText,
@@ -157,10 +160,25 @@ const Form = ({
 
 		const { min, max, display_name } = coins[currency] || DEFAULT_COIN_DATA;
 
-		const MIN = math.max(fee, min);
-		const MAX = limit && math.larger(limit, 0) ? math.min(limit, max) : max;
-
-		const customFee = fiat_fees?.[currency]?.deposit_fee;
+		const baseFee = fiat_fees?.[currency]?.deposit_fee ?? fee;
+		// per on-ramp method (payment option) overrides; `!= null` so 0 is honored
+		const methodConfig = onramp?.[activeTab] || {};
+		const customFee =
+			methodConfig.fee != null && methodConfig.fee !== ''
+				? Number(methodConfig.fee)
+				: baseFee;
+		let MIN = math.max(customFee, min);
+		let MAX = limit && math.larger(limit, 0) ? math.min(limit, max) : max;
+		if (methodConfig.min != null && methodConfig.min !== '') {
+			MIN = Number(methodConfig.min);
+		}
+		if (
+			methodConfig.max != null &&
+			methodConfig.max !== '' &&
+			Number(methodConfig.max) > 0
+		) {
+			MAX = Number(methodConfig.max);
+		}
 
 		return (
 			<Fragment>
@@ -174,48 +192,48 @@ const Form = ({
 							</EditWrapper>
 						</div>
 
-						<div className="py-3">
-							<div className="d-flex justify-content-start">
-								<div className="bold">
+						<div className="fiat-deposit-summary my-3">
+							<div className="fiat-deposit-summary-item">
+								<span className="fiat-deposit-summary-label">
 									<EditWrapper stringId="MIN_DEPOSIT">
 										{STRINGS['MIN_DEPOSIT']}
 									</EditWrapper>
-								</div>
-								<div className="pl-4">
+								</span>
+								<span className="fiat-deposit-summary-value">
 									{STRINGS.formatString(
 										STRINGS['AMOUNT_FORMAT'],
 										MIN,
 										display_name
 									)}
-								</div>
+								</span>
 							</div>
-							<div className="d-flex justify-content-start">
-								<div className="bold">
+							<div className="fiat-deposit-summary-item">
+								<span className="fiat-deposit-summary-label">
 									<EditWrapper stringId="MAX_DEPOSIT">
 										{STRINGS['MAX_DEPOSIT']}
 									</EditWrapper>
-								</div>
-								<div className="pl-4">
+								</span>
+								<span className="fiat-deposit-summary-value">
 									{STRINGS.formatString(
 										STRINGS['AMOUNT_FORMAT'],
 										MAX,
 										display_name
 									)}
-								</div>
+								</span>
 							</div>
-							<div className="d-flex justify-content-start">
-								<div className="bold">
+							<div className="fiat-deposit-summary-item">
+								<span className="fiat-deposit-summary-label">
 									<EditWrapper stringId="FEE_LABEL">
 										{STRINGS['FEE_LABEL']}
 									</EditWrapper>
-								</div>
-								<div className="pl-4">
+								</span>
+								<span className="fiat-deposit-summary-value">
 									{STRINGS.formatString(
 										STRINGS['AMOUNT_FORMAT'],
 										customFee ?? fee,
 										display_name
 									)}
-								</div>
+								</span>
 							</div>
 						</div>
 					</Fragment>

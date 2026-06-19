@@ -1069,6 +1069,40 @@
 	background-color: var(--admin_panel_content_background) !important;
 }
 
+/* Make the popup close (X) icon white to match the popup text */
+.fiat-popup-modal .ant-modal-close,
+.fiat-popup-modal .ant-modal-close-x {
+	color: #ffffff;
+}
+
+/* On-ramp per-method deposit limits & fee inputs */
+.onramp-method-limits-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	max-width: 40rem;
+}
+
+.onramp-method-limits-fields .onramp-method-limit-field {
+	flex: 1;
+	min-width: 10rem;
+}
+
+/* On-ramp form instruction note */
+.onramp-instruction-note {
+	display: flex;
+	align-items: flex-start;
+	background-color: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+	padding: 10px 14px;
+	max-width: 40rem;
+}
+
+.onramp-instruction-note .anticon {
+	margin-top: 3px;
+}
+
 /* ---- Fiat summary page ---- */
 .summary-content-wrapper .fiat-summary-section {
 	width: 100%;

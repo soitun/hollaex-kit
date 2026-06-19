@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 
 import { Image } from 'components';
+import { getOfframpTypes } from 'utils/wallet';
 import Coins from '../Coins';
 
 import './index.css';
@@ -61,9 +62,9 @@ const Summarycontent = ({
 
 	const getRampStats = (symbol) => {
 		const onRampMethods = onramp?.[symbol] ? Object.keys(onramp[symbol]) : [];
-		const offRampMethods = Array.isArray(offramp?.[symbol])
-			? offramp[symbol].filter((method) => user_payments?.[method])
-			: [];
+		const offRampMethods = getOfframpTypes(offramp?.[symbol]).filter(
+			(method) => user_payments?.[method]
+		);
 		return {
 			onCount: onRampMethods.length,
 			offCount: offRampMethods.length,

@@ -1750,7 +1750,7 @@
 		}
 	},
 	"DEPOSIT_FEE_NOTE": "Note, the total amount deposited to your account will be the amount minus the deposit fee",
-	"AMOUNT_LABEL": "Enter the amount deposited (must be identical to the actual amount)",
+	"AMOUNT_LABEL": "Enter the amount",
 	"TRANSACTION_ID_LABEL": "Enter the transaction ID of the deposit",
 	"FEE_LABEL": "Deposit Fee",
 	"AMOUNT_FORMAT": "{0} {1}",
