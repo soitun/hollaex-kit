@@ -107,7 +107,14 @@ export const renderRowContent = ({
 	type,
 	coins,
 	network,
+	source,
 }) => {
+	const renderSource = (value) => {
+		const items = Array.isArray(value) ? value : value ? [value] : [];
+		return items
+			.map((item) => (typeof item === 'object' ? JSON.stringify(item) : item))
+			.join(', ');
+	};
 	return (
 		<div>
 			{address && <div>Address: {address}</div>}
@@ -125,6 +132,9 @@ export const renderRowContent = ({
 				Fee: {fee} {fee_coin}
 			</div>
 			<div>Network: {network}</div>
+			{(Array.isArray(source) ? source.length > 0 : !!source) && (
+				<div>Source: {renderSource(source)}</div>
+			)}
 			<div>Timestamp: {formatDate(created_at)}</div>
 			{description && <div>Description: {description}</div>}
 		</div>

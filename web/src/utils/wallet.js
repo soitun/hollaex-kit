@@ -86,3 +86,31 @@ export const getNetworkName = (network) => {
 		return network;
 	}
 };
+
+// `onramp[currency]` / `offramp[currency]` are backward compatible: each may be a
+// plain array of enabled payment types (legacy, no limits) or an object keyed by
+// type holding { min, max, fee } (and, for on-ramp, the payment schema { data, type }).
+export const getRampTypes = (cfg) => {
+	if (!cfg) return [];
+	return Array.isArray(cfg) ? cfg : Object.keys(cfg);
+};
+
+export const getRampMethodConfig = (cfg, type) => {
+	if (!cfg || Array.isArray(cfg)) return null;
+	return cfg[type] || null;
+};
+
+// Normalize a currency's ramp config to object form, preserving any existing
+// per-method config so legacy array configs upgrade in place without data loss.
+export const toRampObject = (cfg) => {
+	if (!cfg) return {};
+	if (Array.isArray(cfg)) {
+		return cfg.reduce((acc, type) => ({ ...acc, [type]: {} }), {});
+	}
+	return { ...cfg };
+};
+
+// Off-ramp-named aliases kept for existing call sites; the logic is direction-agnostic.
+export const getOfframpTypes = getRampTypes;
+export const getOfframpMethodConfig = getRampMethodConfig;
+export const toOfframpObject = toRampObject;

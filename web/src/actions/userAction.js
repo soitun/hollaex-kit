@@ -64,7 +64,9 @@ export const updateUser = (values) => {
 	}
 	userValues.gender = values.gender;
 	if (values.dob) {
-		userValues.dob = new Date(values.dob);
+		// dob is a calendar date — send the raw 'YYYY-MM-DD' string so we
+		// don't re-introduce a timezone via new Date().
+		userValues.dob = values.dob;
 	}
 	userValues.nationality = values.nationality;
 

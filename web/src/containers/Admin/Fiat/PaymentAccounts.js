@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Modal, Tooltip, Select, message, Spin } from 'antd';
+import { Button, Modal, Tooltip, message, Spin } from 'antd';
 import {
-	CaretDownOutlined,
-	CaretUpOutlined,
+	PlusOutlined,
 	QuestionCircleOutlined,
+	EditOutlined,
+	UndoOutlined,
 } from '@ant-design/icons';
 import _get from 'lodash/get';
 
@@ -12,17 +13,19 @@ import PaymentAccountPopup from './PaymentPopup';
 import PaymentDetails from './PaymentDetails';
 import { updateConstants } from '../General/action';
 import { getConstants } from '../Settings/action';
+import { upload } from 'actions/operatorActions';
 import {
 	DEFAULT_BANK_PAYMENT_ACCOUNTS,
 	DEFAULT_CUSTOM_PAYMENT_CUSTOM,
 	DEFAULT_PAYPAL_PAYMENT_PAYPAL,
+	getPaymentPreset,
+	getPaymentMethodIcon,
 } from 'config/constants';
 import { PaymentWay } from './PaymentWay';
 import { constractPaymentOption } from 'utils/utils';
+import { getOfframpTypes } from 'utils/wallet';
 
 import './index.css';
-
-const { Option } = Select;
 
 const PaymentAccounts = ({
 	router,
@@ -36,7 +39,6 @@ const PaymentAccounts = ({
 	const [currentTab, setCurrentTab] = useState('payment');
 	const [paymenttype, setPaymentType] = useState('initial');
 	const [paymentSelect, setPaymentSelect] = useState('');
-	const [isOpen, setIsOpen] = useState(false);
 	const [payOption, setPayOption] = useState(true);
 	const [isDisplayForm, setIsDisplayForm] = useState(true);
 	const [formData, setFormData] = useState({});
@@ -132,10 +134,21 @@ const PaymentAccounts = ({
 					: constructedData(paymentType)
 			);
 		} else if (type === 'customForm') {
-			const test =
-				currentType === 'add'
-					? getCustomDefaultValues(paymentType)
-					: constructedData(paymentType);
+			let test;
+			if (currentType === 'add') {
+				const preset = getPaymentPreset(paymentType);
+				if (preset) {
+					let temp = {};
+					preset.data.forEach((item, index) => {
+						temp = { ...temp, [`section_${index + 1}`]: item };
+					});
+					test = temp;
+				} else {
+					test = getCustomDefaultValues(paymentType);
+				}
+			} else {
+				test = constructedData(paymentType);
+			}
 			setCustomInitValue(test);
 		}
 	};
@@ -269,6 +282,7 @@ const PaymentAccounts = ({
 				user_payments: {
 					...user_payments,
 					[currentPaymentType]: {
+						...user_payments[currentPaymentType],
 						data: paymentAccData,
 						orderBy: paymentOrderBy,
 					},
@@ -335,7 +349,11 @@ const PaymentAccounts = ({
 		let orderBy = 1;
 		paymentsMethodsData.forEach((item) => {
 			if (item.name !== method) {
-				bodyData[item.name] = { data: item.data, orderBy: orderBy };
+				bodyData[item.name] = {
+					data: item.data,
+					orderBy: orderBy,
+					...(item.icon ? { icon: item.icon } : {}),
+				};
 				orderBy++;
 			}
 		});
@@ -345,7 +363,7 @@ const PaymentAccounts = ({
 		};
 
 		let paymentSavedCoins = Object.keys(offramp).filter((item) => {
-			if (offramp[item].includes(method)) {
+			if (getOfframpTypes(offramp[item]).includes(method)) {
 				return item.name;
 			}
 			return null;
@@ -364,8 +382,64 @@ const PaymentAccounts = ({
 		setIsDisplayForm(false);
 	};
 
-	const handleOpenPayment = () => {
-		setIsOpen(!isOpen);
+	const renderPaymentIcon = (item) =>
+		getPaymentMethodIcon(
+			item?.name,
+			item?.icon,
+			typeof item?.data === 'string'
+		);
+
+	// Uploads a custom icon for a payment account and persists it on the
+	// account's config (user_payments[name].icon) so it shows everywhere the
+	// payment method is rendered (admin & user side).
+	const handleIconUpload = (item, file) => {
+		if (!file) {
+			return;
+		}
+		if (!file.type.startsWith('image/')) {
+			message.error('Please select an image file');
+			return;
+		}
+		setIsLoading(true);
+		const formData = new FormData();
+		const extension = file.name.split('.').pop();
+		const name = `PAYMENT_ICON_${item.name}___${Date.now()}.${extension}`;
+		formData.append('name', name);
+		formData.append('file', file);
+		upload(formData)
+			.then(({ data: { path } }) => {
+				updateConstantsData({
+					kit: {
+						user_payments: {
+							...user_payments,
+							[item.name]: {
+								...user_payments[item.name],
+								icon: path,
+							},
+						},
+					},
+				});
+			})
+			.catch((err) => {
+				const error = err && err.data ? err.data.message : err.message;
+				message.error(error);
+				setIsLoading(false);
+			});
+	};
+
+	// Clears a previously uploaded custom icon so the method falls back to its
+	// default (bank / paypal / preset / generic) icon.
+	const handleIconReset = (item) => {
+		const updatedMethod = { ...user_payments[item.name] };
+		delete updatedMethod.icon;
+		updateConstantsData({
+			kit: {
+				user_payments: {
+					...user_payments,
+					[item.name]: updatedMethod,
+				},
+			},
+		});
 	};
 
 	const handleBack = () => {
@@ -389,14 +463,13 @@ const PaymentAccounts = ({
 						/>
 						<div>
 							<div>
-								Allow your users add their payment method for{' '}
-								{paymenttype === 'initial'
-									? 'withdrawing fiat.'
-									: 'receiving fiat.'}
+								A <b>payment account</b> is a reusable fiat payment method —
+								such as a bank transfer or PayPal — that defines which details
+								to collect (e.g. account holder, IBAN, email).
 							</div>
 							<div className="d-flex align-items-center">
 								<div className="mr-3">
-									The payment account details will be added to the user's
+									Your users fill in these details from their account
 									verification section.
 								</div>
 								<Tooltip
@@ -414,10 +487,8 @@ const PaymentAccounts = ({
 								</Tooltip>
 							</div>
 							<div className="mt-4">
-								These payment details can be reused for{' '}
-								{paymenttype === 'initial'
-									? 'off ramping page.'
-									: 'on and off ramping.'}
+								Once added, a payment account can be reused to set up fiat
+								deposits (On-ramp) and withdrawals (Off-ramp).
 							</div>
 						</div>
 					</div>
@@ -458,34 +529,81 @@ const PaymentAccounts = ({
 
 				<div className="onramp-payment-acc-wrapper">
 					<div className={!isUpgrade ? 'disableall ' : ''}>
-						{payOption && formValues.length && formValues.length > 1 ? (
+						{payOption && formValues.length ? (
 							<div className="mt-4">
 								<div>Payment accounts ({formValues.length} method saved)</div>
-								<div className="mb-3">
-									<Select
-										className="paymentSelect"
-										dropdownClassName="blue-admin-select-dropdown"
-										defaultValue={formValues[0]}
-										value={paymentSelect}
-										suffixIcon={
-											isOpen ? (
-												<CaretDownOutlined className="downarrow" />
-											) : (
-												<CaretUpOutlined className="downarrow" />
-											)
+								<div className="payment-cards-wrapper mb-3 mt-2">
+									{formValues.map((item, index) => {
+										const isSelected = paymentSelect === item.name;
+										return (
+											<div
+												className={
+													isSelected
+														? 'payment-card payment-card-selected'
+														: 'payment-card'
+												}
+												key={index}
+												onClick={() => setPaymentMethod(item.name)}
+											>
+												<div className="payment-card-icon-wrapper">
+													<img
+														src={renderPaymentIcon(item)}
+														alt="pay-icon"
+														className="payment-card-icon"
+													/>
+													<label
+														className="payment-card-icon-edit"
+														title="Upload custom icon"
+														onClick={(e) => e.stopPropagation()}
+													>
+														<EditOutlined />
+														<input
+															type="file"
+															accept="image/*"
+															style={{ display: 'none' }}
+															onChange={(e) => {
+																handleIconUpload(item, e.target.files[0]);
+																e.target.value = '';
+															}}
+														/>
+													</label>
+													{item?.icon ? (
+														<span
+															className="payment-card-icon-reset"
+															title="Reset to default icon"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleIconReset(item);
+															}}
+														>
+															<UndoOutlined />
+														</span>
+													) : null}
+												</div>
+												<div className="payment-card-title">
+													User payment account {item.orderBy}
+												</div>
+												<div className="payment-card-name">{item.name}</div>
+											</div>
+										);
+									})}
+									<div
+										className={
+											!isUpgrade || isDisplayDetails || isLoading
+												? 'payment-card payment-card-add disableall'
+												: 'payment-card payment-card-add'
 										}
-										onClick={handleOpenPayment}
-										onChange={setPaymentMethod}
-										getPopupContainer={(triggerNode) => triggerNode.parentNode}
+										onClick={() => {
+											if (isUpgrade && !isDisplayDetails && !isLoading) {
+												handleClosePlugin(true);
+											}
+										}}
 									>
-										{formValues.map((item, index) => {
-											return (
-												<Option value={item.name} key={index}>
-													User payment account {item.orderBy}: {item.name}
-												</Option>
-											);
-										})}
-									</Select>
+										<PlusOutlined className="payment-card-plus" />
+										<div className="payment-card-title">
+											Add payment account
+										</div>
+									</div>
 								</div>
 							</div>
 						) : null}
@@ -542,7 +660,13 @@ const PaymentAccounts = ({
 					)}
 				</div>
 			</div>
-			<Modal visible={isVisible} footer={null} width={500} onCancel={onCancel}>
+			<Modal
+				visible={isVisible}
+				footer={null}
+				width={500}
+				onCancel={onCancel}
+				className="fiat-popup-modal"
+			>
 				<PaymentAccountPopup
 					handleClosePlugin={handleClosePlugin}
 					type={currentTab}

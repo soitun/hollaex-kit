@@ -1139,6 +1139,51 @@ const putMint = (req, res) => {
 		});
 };
 
+const reallocateDeposit = (req, res) => {
+	loggerAdmin.verbose(
+		req.uuid,
+		'controllers/admin/reallocateDeposit auth',
+		req.auth
+	);
+
+	const { transaction_id, address, receiver_id, description } = req.swagger.params.data.value;
+
+	loggerAdmin.info(
+		req.uuid,
+		'controllers/admin/reallocateDeposit',
+		'transaction_id',
+		transaction_id,
+		'address',
+		address,
+		'receiver_id',
+		receiver_id
+	);
+
+	toolsLib.wallet.reallocateDepositByKitId(transaction_id, address, receiver_id, {
+		description,
+		additionalHeaders: {
+			'x-forwarded-for': req.headers['x-forwarded-for']
+		}
+	})
+		.then((data) => {
+			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], req?.swagger?.params?.data?.value);
+			loggerAdmin.info(
+				req.uuid,
+				'controllers/admin/reallocateDeposit successful'
+			);
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(
+				req.uuid,
+				'controllers/admin/reallocateDeposit err',
+				err
+			);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 const burnAsset = (req, res) => {
 	loggerAdmin.verbose(
 		req.uuid,
@@ -3478,7 +3523,7 @@ const updateExchangeUserRole = (req, res) => {
 
 	const { id, description, permissions, configs, otp_code, color, restrictions } = req.swagger.params.data.value;
 
-	loggerAdmin.verbose(req.uuid, 'controllers/admin/updateExchangeUserRole data', id, description, permissions, configs, otp_code, color, restrictions);
+	loggerAdmin.verbose(req.uuid, 'controllers/admin/updateExchangeUserRole data', id, description, permissions, configs, color, restrictions);
 
 	toolsLib.user.updateExchangeUserRole(id, {
 		description,
@@ -3960,6 +4005,7 @@ module.exports = {
 	verifyPhoneUser,
 	settleFees,
 	putMint,
+	reallocateDeposit,
 	putBurn,
 	putUserDiscount,
 	deleteKitUserMeta,

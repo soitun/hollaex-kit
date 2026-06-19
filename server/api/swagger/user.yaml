@@ -1782,6 +1782,12 @@ paths:
           required: true
           type: string
           maxLength: 256
+        - in: query
+          name: bank_id
+          description: optional fiat payment option (bank account) id for per-method limits
+          required: false
+          type: string
+          maxLength: 256
       responses:
         200:
           description: Success

@@ -348,6 +348,7 @@ const getWithdrawalMax = (req, res) => {
 	const {
 		currency,
 		network,
+		bank_id,
 	} = req.swagger.params;
 
 
@@ -355,7 +356,7 @@ const getWithdrawalMax = (req, res) => {
 		req.auth.sub.id,
 		currency.value,
 		network.value,
-
+		bank_id ? bank_id.value : null,
 	)
 		.then((data) => {
 			return res.json(data);

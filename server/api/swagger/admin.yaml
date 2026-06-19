@@ -2835,6 +2835,35 @@ paths:
         - hmac
       x-token-permissions:
         - can_withdraw
+  /admin/deposit/reallocate:
+    x-swagger-router-controller: admin
+    post:
+      operationId: reallocateDeposit
+      description: Reallocate an on-hold deposit to a different user (block)
+      tags:
+        - Admin
+      parameters:
+        - in: body
+          name: data
+          required: true
+          schema:
+            $ref: "#/definitions/ReallocateDepositRequest"
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: "Error"
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-token-permissions:
+        - can_withdraw
   /admin/burn:
     x-swagger-router-controller: admin
     post:
