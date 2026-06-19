@@ -38,7 +38,7 @@ const createDepositRequest = (req, res) => {
 				throw new Error('User not found');
 			}
 			
-			const { fee } = await toolsLib.wallet.validateDeposit(user, amount, currency, 'fiat');
+			const { fee } = await toolsLib.wallet.validateDeposit(user, amount, currency, 'fiat', address);
 
 			const { count: depositCount } = await toolsLib.wallet.getUserDepositsByKitId(
 				userId,
@@ -155,8 +155,9 @@ const createWithdrawalRequest = (req, res) => {
 				throw new Error('You already have 3 pending withdrawals. Please wait for them to be processed before creating new withdrawals.');
 			}
 
-			// fee_coin is always the same as currency in fiat
-			const { fee } = await toolsLib.wallet.validateWithdrawal(user, bank_id, amount, currency, 'fiat');
+			// fee_coin is always the same as currency in fiat. `bank.type` selects the
+			// per off-ramp method (payment option) limits & fee override, if configured.
+			const { fee } = await toolsLib.wallet.validateWithdrawal(user, bank_id, amount, currency, 'fiat', bank.type);
 			
 			let bankFormat = '';
 
