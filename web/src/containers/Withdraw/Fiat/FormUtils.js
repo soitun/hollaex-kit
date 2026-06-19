@@ -178,10 +178,7 @@ export const generateFormValues = (
 				STRINGS['WITHDRAWALS_FORM_AMOUNT_LABEL'],
 				fullname
 			),
-			placeholder: STRINGS.formatString(
-				STRINGS['WITHDRAWALS_FORM_AMOUNT_PLACEHOLDER'],
-				fullname
-			).join(''),
+			placeholder: STRINGS['TYPE_AMOUNT'],
 			min: effectiveMin,
 			max: MAX,
 			step: increment_unit,

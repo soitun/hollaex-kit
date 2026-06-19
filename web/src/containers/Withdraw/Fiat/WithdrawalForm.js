@@ -22,7 +22,7 @@ import { DEFAULT_COIN_DATA } from 'config/constants';
 import { getDecimals } from 'utils/utils';
 import PendingWithdrawal from './PendingWithdrawal';
 import { withdrawFiat } from 'actions/walletActions';
-import { withRouter } from 'react-router';
+import { withRouter, Link } from 'react-router';
 import STRINGS from 'config/localizedStrings';
 import { getFiatWithdrawalFee } from 'containers/Deposit/Fiat/utils';
 
@@ -346,6 +346,16 @@ class Index extends Component {
 										)}
 									</EditWrapper>
 								)}
+								<div className="pt-3">
+									<Link
+										to="/verification?payment-accounts"
+										className="blue-link"
+									>
+										<EditWrapper stringId="ADD_PAYMENT_ACCOUNT">
+											{STRINGS['ADD_PAYMENT_ACCOUNT']}
+										</EditWrapper>
+									</Link>
+								</div>
 							</div>
 						</Fragment>
 					)}

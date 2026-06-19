@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
-import { Modal, message, Input } from 'antd';
+import { Modal, message } from 'antd';
 import _get from 'lodash/get';
 
 import { STATIC_ICONS } from 'config/icons';
@@ -66,12 +66,6 @@ const RampPaymentAccounts = ({
 	const [savedContent, setSavedContent] = useState(false);
 	const [paymentSelect, setPaymentSelect] = useState('');
 	const [payOption, setPayOption] = useState(true);
-	// per on-ramp method (payment option) deposit limits & fee
-	const [methodLimits, setMethodLimits] = useState({
-		min: '',
-		max: '',
-		fee: '',
-	});
 	const [formData, setFormData] = useState({});
 	const [saveType, setSaveType] = useState('');
 	const [bodyData, setBodyData] = useState({});
@@ -413,18 +407,6 @@ const RampPaymentAccounts = ({
 		// eslint-disable-next-line
 	}, [onramp, user_payments, currentActiveTab, currentOnrampType]);
 
-	// Load the selected on-ramp method's saved deposit limits & fee into the inputs.
-	useEffect(() => {
-		if (currentActiveTab !== 'onRamp') return;
-		const cfg = onramp?.[currentPaymentType];
-		setMethodLimits({
-			min: cfg?.min ?? '',
-			max: cfg?.max ?? '',
-			fee: cfg?.fee ?? '',
-		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentPaymentType, onramp, currentActiveTab]);
-
 	useEffect(() => {
 		if (
 			formValues &&
@@ -582,23 +564,18 @@ const RampPaymentAccounts = ({
 					type: 'manual',
 				};
 			});
-			// attach per-method deposit limits & fee (only when provided)
-			if (methodLimits.min !== '' && methodLimits.min != null) {
-				onRampData.min = Number(methodLimits.min);
-			}
-			if (methodLimits.max !== '' && methodLimits.max != null) {
-				onRampData.max = Number(methodLimits.max);
-			}
-			if (methodLimits.fee !== '' && methodLimits.fee != null) {
-				onRampData.fee = Number(methodLimits.fee);
-			}
 			userPayment = {
 				kit: {
 					onramp: {
 						...originalonramp,
 						[currentsymbol]: {
 							...originalonramp[currentsymbol],
-							[currentPaymentType]: onRampData,
+							// preserve any per-method min/max/fee set in the Fiat Fees &
+							// Customization tab; only the payment schema is updated here.
+							[currentPaymentType]: {
+								...originalonramp[currentsymbol]?.[currentPaymentType],
+								...onRampData,
+							},
 						},
 					},
 				},
@@ -862,52 +839,6 @@ const RampPaymentAccounts = ({
 						defaultPaypalInitialValues={defaultPaypalInitialValues}
 						defaultCustomInitialValues={defaultCustomInitialValues}
 					/>
-				) : null}
-				{currentActiveTab === 'onRamp' && isCurrentFormOpen ? (
-					<div className="onramp-method-limits mt-4">
-						<div className="font-weight-bold mb-1">
-							Deposit limits & fee (optional)
-						</div>
-						<div className="small-gray-text mb-3">
-							Set values specific to this payment method. Leave blank to use the
-							asset / fiat-fee defaults.
-						</div>
-						<div className="onramp-method-limits-fields">
-							<div className="onramp-method-limit-field">
-								<div className="mb-1">Minimum deposit</div>
-								<Input
-									type="number"
-									value={methodLimits.min}
-									placeholder="Minimum"
-									onChange={(e) =>
-										setMethodLimits({ ...methodLimits, min: e.target.value })
-									}
-								/>
-							</div>
-							<div className="onramp-method-limit-field">
-								<div className="mb-1">Maximum deposit</div>
-								<Input
-									type="number"
-									value={methodLimits.max}
-									placeholder="Maximum"
-									onChange={(e) =>
-										setMethodLimits({ ...methodLimits, max: e.target.value })
-									}
-								/>
-							</div>
-							<div className="onramp-method-limit-field">
-								<div className="mb-1">Deposit fee</div>
-								<Input
-									type="number"
-									value={methodLimits.fee}
-									placeholder="Fee"
-									onChange={(e) =>
-										setMethodLimits({ ...methodLimits, fee: e.target.value })
-									}
-								/>
-							</div>
-						</div>
-					</div>
 				) : null}
 				{payOption &&
 				!isDisplayDetails &&
