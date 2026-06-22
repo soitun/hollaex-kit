@@ -341,6 +341,7 @@
 		"GOTO_LOGIN": "Go to the login page",
 		"AFFILIATION_CODE": "Referral code (optional)",
 		"AFFILIATION_CODE_PLACEHOLDER": "Type your referral code",
+		"COMPANY_ACCOUNT": "Register as a company account",
 		"TERMS": {
 			"terms": "General Terms",
 			"policy": "Privacy Policy",
@@ -372,6 +373,15 @@
 		"CONFIRM_DESCRIPTION": "Please confirm your account sign up by clicking the button below"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Company Account",
+			"BANNER": "This is a company account",
+			"NAME": "Company name",
+			"REGISTRATION_NUMBER": "Registration number",
+			"COUNTRY_OF_INCORPORATION": "Country of incorporation",
+			"BUSINESS_ADDRESS": "Business address",
+			"PENDING": "Company verification pending"
+		},
 		"INFO_TXT": "Here you can monitor your progress towards verification and an account upgrades.",
 		"INFO_TXT_1": "Please submit the relevant information needed for each section below.Only when all sections have submissions completed will your information be reviewed and approved for an account upgrade.",
 		"COMPLETED": "Completed",

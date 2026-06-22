@@ -292,6 +292,7 @@
 		"TEXT_2": "Klik hieronder op inloggen om verder te gaan."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Registreren als bedrijfsaccount",
 		"SIGNUP_TO": "Aanmelden bij {0}",
 		"NO_EMAIL": "Heb je de e-mail niet ontvangen?",
 		"REQUEST_EMAIL": "Vraag hier een andere aan",
@@ -330,6 +331,15 @@
 		"CONFIRM_DESCRIPTION": "Bevestig uw accountregistratie door op de onderstaande knop te klikken"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Bedrijfsaccount",
+			"BANNER": "Dit is een bedrijfsaccount",
+			"NAME": "Bedrijfsnaam",
+			"REGISTRATION_NUMBER": "Registratienummer",
+			"COUNTRY_OF_INCORPORATION": "Land van oprichting",
+			"BUSINESS_ADDRESS": "Bedrijfsadres",
+			"PENDING": "Bedrijfsverificatie in behandeling"
+		},
 		"INFO_TXT": "Hier kunt u uw voortgang naar verificatie en accountupgrades volgen.",
 		"INFO_TXT_1": "Voer de relevante informatie in die nodig is voor elke sectie hieronder. Pas wanneer alle secties zijn voltooid, wordt uw informatie beoordeeld en goedgekeurd voor een accountupgrade.",
 		"COMPLETED": "Voltooid",

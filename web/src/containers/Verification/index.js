@@ -867,6 +867,26 @@ class Verification extends Component {
 
 	onLogout = () => this.props.logout('');
 
+	renderCompanyBanner = () => {
+		const { user } = this.props;
+		if (!user || !user.is_company) {
+			return null;
+		}
+		const company = user.company || {};
+		return (
+			<div className="company-account-banner mb-3 p-3">
+				<EditWrapper stringId="USER_VERIFICATION.COMPANY.BANNER">
+					<div className="bold">
+						{STRINGS['USER_VERIFICATION.COMPANY.BANNER']}
+					</div>
+				</EditWrapper>
+				{company.name && (
+					<div className="secondary-text mt-1">{company.name}</div>
+				)}
+			</div>
+		);
+	};
+
 	render() {
 		const { activeLanguage, icons: ICONS } = this.props;
 		const {
@@ -919,6 +939,7 @@ class Verification extends Component {
 					}
 				/>} */}
 				{/* {isMobile && <MobileTabBar {...tabProps} activeTab={activeTab} setActiveTab={this.setActiveTab} />} */}
+				{this.renderCompanyBanner()}
 				{this.renderPageContent(tabProps)}
 				<Dialog
 					isOpen={dialogIsOpen}

@@ -84,6 +84,8 @@ model = require(path.join(__dirname, './blacklistedAddress'))(sequelize, Sequeli
 db[model.name] = model;
 model = require(path.join(__dirname, './sharedaccount'))(sequelize, Sequelize.DataTypes);
 db[model.name] = model;
+model = require(path.join(__dirname, './company'))(sequelize, Sequelize.DataTypes);
+db[model.name] = model;
 Object.keys(db).forEach(function (modelName) {
 	if ('associate' in db[modelName]) {
 		db[modelName].associate(db);

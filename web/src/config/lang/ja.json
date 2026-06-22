@@ -340,6 +340,7 @@
 		"TEXT_2": "続けるにはログインボタンを押してください。"
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "法人アカウントとして登録",
 		"SIGNUP_TO": "{0}に登録する",
 		"NO_EMAIL": "メールが届きませんか？",
 		"REQUEST_EMAIL": "メールをもう一度要請する",
@@ -378,6 +379,15 @@
 		"CONFIRM_DESCRIPTION": "以下のボタンをクリックして、アカウント登録を確認してください"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "法人アカウント",
+			"BANNER": "これは法人アカウントです",
+			"NAME": "会社名",
+			"REGISTRATION_NUMBER": "登録番号",
+			"COUNTRY_OF_INCORPORATION": "設立国",
+			"BUSINESS_ADDRESS": "事業所所在地",
+			"PENDING": "法人確認は保留中です"
+		},
 		"INFO_TXT": "ここから個人情報およびアップグレード状況を確認できます。",
 		"INFO_TXT_1": "以下の各部分に必要な情報を記入してください。全部分の提出が完了した後、審査を通してアカウントのアップグレードが承認されます。",
 		"INFO_TXT_2": "*認証には{0}が必要です。",

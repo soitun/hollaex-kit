@@ -274,7 +274,11 @@ const getUsersAdmin = (req, res) => {
 			'x-forwarded-for': req.headers['x-forwarded-for']
 		}
 	})
-		.then((data) => {
+		.then(async (data) => {
+			// When viewing a single user, attach company info for company accounts
+			if ((id.value || user_id.value) && data?.data?.length === 1 && data.data[0].is_company) {
+				data.data[0].company = await toolsLib.user.getUserCompany(data.data[0].id);
+			}
 			return res.json(data);
 		})
 		.catch((err) => {
@@ -2216,6 +2220,49 @@ const getNetworkPairs = (req, res) => {
 		});
 };
 
+const putUserCompany = (req, res) => {
+	loggerAdmin.verbose(
+		req.uuid,
+		'controllers/admin/putUserCompany auth',
+		req.auth
+	);
+
+	const user_id = req.swagger.params.user_id.value;
+	const updateData = pick(
+		req.swagger.params.data.value,
+		[
+			'name',
+			'registration_number',
+			'country_of_incorporation',
+			'business_address',
+			'status'
+		]
+	);
+
+	loggerAdmin.info(
+		req.uuid,
+		'controllers/admin/putUserCompany user_id:',
+		user_id,
+		'updateData:',
+		updateData
+	);
+
+	const auditInfo = { userEmail: req?.auth?.sub?.email, sessionId: req?.session_id, apiPath: req?.swagger?.apiPath, method: req?.swagger?.operationPath?.[2] };
+	toolsLib.user.updateUserCompany(user_id, updateData, auditInfo)
+		.then((data) => {
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(
+				req.uuid,
+				'controllers/admin/putUserCompany err',
+				err.message
+			);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 const putUserInfo = (req, res) => {
 	loggerAdmin.verbose(
 		req.uuid,
@@ -4025,6 +4072,7 @@ module.exports = {
 	getNetworkPairs,
 	updateExchange,
 	putUserInfo,
+	putUserCompany,
 	getEmail,
 	putEmail,
 	emailConfigTest,

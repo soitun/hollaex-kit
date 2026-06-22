@@ -337,6 +337,7 @@
 		"TEXT_2": "Klicken Sie unten auf Login, um fortzufahren."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Als Firmenkonto registrieren",
 		"SIGNUP_TO": "Registrieren Sie sich bei {0}",
 		"NO_EMAIL": "Haben Sie die E-Mail nicht erhalten?",
 		"REQUEST_EMAIL": "Hier ein weitere E-Mail anfordern",
@@ -375,6 +376,15 @@
 		"CONFIRM_DESCRIPTION": "Bestätigen Sie bitte Ihre Kontoanmeldung, indem Sie auf die Schaltfläche unten klicken"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Firmenkonto",
+			"BANNER": "Dies ist ein Firmenkonto",
+			"NAME": "Firmenname",
+			"REGISTRATION_NUMBER": "Registrierungsnummer",
+			"COUNTRY_OF_INCORPORATION": "Land der Gründung",
+			"BUSINESS_ADDRESS": "Geschäftsadresse",
+			"PENDING": "Unternehmensverifizierung ausstehend"
+		},
 		"INFO_TXT": "Hier können Sie Ihren Fortschritt auf dem Weg zur Verifizierung und zu einem Konto-Upgrade überwachen.",
 		"INFO_TXT_1": "Bitte übermitteln Sie die relevanten Informationen, die für jeden Abschnitt unten benötigt werden. Erst wenn alle Abschnitte ausgefüllt sind, werden Ihre Informationen geprüft und für ein Konto-Upgrade genehmigt.",
 		"INFO_TXT_2": "* Für die Verifizierung des Identitätsabschnitts benötigen Sie {0} bestimmte Dokumente.",

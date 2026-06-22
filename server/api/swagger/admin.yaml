@@ -1454,6 +1454,66 @@ paths:
         - hmac
       x-token-permissions:
         - can_withdraw
+  /admin/user/company:
+    x-swagger-router-controller: admin
+    put:
+      operationId: putUserCompany
+      description: Update a company account user's company info
+      tags:
+        - Admin
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          type: integer
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                maxLength: 256
+              registration_number:
+                type: string
+                maxLength: 256
+              country_of_incorporation:
+                type: string
+                maxLength: 256
+              business_address:
+                type: object
+                properties:
+                  country:
+                    type: string
+                    maxLength: 256
+                  address:
+                    type: string
+                    maxLength: 256
+                  postal_code:
+                    type: string
+                    maxLength: 256
+                  city:
+                    type: string
+                    maxLength: 256
+              status:
+                type: number
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-token-permissions:
+        - can_withdraw
   /admin/user/discount:
     x-swagger-router-controller: admin
     put:

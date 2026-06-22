@@ -298,6 +298,7 @@ const signUpUser = async (email, password, opts = {}, version) => {
 				const createdUser = await getModel('user').create({
 					email,
 					password: resolvedPassword,
+					is_company: opts.is_company === true,
 					verification_level: 1,
 					email_verified: isPhoneSignup ? false : (opts.email_verified || false),
 					phone_number_verified: false,
@@ -2670,6 +2671,82 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 
 	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, updateData, oldValues);
 	return omitUserFields(user.dataValues);
+};
+
+const getUserCompany = async (userId) => {
+	if (!isInteger(userId) || userId <= 0) {
+		throw new Error('UserId must be a positive integer');
+	}
+
+	return dbQuery.findOne('company', {
+		where: { user_id: userId },
+		raw: true
+	});
+};
+
+const updateUserCompany = async (userId, data = {}, auditInfo = {}) => {
+	if (!isInteger(userId) || userId <= 0) {
+		throw new Error('UserId must be a positive integer');
+	}
+	if (!isPlainObject(data)) {
+		throw new Error('Update data must be an object');
+	}
+
+	const user = await getUserByKitId(userId, false);
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	const Company = getModel('company');
+	let company = await Company.findOne({ where: { user_id: userId } });
+
+	const updateData = {};
+	for (const field in data) {
+		const value = data[field];
+
+		switch (field) {
+			case 'name':
+			case 'registration_number':
+			case 'country_of_incorporation':
+				if (isString(value)) {
+					updateData[field] = value;
+				}
+				break;
+			case 'business_address':
+				if (isPlainObject(value)) {
+					updateData[field] = {
+						...((company && company.business_address) || {}),
+						...pick(value, ['address', 'city', 'country', 'postal_code'])
+					};
+				}
+				break;
+			case 'status':
+				if (isInteger(value)) {
+					updateData[field] = value;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	const oldValues = company ? omit(company.dataValues, ['created_at', 'updated_at']) : {};
+
+	if (company) {
+		if (Object.keys(updateData).length > 0) {
+			company = await company.update(updateData, { fields: Object.keys(updateData) });
+		}
+	} else {
+		company = await Company.create({ user_id: userId, ...updateData });
+	}
+
+	// Editing company info implies this is a company account; keep the flag in sync.
+	if (!user.is_company) {
+		await user.update({ is_company: true }, { fields: ['is_company'] });
+	}
+
+	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, updateData, oldValues);
+	return company.dataValues;
 };
 
 const getExchangeUserSessions = (opts = {
@@ -5847,6 +5924,8 @@ module.exports = {
 	mapNetworkIdToKitId,
 	mapKitIdToNetworkId,
 	updateUserInfo,
+	getUserCompany,
+	updateUserCompany,
 	updateLoginAttempt,
 	getExchangeUserSessions,
 	revokeExchangeUserSession,

@@ -253,6 +253,14 @@ export const updateDiscount = (user, discount) => {
 	);
 };
 
+export const updateUserCompany = (values, id) => {
+	const options = {
+		method: 'PUT',
+		body: JSON.stringify(values),
+	};
+	return requestAuthenticated(`/admin/user/company?user_id=${id}`, options);
+};
+
 export const updateUserMeta = (values, id) => {
 	const options = {
 		method: 'PUT',

@@ -86,6 +86,9 @@ definitions:
           - v4
       verification_method:
         $ref: '#/definitions/RequestVerificationMethod'
+      is_company:
+        type: boolean
+        description: Whether the account is being registered as a company account (optional; defaults to false)
   SetEmailRequest:
     type: object
     required:
