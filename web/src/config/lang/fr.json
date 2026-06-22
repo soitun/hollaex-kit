@@ -337,6 +337,7 @@
 		"TEXT_2": "Cliquez sur Connexion ci-dessous pour continuer."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "S'inscrire en tant que compte entreprise",
 		"SIGNUP_TO": "Inscrivez-vous pour {0}",
 		"NO_EMAIL": "Vous n'avez pas reçu l'e-mail ?",
 		"REQUEST_EMAIL": "Demandez-en un autre ici",
@@ -375,6 +376,15 @@
 		"CONFIRM_DESCRIPTION": "Veuillez confirmer votre inscription en cliquant sur le bouton ci-dessous"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Compte entreprise",
+			"BANNER": "Ceci est un compte entreprise",
+			"NAME": "Nom de l'entreprise",
+			"REGISTRATION_NUMBER": "Numéro d'enregistrement",
+			"COUNTRY_OF_INCORPORATION": "Pays de constitution",
+			"BUSINESS_ADDRESS": "Adresse professionnelle",
+			"PENDING": "Vérification de l'entreprise en attente"
+		},
 		"INFO_TXT": "Vous pouvez suivre ici l'évolution des vérifications et les mises à jour de comptes.",
 		"INFO_TXT_1": "Veuillez soumettre toutes les informations pertinentes nécessaires pour chaque section ci-dessous. Ce n'est que lorsque toutes les sections seront complétées que vos informations seront examinées et approuvées pour une mise à niveau de compte.",
 		"INFO_TXT_2": "* La vérification de la section d'identité vous oblige à {0} certains documents.",

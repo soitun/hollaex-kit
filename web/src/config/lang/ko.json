@@ -330,6 +330,7 @@
 		"TEXT_2": "계속하려면 아래 로그인 버튼을 클릭하시기바랍니다."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "법인 계정으로 등록",
 		"SIGNUP_TO": "{0}에 가입하기",
 		"NO_EMAIL": "이메일을 받지 못하셨나요?",
 		"REQUEST_EMAIL": "이메일 재요청하기",
@@ -368,6 +369,15 @@
 		"CONFIRM_DESCRIPTION": "아래 버튼을 클릭하여 계정 가입을 확인하십시오"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "법인 계정",
+			"BANNER": "법인 계정입니다",
+			"NAME": "회사명",
+			"REGISTRATION_NUMBER": "등록 번호",
+			"COUNTRY_OF_INCORPORATION": "설립 국가",
+			"BUSINESS_ADDRESS": "사업장 주소",
+			"PENDING": "법인 인증 대기 중"
+		},
 		"INFO_TXT": "개인정보 및 계정 업그레이드 진행상황을 확인하실 수 있습니다.",
 		"INFO_TXT_1": "아래 각 부문에 필요한 정보를 작성해주시기바랍니다. 모든 부문의 제출의 완료된 이후에 해당 정보를 검토하여 계정업그레이드 승인이 이루어집니다.",
 		"INFO_TXT_2": "*인증을 위해 {0}가 필수적입니다.",

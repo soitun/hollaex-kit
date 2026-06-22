@@ -176,6 +176,11 @@ const User = Loadable({
 	loading: LoadingComponent,
 });
 
+const Companies = Loadable({
+	loader: () => import('./containers/Admin/Companies'),
+	loading: LoadingComponent,
+});
+
 const AdminStake = Loadable({
 	loader: () => import('./containers/Admin/Stakes'),
 	loading: LoadingComponent,
@@ -832,6 +837,11 @@ export const generateRoutes = (routes = []) => {
 					path="/admin/user"
 					name="Admin User"
 					component={withAdminProps(User, 'user')}
+				/>
+				<Route
+					path="/admin/companies"
+					name="Admin Companies"
+					component={withAdminProps(Companies, 'companies')}
 				/>
 				<Route
 					path="/admin/audits"

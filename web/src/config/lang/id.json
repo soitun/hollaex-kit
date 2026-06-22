@@ -336,6 +336,7 @@
 		"TEXT_2": "Klik masuk di bawah untuk melanjutkan."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Daftar sebagai akun perusahaan",
 		"SIGNUP_TO": "Daftar di {0}",
 		"NO_EMAIL": "Email tidak masuk??",
 		"REQUEST_EMAIL": "Cobalah kirim ulang di sini",
@@ -374,6 +375,15 @@
 		"CONFIRM_DESCRIPTION": "Harap konfirmasi pendaftaran akun Anda dengan mengklik tombol di bawah"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Akun Perusahaan",
+			"BANNER": "Ini adalah akun perusahaan",
+			"NAME": "Nama perusahaan",
+			"REGISTRATION_NUMBER": "Nomor registrasi",
+			"COUNTRY_OF_INCORPORATION": "Negara pendirian",
+			"BUSINESS_ADDRESS": "Alamat bisnis",
+			"PENDING": "Verifikasi perusahaan tertunda"
+		},
 		"INFO_TXT": "Anda dapat melihat prosedur verifikasi dan pembaruan akun Anda.",
 		"INFO_TXT_1": "Silakan masukkan informasi pada kolom di bawah. Akun Anda akan diperbarui setelah informasi yang Anda serahkan diidentifikasikan.",
 		"INFO_TXT_2": "* {0} dokumen tertentu diperlukan untuk memverifikasi identitas Anda.",

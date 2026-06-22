@@ -298,6 +298,7 @@ const signUpUser = async (email, password, opts = {}, version) => {
 				const createdUser = await getModel('user').create({
 					email,
 					password: resolvedPassword,
+					is_company: opts.is_company === true,
 					verification_level: 1,
 					email_verified: isPhoneSignup ? false : (opts.email_verified || false),
 					phone_number_verified: false,
@@ -2670,6 +2671,157 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 
 	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, updateData, oldValues);
 	return omitUserFields(user.dataValues);
+};
+
+const getUserCompany = async (userId) => {
+	if (!isInteger(userId) || userId <= 0) {
+		throw new Error('UserId must be a positive integer');
+	}
+
+	return dbQuery.findOne('company', {
+		where: { user_id: userId },
+		raw: true
+	});
+};
+
+const getAllCompaniesAdmin = (opts = {
+	search: null,
+	country_of_incorporation: null,
+	status: null,
+	limit: null,
+	page: null,
+	order_by: null,
+	order: null,
+	start_date: null,
+	end_date: null
+}) => {
+	const pagination = paginationQuery(opts.limit, opts.page);
+	const timeframe = timeframeQuery(opts.start_date, opts.end_date);
+
+	let orderBy = 'id';
+	let order = 'desc';
+	if (opts.order_by) {
+		orderBy = opts.order_by;
+	}
+	if (opts.order) {
+		order = opts.order;
+	}
+	const ordering = orderingQuery(orderBy, order);
+
+	let query = {
+		where: {
+			created_at: timeframe,
+			...(opts.country_of_incorporation != null && { country_of_incorporation: opts.country_of_incorporation }),
+			...(opts.status != null && { status: opts.status }),
+			[Op.and]: []
+		},
+		include: [
+			{
+				model: getModel('user'),
+				as: 'user',
+				attributes: ['id', 'email', 'full_name', 'verification_level', 'is_company']
+			}
+		],
+		order: [ordering],
+		// The search clause references the joined user table ($user.email$); subQuery
+		// must be disabled so the join is available alongside limit/offset.
+		subQuery: false
+	};
+
+	if (opts.search) {
+		query.where[Op.and].push({
+			[Op.or]: [
+				{ name: { [Op.iLike]: `%${opts.search}%` } },
+				{ registration_number: { [Op.iLike]: `%${opts.search}%` } },
+				{ '$user.email$': { [Op.iLike]: `%${opts.search}%` } }
+			]
+		});
+	}
+
+	// Apply an upper bound on the owner's verification level when the requester's
+	// role is restricted, mirroring the Users admin view so company accounts can't
+	// be used to view identities the operator isn't allowed to see.
+	if (isNumber(opts.max_verification_level)) {
+		query.where[Op.and].push({ '$user.verification_level$': { [Op.lte]: opts.max_verification_level } });
+	}
+
+	query = { ...query, ...pagination };
+
+	return dbQuery.findAndCountAllWithRows('company', query);
+};
+
+const updateUserCompany = async (userId, data = {}, auditInfo = {}) => {
+	if (!isInteger(userId) || userId <= 0) {
+		throw new Error('UserId must be a positive integer');
+	}
+	if (!isPlainObject(data)) {
+		throw new Error('Update data must be an object');
+	}
+
+	const user = await getUserByKitId(userId, false);
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	const Company = getModel('company');
+	let company = await Company.findOne({ where: { user_id: userId } });
+
+	const updateData = {};
+	let isCompany; // explicit is_company override, if provided
+	for (const field in data) {
+		const value = data[field];
+
+		switch (field) {
+			case 'name':
+			case 'registration_number':
+			case 'country_of_incorporation':
+				if (isString(value)) {
+					updateData[field] = value;
+				}
+				break;
+			case 'business_address':
+				if (isPlainObject(value)) {
+					updateData[field] = {
+						...((company && company.business_address) || {}),
+						...pick(value, ['address', 'city', 'country', 'postal_code'])
+					};
+				}
+				break;
+			case 'status':
+				if (isInteger(value)) {
+					updateData[field] = value;
+				}
+				break;
+			case 'is_company':
+				if (isBoolean(value)) {
+					isCompany = value;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	const oldValues = company ? omit(company.dataValues, ['created_at', 'updated_at']) : {};
+
+	if (company) {
+		if (Object.keys(updateData).length > 0) {
+			company = await company.update(updateData, { fields: Object.keys(updateData) });
+		}
+	} else {
+		company = await Company.create({ user_id: userId, ...updateData });
+	}
+
+	// Keep the user's is_company flag in sync. An explicit value in the request
+	// wins (so an account can be reverted to individual); otherwise editing
+	// company info implies this is a company account.
+	const targetIsCompany = isCompany !== undefined ? isCompany : true;
+	if (user.is_company !== targetIsCompany) {
+		await user.update({ is_company: targetIsCompany }, { fields: ['is_company'] });
+	}
+
+	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, { ...updateData, ...(isCompany !== undefined && { is_company: isCompany }) }, oldValues);
+	return { ...company.dataValues, is_company: targetIsCompany };
 };
 
 const getExchangeUserSessions = (opts = {
@@ -5847,6 +5999,9 @@ module.exports = {
 	mapNetworkIdToKitId,
 	mapKitIdToNetworkId,
 	updateUserInfo,
+	getUserCompany,
+	getAllCompaniesAdmin,
+	updateUserCompany,
 	updateLoginAttempt,
 	getExchangeUserSessions,
 	revokeExchangeUserSession,
