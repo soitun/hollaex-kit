@@ -2738,6 +2738,13 @@ const getAllCompaniesAdmin = (opts = {
 		});
 	}
 
+	// Apply an upper bound on the owner's verification level when the requester's
+	// role is restricted, mirroring the Users admin view so company accounts can't
+	// be used to view identities the operator isn't allowed to see.
+	if (isNumber(opts.max_verification_level)) {
+		query.where[Op.and].push({ '$user.verification_level$': { [Op.lte]: opts.max_verification_level } });
+	}
+
 	query = { ...query, ...pagination };
 
 	return dbQuery.findAndCountAllWithRows('company', query);
@@ -2760,6 +2767,7 @@ const updateUserCompany = async (userId, data = {}, auditInfo = {}) => {
 	let company = await Company.findOne({ where: { user_id: userId } });
 
 	const updateData = {};
+	let isCompany; // explicit is_company override, if provided
 	for (const field in data) {
 		const value = data[field];
 
@@ -2784,6 +2792,11 @@ const updateUserCompany = async (userId, data = {}, auditInfo = {}) => {
 					updateData[field] = value;
 				}
 				break;
+			case 'is_company':
+				if (isBoolean(value)) {
+					isCompany = value;
+				}
+				break;
 			default:
 				break;
 		}
@@ -2799,13 +2812,16 @@ const updateUserCompany = async (userId, data = {}, auditInfo = {}) => {
 		company = await Company.create({ user_id: userId, ...updateData });
 	}
 
-	// Editing company info implies this is a company account; keep the flag in sync.
-	if (!user.is_company) {
-		await user.update({ is_company: true }, { fields: ['is_company'] });
+	// Keep the user's is_company flag in sync. An explicit value in the request
+	// wins (so an account can be reverted to individual); otherwise editing
+	// company info implies this is a company account.
+	const targetIsCompany = isCompany !== undefined ? isCompany : true;
+	if (user.is_company !== targetIsCompany) {
+		await user.update({ is_company: targetIsCompany }, { fields: ['is_company'] });
 	}
 
-	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, updateData, oldValues);
-	return company.dataValues;
+	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, { ...updateData, ...(isCompany !== undefined && { is_company: isCompany }) }, oldValues);
+	return { ...company.dataValues, is_company: targetIsCompany };
 };
 
 const getExchangeUserSessions = (opts = {

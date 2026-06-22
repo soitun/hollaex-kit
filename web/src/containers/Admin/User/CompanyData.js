@@ -43,9 +43,19 @@ const CompanyDataFields = {
 	},
 };
 
+const AccountTypeFields = {
+	is_company: {
+		type: 'boolean',
+		label:
+			'Company account (turn off to revert this user to an individual account)',
+	},
+};
+
 const onSubmit = (userData, onChangeSuccess, handleClose) => (values) => {
+	const isCompany = values.is_company !== false;
 	const submitData = {
 		business_address: {},
+		is_company: isCompany,
 	};
 
 	Object.keys(CompanyDataFields).forEach((key) => {
@@ -62,7 +72,7 @@ const onSubmit = (userData, onChangeSuccess, handleClose) => (values) => {
 				// existing userData rather than replacing it with company fields only.
 				onChangeSuccess({
 					...userData,
-					is_company: true,
+					is_company: isCompany,
 					company: { ...submitData, ...data },
 				});
 			}
@@ -73,11 +83,12 @@ const onSubmit = (userData, onChangeSuccess, handleClose) => (values) => {
 		});
 };
 
-const generateInitialValues = (company = {}) => {
+const generateInitialValues = (company = {}, is_company = true) => {
 	const { business_address = {} } = company;
 	return {
 		...company,
 		...business_address,
+		is_company,
 	};
 };
 
@@ -87,6 +98,7 @@ const CompanyData = ({ initialValues, onChangeSuccess, handleClose }) => {
 	const fieldsData = {
 		...CompanyDataFields,
 		...BusinessAddressFields,
+		...AccountTypeFields,
 	};
 
 	return (
@@ -94,7 +106,10 @@ const CompanyData = ({ initialValues, onChangeSuccess, handleClose }) => {
 			onSubmit={onSubmit(initialValues, onChangeSuccess, handleClose)}
 			buttonText="SAVE"
 			fields={fieldsData}
-			initialValues={generateInitialValues(company)}
+			initialValues={generateInitialValues(
+				company,
+				initialValues.is_company !== false
+			)}
 			buttonClass="green-btn"
 		/>
 	);

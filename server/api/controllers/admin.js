@@ -312,6 +312,22 @@ const getCompaniesAdmin = (req, res) => {
 		return res.status(400).json({ message: 'Invalid order by' });
 	}
 
+	// Derive max visible verification level from the requester's role restrictions (if configured)
+	let maxVisibleVerificationLevel = null;
+	try {
+		const roles = toolsLib.getRoles();
+		const requesterRoleName = req?.auth?.sub?.role;
+		const requesterRole = roles?.find((r) => r.role_name === requesterRoleName);
+		const restrictions = requesterRole?.restrictions || {};
+		const usersRestriction = restrictions?.users || {};
+		const configuredMaxLevel = usersRestriction?.max_view_verification_level ?? restrictions?.max_view_verification_level;
+		if (typeof configuredMaxLevel === 'number') {
+			maxVisibleVerificationLevel = configuredMaxLevel;
+		}
+	} catch (e) {
+		// ignore restriction errors and proceed without max filter
+	}
+
 	toolsLib.user.getAllCompaniesAdmin({
 		search: search.value,
 		country_of_incorporation: country_of_incorporation.value,
@@ -321,7 +337,8 @@ const getCompaniesAdmin = (req, res) => {
 		order_by: order_by.value,
 		order: order.value,
 		start_date: start_date.value,
-		end_date: end_date.value
+		end_date: end_date.value,
+		max_verification_level: maxVisibleVerificationLevel
 	})
 		.then((data) => {
 			return res.json(data);
@@ -2280,7 +2297,8 @@ const putUserCompany = (req, res) => {
 			'registration_number',
 			'country_of_incorporation',
 			'business_address',
-			'status'
+			'status',
+			'is_company'
 		]
 	);
 

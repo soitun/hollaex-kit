@@ -1574,6 +1574,9 @@ paths:
                     maxLength: 256
               status:
                 type: number
+              is_company:
+                type: boolean
+                description: Whether the account is a company account. Set false to revert a company account back to an individual account.
       responses:
         200:
           description: Success
