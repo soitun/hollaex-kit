@@ -13,6 +13,11 @@ export const User = Loadable({
 	loading: LoadingComponent,
 });
 
+export const Companies = Loadable({
+	loader: () => import('./Companies'),
+	loading: LoadingComponent,
+});
+
 export const TradeHistory = Loadable({
 	loader: () => import('./TradeHistory'),
 	loading: LoadingComponent,

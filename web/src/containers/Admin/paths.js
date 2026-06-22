@@ -20,6 +20,11 @@ export const ADMIN_PATHS = [
 		routeKey: 'user',
 	},
 	{
+		path: '/admin/companies',
+		label: 'Companies',
+		routeKey: 'companies',
+	},
+	{
 		path: '/admin/financials',
 		label: 'Assets',
 		routeKey: 'financials',
@@ -276,6 +281,7 @@ export const pathToPermissionMap = {
 		'/admin/verify-email:',
 		'/admin/deactivate-otp:',
 	],
+	'/admin/companies': ['/admin/companies:'],
 	'/admin/financials': [
 		'/admin/coin:',
 		'/admin/coins:',

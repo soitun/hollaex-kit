@@ -288,6 +288,51 @@ const getUsersAdmin = (req, res) => {
 		});
 };
 
+const getCompaniesAdmin = (req, res) => {
+	loggerAdmin.verbose(req.uuid, 'controllers/admin/getCompaniesAdmin/auth', req.auth);
+
+	const {
+		search,
+		country_of_incorporation,
+		status,
+		limit,
+		page,
+		order_by,
+		order,
+		start_date,
+		end_date
+	} = req.swagger.params;
+
+	if (order_by.value && typeof order_by.value !== 'string') {
+		loggerAdmin.error(
+			req.uuid,
+			'controllers/admin/getCompaniesAdmin invalid order_by',
+			order_by.value
+		);
+		return res.status(400).json({ message: 'Invalid order by' });
+	}
+
+	toolsLib.user.getAllCompaniesAdmin({
+		search: search.value,
+		country_of_incorporation: country_of_incorporation.value,
+		status: status.value,
+		limit: limit.value,
+		page: page.value,
+		order_by: order_by.value,
+		order: order.value,
+		start_date: start_date.value,
+		end_date: end_date.value
+	})
+		.then((data) => {
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(req.uuid, 'controllers/admin/getCompaniesAdmin', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 const putUserRole = (req, res) => {
 	loggerAdmin.verbose(
 		req.uuid,
@@ -4029,6 +4074,7 @@ module.exports = {
 	getAdminKit,
 	putAdminKit,
 	getUsersAdmin,
+	getCompaniesAdmin,
 	putUserRole,
 	putUserNote,
 	getAdminUserBalance,

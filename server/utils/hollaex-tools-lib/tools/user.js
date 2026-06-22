@@ -2684,6 +2684,65 @@ const getUserCompany = async (userId) => {
 	});
 };
 
+const getAllCompaniesAdmin = (opts = {
+	search: null,
+	country_of_incorporation: null,
+	status: null,
+	limit: null,
+	page: null,
+	order_by: null,
+	order: null,
+	start_date: null,
+	end_date: null
+}) => {
+	const pagination = paginationQuery(opts.limit, opts.page);
+	const timeframe = timeframeQuery(opts.start_date, opts.end_date);
+
+	let orderBy = 'id';
+	let order = 'desc';
+	if (opts.order_by) {
+		orderBy = opts.order_by;
+	}
+	if (opts.order) {
+		order = opts.order;
+	}
+	const ordering = orderingQuery(orderBy, order);
+
+	let query = {
+		where: {
+			created_at: timeframe,
+			...(opts.country_of_incorporation != null && { country_of_incorporation: opts.country_of_incorporation }),
+			...(opts.status != null && { status: opts.status }),
+			[Op.and]: []
+		},
+		include: [
+			{
+				model: getModel('user'),
+				as: 'user',
+				attributes: ['id', 'email', 'full_name', 'verification_level', 'is_company']
+			}
+		],
+		order: [ordering],
+		// The search clause references the joined user table ($user.email$); subQuery
+		// must be disabled so the join is available alongside limit/offset.
+		subQuery: false
+	};
+
+	if (opts.search) {
+		query.where[Op.and].push({
+			[Op.or]: [
+				{ name: { [Op.iLike]: `%${opts.search}%` } },
+				{ registration_number: { [Op.iLike]: `%${opts.search}%` } },
+				{ '$user.email$': { [Op.iLike]: `%${opts.search}%` } }
+			]
+		});
+	}
+
+	query = { ...query, ...pagination };
+
+	return dbQuery.findAndCountAllWithRows('company', query);
+};
+
 const updateUserCompany = async (userId, data = {}, auditInfo = {}) => {
 	if (!isInteger(userId) || userId <= 0) {
 		throw new Error('UserId must be a positive integer');
@@ -5925,6 +5984,7 @@ module.exports = {
 	mapKitIdToNetworkId,
 	updateUserInfo,
 	getUserCompany,
+	getAllCompaniesAdmin,
 	updateUserCompany,
 	updateLoginAttempt,
 	getExchangeUserSessions,
