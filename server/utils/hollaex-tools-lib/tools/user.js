@@ -40,6 +40,7 @@ const {
 	INVALID_USERNAME,
 	ACCOUNT_NOT_VERIFIED,
 	INVALID_VERIFICATION_LEVEL,
+	SUBACCOUNT_TIER_NOT_EDITABLE,
 	USER_EMAIL_NOT_VERIFIED,
 	USER_PHONE_NOT_VERIFIED,
 	VERIFICATION_CODE_EXPIRED,
@@ -1892,48 +1893,95 @@ const updateUserDiscount = (userId, discount, auditInfo) => {
 		});
 };
 
+// Applies a verification level change to a single user instance:
+// persists it, publishes the event and sends the upgrade email.
+const applyVerificationLevelChange = async (user, newLevel, domain) => {
+	const previousLevel = user.verification_level;
+	if (previousLevel === newLevel) {
+		return user;
+	}
+
+	const updatedUser = await user.update(
+		{ verification_level: newLevel },
+		{ fields: ['verification_level'], returning: true }
+	);
+
+	publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+		type: 'user',
+		data: {
+			action: 'verification_level',
+			user_id: updatedUser.id,
+			previous_level: previousLevel,
+			current_level: updatedUser.verification_level,
+		}
+	}));
+
+	if (previousLevel < updatedUser.verification_level) {
+		sendEmail(
+			MAILTYPE.ACCOUNT_UPGRADE,
+			updatedUser.email,
+			getKitTier(updatedUser.verification_level).name,
+			updatedUser.settings,
+			domain
+		);
+	}
+
+	return updatedUser;
+};
+
+// Cascades a verification level change to every active subaccount of a master
+// account so subaccounts stay in sync with the main account's tier.
+const changeSubaccountsVerificationLevel = async (masterId, newLevel, domain) => {
+	const SubaccountModel = getModel('subaccount');
+	const UserModel = getModel('user');
+
+	const links = await dbQuery.findAll('subaccount', {
+		where: { master_id: masterId, active: true },
+		include: [
+			{
+				model: UserModel,
+				as: 'sub'
+			}
+		]
+	}, SubaccountModel);
+
+	for (const link of links) {
+		const sub = link.sub;
+		// Skip missing links and unverified subaccounts (mirrors the
+		// ACCOUNT_NOT_VERIFIED guard on the main account) instead of failing
+		// the whole cascade.
+		if (!sub || sub.verification_level === 0) {
+			continue;
+		}
+		await applyVerificationLevelChange(sub, newLevel, domain);
+	}
+};
+
 const changeUserVerificationLevelById = (userId, newLevel, domain) => {
 	if (!isValidTierLevel(newLevel)) {
 		return reject(new Error(INVALID_VERIFICATION_LEVEL(newLevel)));
 	}
 
-	let currentVerificationLevel = 0;
 	return getUserByKitId(userId, false)
 		.then((user) => {
 			if (!user) {
 				throw new Error(USER_NOT_FOUND);
 			}
+			// Subaccount tiers are not editable directly; they only change as
+			// part of the cascade when their master account's tier is updated.
+			if (user.is_subaccount) {
+				throw new Error(SUBACCOUNT_TIER_NOT_EDITABLE);
+			}
 			if (user.verification_level === 0) {
 				throw new Error(ACCOUNT_NOT_VERIFIED);
 			}
-			currentVerificationLevel = user.verification_level;
-			return user.update(
-				{ verification_level: newLevel },
-				{ fields: ['verification_level'], returning: true }
-			);
+			return applyVerificationLevelChange(user, newLevel, domain);
 		})
 		.then((user) => {
-			if (currentVerificationLevel !== user.verification_level) {
-				publisher.publish(EVENTS_CHANNEL, JSON.stringify({
-					type: 'user',
-					data: {
-						action: 'verification_level',
-						user_id: user.id,
-						previous_level: currentVerificationLevel,
-						current_level: user.verification_level,
-					}
-				}));
-			}
-			if (currentVerificationLevel < user.verification_level) {
-				sendEmail(
-					MAILTYPE.ACCOUNT_UPGRADE,
-					user.email,
-					getKitTier(user.verification_level).name,
-					user.settings,
-					domain
-				);
-			}
-			return;
+			// Keep all subaccounts in sync with the main account's tier. When
+			// the target is itself a subaccount this resolves to an empty set.
+			return changeSubaccountsVerificationLevel(user.id, newLevel, domain)
+				.then(() => user);
 		});
 };
 

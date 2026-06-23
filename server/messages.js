@@ -312,6 +312,7 @@ exports.P2P_DEAL_NOT_FOUND = 'P2P Deal not found!';
 exports.INVALID_NUMBER = 'Value is not a number';
 exports.INVALID_AUTOTRADE_CONFIG = 'This pair does not exist';
 exports.SUBACCOUNT_CANNOT_GENERATE_ADDRESS = 'Subaccounts cannot generate deposit addresses';
+exports.SUBACCOUNT_TIER_NOT_EDITABLE = 'Subaccount verification level cannot be changed directly. It follows the master account tier.';
 exports.WITHDRAWAL_LIMIT_ERROR = 'You have reached your withdrawal limit for your tier';
 exports.USER_PHONE_NOT_VERIFIED = 'User phone number is not verified';
 exports.USER_HAS_NO_PHONE = 'User has no phone number';
