@@ -535,7 +535,8 @@ const reducer = (state = INITIAL_STATE, { type, payload = {} }) => {
 			let pairs = Object.keys(state.pairs);
 			Object.keys(payload).forEach((key) => {
 				if (pairs.includes(key)) {
-					let temp = state.tickers[key] || {};
+					// clone: never mutate the object stored in state
+					let temp = { ...(state.tickers[key] || {}) };
 					let pairTrade = payload[key][0];
 					let close = (
 						pairTrade && pairTrade.price ? pairTrade.price : temp.close

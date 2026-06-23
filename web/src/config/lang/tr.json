@@ -306,6 +306,7 @@
 		"TEXT_2": "Devam etmek için girişe tıklayınız."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Şirket hesabı olarak kaydol",
 		"SIGNUP_TO": "{0}'a giriş yapın.",
 		"NO_EMAIL": "E-Posta'yı almadınız mı?",
 		"REQUEST_EMAIL": "Buradan bir E-Posta daha isteyin.",
@@ -344,6 +345,15 @@
 		"CONFIRM_DESCRIPTION": "Lütfen hesap kaydınızı aşağıdaki düğmeye tıklayarak onaylayın"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Şirket Hesabı",
+			"BANNER": "Bu bir şirket hesabıdır",
+			"NAME": "Şirket adı",
+			"REGISTRATION_NUMBER": "Kayıt numarası",
+			"COUNTRY_OF_INCORPORATION": "Kuruluş ülkesi",
+			"BUSINESS_ADDRESS": "İş adresi",
+			"PENDING": "Şirket doğrulaması beklemede"
+		},
 		"INFO_TXT": "Buradan hesap onay ve hesap yükseltimi durumunuzu görüntüleyebilirsiniz.",
 		"INFO_TXT_1": "Lütfen aşağıdaki her bölüme gerekli bilgileri giriniz.Sadece tüm bölümleri doldurduğunuz zaman, belgeleriniz incelenecek ve hesap yükseltiminiz yapılacaktır.",
 		"COMPLETED": "Tamamlandı",
@@ -1042,6 +1052,8 @@
 	"COMPLETE": "Tamamlandı",
 	"PENDING": "Bekliyor",
 	"REJECTED": "Reddedildi",
+	"VERIFIED": "Doğrulandı",
+	"TYPE_AMOUNT": "Tutarı girin",
 	"ORDERBOOK": "Emir defteri",
 	"CANCEL": "İptal",
 	"CANCEL_ALL": "Tümünü İptal Et",
@@ -1601,6 +1613,8 @@
 	"REGULAR": "Klasik",
 	"STOPS": "Stoplar",
 	"VIEW_ALL": "hepsine bak",
+	"SHOW_LESS": "Daha az göster",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} hesap",
 	"TRIGGER_PRICE": "Tetik fiyatı",
 	"SPEND_AMOUNT": "Harcama Miktarı",
 	"ESTIMATE_RECEIVE_AMOUNT": "Tahmini Gelecek Miktar",

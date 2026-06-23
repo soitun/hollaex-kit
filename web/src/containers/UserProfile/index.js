@@ -237,6 +237,68 @@ class UserProfile extends Component {
 		this.setState({ sections });
 	};
 
+	renderCompanySection = () => {
+		const { is_company, company } = this.props;
+		if (!is_company) {
+			return null;
+		}
+		const data = company || {};
+		const business_address = data.business_address || {};
+		const verified = data.status === 3;
+		const provided = !!data.name;
+		const addressLine = [
+			business_address.address,
+			business_address.city,
+			business_address.postal_code,
+			business_address.country,
+		]
+			.filter(Boolean)
+			.join(', ');
+
+		const renderRow = (stringId, label, value) => (
+			<div className="d-flex py-1">
+				<div className="f-1 bold">{STRINGS[stringId] || label}</div>
+				<div className="f-1">{value || '-'}</div>
+			</div>
+		);
+
+		return {
+			stringId: 'USER_VERIFICATION.COMPANY.TITLE',
+			title: STRINGS['USER_VERIFICATION.COMPANY.TITLE'],
+			subtitle: data.name,
+			content: (
+				<div className="my-2">
+					{renderRow(
+						'USER_VERIFICATION.COMPANY.NAME',
+						'Company name',
+						data.name
+					)}
+					{renderRow(
+						'USER_VERIFICATION.COMPANY.REGISTRATION_NUMBER',
+						'Registration number',
+						data.registration_number
+					)}
+					{renderRow(
+						'USER_VERIFICATION.COMPANY.COUNTRY_OF_INCORPORATION',
+						'Country of incorporation',
+						data.country_of_incorporation
+					)}
+					{renderRow(
+						'USER_VERIFICATION.COMPANY.BUSINESS_ADDRESS',
+						'Business address',
+						addressLine
+					)}
+				</div>
+			),
+			notification: this.generateNotification(
+				verified,
+				provided,
+				STRINGS['USER_VERIFICATION.COMPANY.PENDING'],
+				'USER_VERIFICATION.COMPANY.PENDING'
+			),
+		};
+	};
+
 	goToVerification = () => {
 		if (this.props.goToVerification) {
 			this.props.goToVerification();
@@ -253,10 +315,14 @@ class UserProfile extends Component {
 			return <Loader />;
 		}
 		const { sections } = this.state;
+		const companySection = this.renderCompanySection();
+		const allSections = companySection
+			? [companySection, ...sections]
+			: sections;
 		return (
 			<div>
 				<Accordion
-					sections={sections}
+					sections={allSections}
 					allowMultiOpen={true}
 					wrapperId="app_container-main"
 					doScroll={false}
@@ -283,6 +349,8 @@ const mapStateToProps = (state) => ({
 	verification_level: state.user.verification_level,
 	userData: state.user.userData,
 	email: state.user.email,
+	is_company: state.user.is_company,
+	company: state.user.company,
 	limits: state.user.limits,
 	fees: state.user.feeValues,
 	activeLanguage: state.app.language,

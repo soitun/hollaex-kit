@@ -135,9 +135,9 @@ class Form extends Component {
 	};
 
 	onCalculateMax = () => {
-		const { currency, change } = this.props;
+		const { currency, change, selectedBank } = this.props;
 
-		getWithdrawalMax(currency, 'fiat')
+		getWithdrawalMax(currency, 'fiat', selectedBank)
 			.then((res) => {
 				change(FORM_NAME, 'amount', res.data.amount);
 			})

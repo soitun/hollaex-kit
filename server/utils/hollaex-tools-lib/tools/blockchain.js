@@ -137,6 +137,31 @@ const isAddressBlacklisted = async (address, network = null) => {
 };
 
 /**
+ * Returns the subset of the given addresses that are blacklisted for the
+ * network (empty array = all clean). Reuses the cached blacklist set so a list
+ * of deposit-source addresses can be screened in a single lookup. Used by the
+ * network-facing deposit check endpoint.
+ */
+const areAddressesBlacklisted = async (addresses = [], network = null) => {
+	if (!Array.isArray(addresses) || addresses.length === 0) {
+		return [];
+	}
+	const normalizedNetwork = normalizeNetwork(network);
+	const set = await getBlacklistSet();
+	return addresses.filter((address) => {
+		const normalizedAddress = normalizeAddress(address, network);
+		if (!normalizedAddress) {
+			return false;
+		}
+		// match an entry scoped to this network, or a global (all-networks) entry
+		return (
+			set.has(buildKey(normalizedAddress, normalizedNetwork)) ||
+			set.has(buildKey(normalizedAddress, null))
+		);
+	});
+};
+
+/**
  * Chokepoint guard: throws WITHDRAWAL_ADDRESS_NOT_ALLOWED if the destination is
  * blacklisted. On a blocked attempt it logs the event and sends a throttled
  * alert to the exchange operator. The block itself is never throttled.
@@ -185,6 +210,57 @@ const enforceAddressNotBlacklisted = async (address, network = null, user = {}) 
 	}
 
 	throw new Error(WITHDRAWAL_ADDRESS_NOT_ALLOWED);
+};
+
+/**
+ * Sends a throttled operator alert when an incoming deposit's source address(es)
+ * match the blacklist. Mirrors the throttling used by enforceAddressNotBlacklisted
+ * so retries / repeated vault notifications don't spam the operator inbox. Unlike
+ * withdrawals this never throws — the network is responsible for holding the
+ * deposit; this only notifies the operator.
+ */
+const alertBlacklistedDeposit = async (matched = [], network = null, user_id) => {
+	if (!Array.isArray(matched) || matched.length === 0) {
+		return;
+	}
+
+	const normalizedNetwork = normalizeNetwork(network);
+	const normalizedMatched = matched.map((address) => normalizeAddress(address, network));
+
+	loggerWithdrawals.warn(
+		'tools/blockchain/alertBlacklistedDeposit blocked',
+		'user_id',
+		user_id,
+		'addresses',
+		normalizedMatched.join(','),
+		'network',
+		normalizedNetwork
+	);
+
+	// throttle operator alert per (matched addresses, user) so repeated vault
+	// notifications for the same deposit don't spam the inbox
+	try {
+		const throttleKey = `blacklist-deposit-alert:${normalizedMatched.join(',')}:${user_id || 'unknown'}`;
+		const alreadyAlerted = await client.getAsync(throttleKey);
+		if (!alreadyAlerted) {
+			await client.setexAsync(throttleKey, ALERT_THROTTLE_TTL, '1');
+			sendEmail(
+				MAILTYPE.ALERT,
+				null,
+				{
+					type: 'Blacklisted deposit source',
+					data: {
+						user_id,
+						addresses: normalizedMatched,
+						network: normalizedNetwork
+					}
+				},
+				{}
+			);
+		}
+	} catch (err) {
+		loggerWithdrawals.error('tools/blockchain/alertBlacklistedDeposit/alert', err.message);
+	}
 };
 
 const createBlacklistedAddress = async (data = {}) => {
@@ -281,7 +357,9 @@ const deleteBlacklistedAddress = async (id) => {
 module.exports = {
 	normalizeAddress,
 	isAddressBlacklisted,
+	areAddressesBlacklisted,
 	enforceAddressNotBlacklisted,
+	alertBlacklistedDeposit,
 	createBlacklistedAddress,
 	getBlacklistedAddresses,
 	deleteBlacklistedAddress,

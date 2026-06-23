@@ -407,6 +407,7 @@
 		"TEXT_2": "Click en iniciar sesión abajo para continuar."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Registrarse como cuenta de empresa",
 		"SIGNUP_TO": "Registrarse para {0}",
 		"NO_EMAIL": "¿No ha recibido el correo?",
 		"REQUEST_EMAIL": "Solicitar otro aquí",
@@ -445,6 +446,15 @@
 		"CONFIRM_DESCRIPTION": "Por favor, confirma tu registro de cuenta haciendo clic en el botón a continuación"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Cuenta de empresa",
+			"BANNER": "Esta es una cuenta de empresa",
+			"NAME": "Nombre de la empresa",
+			"REGISTRATION_NUMBER": "Número de registro",
+			"COUNTRY_OF_INCORPORATION": "País de constitución",
+			"BUSINESS_ADDRESS": "Dirección comercial",
+			"PENDING": "Verificación de empresa pendiente"
+		},
 		"INFO_TXT": "Aquí puede monitorear su progreso hacia la verificación y una mejora de cuenta.",
 		"INFO_TXT_1": "Por favor enviar la información relevante requerida para cada sección debajo. Solo cuando todas las secciones tienen envíos completos su información va a ser revisada y aprobada para ascender su cuenta.",
 		"COMPLETED": "Completo",
@@ -1239,6 +1249,8 @@
 	"COMPLETE": "Completar",
 	"PENDING": "Pendiente",
 	"REJECTED": "Rechazado",
+	"VERIFIED": "Verificado",
+	"TYPE_AMOUNT": "Ingrese el monto",
 	"ORDERBOOK": "Libro de órdenes",
 	"NEW_ORDER_CREATED": "Nuevo pedido creado: {0} {1}",
 	"ORDER_CANCELED": "Pedido cancelado: {0} {1}",
@@ -1921,6 +1933,8 @@
 	"REGULAR": "Regular",
 	"STOPS": "Paradas",
 	"VIEW_ALL": "ver todo",
+	"SHOW_LESS": "Mostrar menos",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} cuentas",
 	"TRIGGER_PRICE": "Stop",
 	"SPEND_AMOUNT": "Monto a Comprar",
 	"ESTIMATE_RECEIVE_AMOUNT": "Cantidad Estimada a Recibir",

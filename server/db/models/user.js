@@ -75,7 +75,7 @@ module.exports = function (sequelize, DataTypes) {
 				defaultValue: ''
 			},
 			dob: {
-				type: DataTypes.DATE
+				type: DataTypes.DATEONLY
 			},
 			phone_number: {
 				type: DataTypes.STRING,
@@ -195,6 +195,11 @@ module.exports = function (sequelize, DataTypes) {
 			is_subaccount: {
 				type: DataTypes.BOOLEAN,
 				defaultValue: false
+			},
+			is_company: {
+				type: DataTypes.BOOLEAN,
+				allowNull: false,
+				defaultValue: false
 			}
 		},
 		{
@@ -251,6 +256,10 @@ module.exports = function (sequelize, DataTypes) {
 			foreignKey: 'referer_id'
 		});
 		User.hasMany(models.Passkey);
+		User.hasOne(models.Company, {
+			foreignKey: 'user_id',
+			as: 'company'
+		});
 	};
 
 	return User;

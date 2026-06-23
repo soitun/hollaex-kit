@@ -86,6 +86,9 @@ definitions:
           - v4
       verification_method:
         $ref: '#/definitions/RequestVerificationMethod'
+      is_company:
+        type: boolean
+        description: Whether the account is being registered as a company account (optional; defaults to false)
   SetEmailRequest:
     type: object
     required:
@@ -1512,6 +1515,24 @@ definitions:
         type: boolean
       email:
         type: boolean
+      description:
+        type: string
+        maxLength: 256
+  ReallocateDepositRequest:
+    type: object
+    required:
+      - transaction_id
+      - address
+      - receiver_id
+    properties:
+      transaction_id:
+        type: string
+        maxLength: 256
+      address:
+        type: string
+        maxLength: 256
+      receiver_id:
+        type: integer
       description:
         type: string
         maxLength: 256

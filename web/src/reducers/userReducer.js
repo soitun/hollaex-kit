@@ -140,6 +140,8 @@ const INITIAL_STATE = {
 	affiliation: {},
 	is_hap: false,
 	is_subaccount: false,
+	is_company: false,
+	company: null,
 	meta: {},
 	configs: [],
 	permissions: [],
@@ -181,6 +183,8 @@ export default function reducer(state = INITIAL_STATE, action) {
 				permissions,
 				restrictions,
 				is_subaccount,
+				is_company,
+				company,
 			} = action.payload;
 			const userData = extractuserData(action.payload);
 			const fees = action.payload.fees || state.fees;
@@ -225,6 +229,8 @@ export default function reducer(state = INITIAL_STATE, action) {
 				permissions,
 				restrictions,
 				is_subaccount,
+				is_company,
+				company,
 			};
 		}
 		case 'SET_USER_DATA': {

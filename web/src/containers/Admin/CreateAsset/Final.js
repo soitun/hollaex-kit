@@ -1084,6 +1084,26 @@ const Final = ({
 									Go to markup fees
 								</span>
 							</div>
+							{isFiatAsset && (
+								<div className="description-small mt-2">
+									This is a fiat currency — this withdrawal fee can be
+									overwritten in the{' '}
+									<Link
+										className="link-text underline-text"
+										to="/admin/fiat?tab=4"
+									>
+										fiat controls
+									</Link>{' '}
+									or through a fiat-ramp{' '}
+									<Link
+										className="link-text underline-text"
+										to="/admin/plugins"
+									>
+										plugin
+									</Link>
+									.
+								</div>
+							)}
 							{isConfigure && isOwner && (
 								<div className="btn-wrapper">
 									<Button
@@ -1110,6 +1130,26 @@ const Final = ({
 										Go to markup fees
 									</span>
 								</div>
+								{isFiatAsset && (
+									<div className="description-small mt-2">
+										This is a fiat currency — this deposit fee can be
+										overwritten in the{' '}
+										<Link
+											className="link-text underline-text"
+											to="/admin/fiat?tab=4"
+										>
+											fiat controls
+										</Link>{' '}
+										or through a fiat-ramp{' '}
+										<Link
+											className="link-text underline-text"
+											to="/admin/plugins"
+										>
+											plugin
+										</Link>
+										.
+									</div>
+								)}
 								{isConfigure && isOwner && (
 									<div className="btn-wrapper">
 										<Button

@@ -111,7 +111,35 @@ const isValidAddress = (currency, address, network) => {
 	}
 };
 
-const getWithdrawalFee = (currency, network, amount, level) => {
+// Resolve the per off-ramp method (payment option) config for a fiat currency.
+// `offramp[currency]` is backward compatible: it may be a plain array of enabled
+// payment types (legacy, no limits) or an object keyed by type holding { min, max, fee }.
+const getOfframpMethodConfig = (currency, method) => {
+	if (!method) {
+		return null;
+	}
+	const offramp = getKitConfig()?.offramp?.[currency];
+	if (!offramp || Array.isArray(offramp)) {
+		return null;
+	}
+	return offramp[method] || null;
+};
+
+// Resolve the per on-ramp method (payment option) config for a fiat currency.
+// `onramp[currency]` is backward compatible: it may be a plain array of enabled
+// payment types (legacy, no limits) or an object keyed by type holding { min, max, fee }.
+const getOnrampMethodConfig = (currency, method) => {
+	if (!method) {
+		return null;
+	}
+	const onramp = getKitConfig()?.onramp?.[currency];
+	if (!onramp || Array.isArray(onramp)) {
+		return null;
+	}
+	return onramp[method] || null;
+};
+
+const getWithdrawalFee = (currency, network, amount, level, method = null) => {
 	if (!subscribedToCoin(currency)) {
 		return reject(new Error(INVALID_COIN(currency)));
 	}
@@ -138,6 +166,13 @@ const getWithdrawalFee = (currency, network, amount, level) => {
 		if (customFee) {
 			fee_coin = currency;
 			fee = customFee;
+		}
+
+		// per off-ramp method (payment option) fee override; `!= null` so an explicit 0 is honored
+		const methodFee = getOfframpMethodConfig(currency, method)?.fee;
+		if (methodFee != null && methodFee !== '') {
+			fee_coin = currency;
+			fee = methodFee;
 		}
 
 	}
@@ -392,7 +427,7 @@ const performWithdrawalNetwork = async (networkId, address, currency, amount, op
 	return getNodeLib().performWithdrawal(networkId, address, currency, amount, opts);
 };
 
-const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
+const calculateWithdrawalMax = async (user_id, currency, selectedNetwork, bankId = null) => {
 	if (!subscribedToCoin(currency)) {
 		throw new Error('Invalid coin ' + currency);
 	}
@@ -403,9 +438,18 @@ const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
 
 	if (amount === 0) return { amount };
 
+	// Resolve the selected fiat payment option (bank) to its off-ramp method so the
+	// per-method fee/max overrides apply to the max calculation. Optional & backward
+	// compatible: with no bankId (e.g. crypto) `method` stays null and defaults are used.
+	let method = null;
+	if (bankId && Array.isArray(user.bank_account)) {
+		method = user.bank_account.find((bank) => bank.id === bankId)?.type || null;
+	}
+	const methodConfig = getOfframpMethodConfig(currency, method);
+
 	const coinConfiguration = getKitCoin(currency);
 	const coinMarkup = getKitConfig()?.coin_customizations?.[currency];
-	const { fee, fee_coin } = getWithdrawalFee(currency, selectedNetwork, amount, user.verification_level);
+	const { fee, fee_coin } = getWithdrawalFee(currency, selectedNetwork, amount, user.verification_level, method);
 	const { increment_unit } = coinConfiguration;
 
 
@@ -477,11 +521,20 @@ const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
 		amount = 0;
 	}
 
+	// cap by the per off-ramp method max (`!= null` so an explicit 0 is ignored via the > 0 guard)
+	if (
+		methodConfig?.max != null &&
+		methodConfig.max !== '' &&
+		Number(methodConfig.max) > 0
+	) {
+		amount = BigNumber.minimum(amount, Number(methodConfig.max)).toNumber();
+	}
+
 	amount = new BigNumber(amount).decimalPlaces(decimalPoint, BigNumber.ROUND_DOWN).toNumber();
 	return { amount };
 };
 
-const validateWithdrawal = async (user, address, amount, currency, network = null) => {
+const validateWithdrawal = async (user, address, amount, currency, network = null, method = null) => {
 	const coinConfiguration = getKitCoin(currency);
 	const coinMarkup = getKitConfig()?.coin_customizations?.[currency];
 	if (!subscribedToCoin(currency)) {
@@ -545,7 +598,28 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		throw new Error(WITHDRAWAL_OTP_REQUIRED);
 	}
 
-	let { fee, fee_coin } = getWithdrawalFee(currency, network, amount, user.verification_level);
+	// per off-ramp method (payment option) min/max enforcement; `!= null` so 0 is honored
+	const methodConfig = getOfframpMethodConfig(currency, method);
+	if (methodConfig) {
+		const symbol = currency.toUpperCase();
+		if (
+			methodConfig.min != null &&
+			methodConfig.min !== '' &&
+			amount < Number(methodConfig.min)
+		) {
+			throw new Error(`Amount is below the minimum withdrawal of ${methodConfig.min} ${symbol} for this payment method`);
+		}
+		if (
+			methodConfig.max != null &&
+			methodConfig.max !== '' &&
+			Number(methodConfig.max) > 0 &&
+			amount > Number(methodConfig.max)
+		) {
+			throw new Error(`Amount is above the maximum withdrawal of ${methodConfig.max} ${symbol} for this payment method`);
+		}
+	}
+
+	let { fee, fee_coin } = getWithdrawalFee(currency, network, amount, user.verification_level, method);
 
 	const balance = await getNodeLib().getUserBalance(user.network_id);
 
@@ -1237,6 +1311,24 @@ const updatePendingMint = (
 	return getNodeLib().updatePendingMint(transactionId, opts);
 };
 
+const reallocateDepositByKitId = async (
+	transactionId,
+	address,
+	receiverKitId,
+	opts = {
+		description: null,
+		additionalHeaders: null
+	}
+) => {
+	const idDictionary = await mapKitIdToNetworkId([receiverKitId]);
+	if (!has(idDictionary, receiverKitId)) {
+		throw new Error(USER_NOT_FOUND);
+	} else if (!idDictionary[receiverKitId]) {
+		throw new Error('User not registered on network');
+	}
+	return getNodeLib().reallocateDeposit(transactionId, address, idDictionary[receiverKitId], opts);
+};
+
 const burnAssetByKitId = async (
 	kitId,
 	currency,
@@ -1307,7 +1399,7 @@ const updatePendingBurn = (
 	return getNodeLib().updatePendingBurn(transactionId, opts);
 };
 
-const getDepositFee = (currency, network, amount, level) => {
+const getDepositFee = (currency, network, amount, level, method = null) => {
 	if (!subscribedToCoin(currency)) {
 		return reject(new Error(INVALID_COIN(currency)));
 	}
@@ -1325,6 +1417,13 @@ const getDepositFee = (currency, network, amount, level) => {
 	if (customFee) {
 		fee_coin = currency;
 		fee = customFee;
+	}
+
+	// per on-ramp method (payment option) fee override; `!= null` so an explicit 0 is honored
+	const methodFee = getOnrampMethodConfig(currency, method)?.fee;
+	if (methodFee != null && methodFee !== '') {
+		fee_coin = currency;
+		fee = methodFee;
 	}
 
 	return {
@@ -1353,7 +1452,7 @@ const validateDepositEnabled = (currency, network = null) => {
 	}
 };
 
-async function validateDeposit(user, amount, currency, network = null) {
+async function validateDeposit(user, amount, currency, network = null, method = null) {
 	validateDepositEnabled(currency, network);
 
 	if (amount <= 0) {
@@ -1368,7 +1467,28 @@ async function validateDeposit(user, amount, currency, network = null) {
 		throw new Error(UPGRADE_VERIFICATION_LEVEL(1));
 	}
 
-	const { fee, fee_coin } = getDepositFee(currency, network, amount, user.verification_level);
+	// per on-ramp method (payment option) min/max enforcement; `!= null` so 0 is honored
+	const methodConfig = getOnrampMethodConfig(currency, method);
+	if (methodConfig) {
+		const symbol = currency.toUpperCase();
+		if (
+			methodConfig.min != null &&
+			methodConfig.min !== '' &&
+			amount < Number(methodConfig.min)
+		) {
+			throw new Error(`Amount is below the minimum deposit of ${methodConfig.min} ${symbol} for this payment method`);
+		}
+		if (
+			methodConfig.max != null &&
+			methodConfig.max !== '' &&
+			Number(methodConfig.max) > 0 &&
+			amount > Number(methodConfig.max)
+		) {
+			throw new Error(`Amount is above the maximum deposit of ${methodConfig.max} ${symbol} for this payment method`);
+		}
+	}
+
+	const { fee, fee_coin } = getDepositFee(currency, network, amount, user.verification_level, method);
 
 	return {
 		fee,
@@ -1518,6 +1638,7 @@ module.exports = {
 	burnAssetByNetworkId,
 	getKitBalance,
 	updatePendingMint,
+	reallocateDepositByKitId,
 	updatePendingBurn,
 	isValidAddress,
 	validateDepositEnabled,

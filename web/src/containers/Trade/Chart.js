@@ -68,6 +68,7 @@ class TVChartContainer extends React.PureComponent {
 			},
 		};
 		this.ref = React.createRef();
+		this.unmounted = false;
 	}
 
 	UNSAFE_componentWillMount() {
@@ -230,8 +231,13 @@ class TVChartContainer extends React.PureComponent {
 	}
 
 	componentWillUnmount() {
-		if (this.tvWidget !== null && this.tvWidget._ready) {
-			this.tvWidget.remove();
+		this.unmounted = true;
+		if (this.tvWidget !== null) {
+			try {
+				this.tvWidget.remove();
+			} catch (err) {
+				console.error('Failed to remove TradingView widget', err);
+			}
 			this.tvWidget = null;
 		}
 		this.ref = null;
@@ -317,6 +323,14 @@ class TVChartContainer extends React.PureComponent {
 		const tvWidget = new widget(widgetOptions);
 
 		tvWidget.onChartReady(() => {
+			if (this.unmounted) {
+				try {
+					tvWidget.remove();
+				} catch (err) {
+					console.error('Failed to remove TradingView widget', err);
+				}
+				return;
+			}
 			tvWidget.save((tvChartObject) => {
 				let chartID =
 					tvChartObject['charts'][0]['panes'][0]['sources'][0]['id'];

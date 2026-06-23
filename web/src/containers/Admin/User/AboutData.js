@@ -24,6 +24,7 @@ import classnames from 'classnames';
 
 import Notes from './Notes';
 import UserData from './UserData';
+import CompanyData from './CompanyData';
 import { AdminHocForm } from '../../../components';
 // import Audits from '../Audits';
 import Logins from '../Logins';
@@ -226,6 +227,17 @@ const RenderModalContent = ({
 						onChangeSuccess={onChangeSuccess}
 						handleClose={handleClose}
 						handleNav={handleNav}
+					/>
+				</div>
+			);
+		case 'company':
+			return (
+				<div className="user-data-form">
+					<h3>Company information</h3>
+					<CompanyData
+						initialValues={userData}
+						onChangeSuccess={onChangeSuccess}
+						handleClose={handleClose}
 					/>
 				</div>
 			);
@@ -606,6 +618,7 @@ const AboutData = ({
 	} = userData;
 	const userInfo = {
 		email,
+		account_type: userData.is_company ? 'Company' : 'Individual',
 		full_name,
 		gender: gender ? 'Woman' : 'Man',
 		nationality,
@@ -615,6 +628,18 @@ const AboutData = ({
 		address: address.address,
 		postal_code: address.postal_code,
 		city: address.city,
+	};
+
+	const company = userData.company || {};
+	const companyBusinessAddress = company.business_address || {};
+	const companyInfo = {
+		company_name: company.name,
+		registration_number: company.registration_number,
+		country_of_incorporation: company.country_of_incorporation,
+		business_country: companyBusinessAddress.country,
+		business_address: companyBusinessAddress.address,
+		business_postal_code: companyBusinessAddress.postal_code,
+		business_city: companyBusinessAddress.city,
 	};
 
 	const renderRole = () => {
@@ -1112,6 +1137,27 @@ const AboutData = ({
 							</Button>
 						</div>
 					</div>
+					{userData.is_company && (
+						<div className="d-flex justify-content-between m-4">
+							<div>
+								<div className="about-title">Company information</div>
+								<DataDisplay
+									data={companyInfo}
+									renderRow={renderRowInformation}
+								/>
+							</div>
+							<div>
+								<Button
+									type="primary"
+									className="green-btn"
+									size="small"
+									onClick={() => handleOpenModal('company')}
+								>
+									Edit Company Data
+								</Button>
+							</div>
+						</div>
+					)}
 				</div>
 				{/* <div>
 					<div className="about-title">Audit</div>

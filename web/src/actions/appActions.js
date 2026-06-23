@@ -783,9 +783,10 @@ export const getNetWorkURL = () => {
 	return network;
 };
 
-export const getWithdrawalMax = (currency, network) => {
+export const getWithdrawalMax = (currency, network, bankId) => {
+	const bankParam = bankId ? `&bank_id=${encodeURIComponent(bankId)}` : '';
 	return axios.get(
-		`/user/withdrawal/max?currency=${currency}&network=${network}`
+		`/user/withdrawal/max?currency=${currency}&network=${network}${bankParam}`
 	);
 };
 

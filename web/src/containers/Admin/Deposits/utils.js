@@ -17,7 +17,7 @@ import { Coin } from 'components';
 	<LegacyIcon type={value ? 'check-circle' : 'close-circle-o'} />
 );*/
 
-export const renderStatus = (_, { status, dismissed, rejected }) => {
+export const renderStatus = (_, { status, dismissed, rejected, onhold }) => {
 	if (status) {
 		return 'Completed';
 	}
@@ -28,6 +28,10 @@ export const renderStatus = (_, { status, dismissed, rejected }) => {
 
 	if (rejected) {
 		return 'Rejected';
+	}
+
+	if (onhold) {
+		return 'On Hold';
 	}
 
 	return 'Pending';
@@ -102,16 +106,99 @@ export const renderAsset = (asset) => {
 	);
 };
 
-export const renderResendContent = (renderData, onOpenModal) => {
-	if (
+export const renderContent = (renderData, onOpenModal) => {
+	if (renderData.status) {
+		return (
+			<div className="d-flex align-items-center">
+				<CheckCircleOutlined style={{ margin: '5px' }} />
+				Completed
+			</div>
+		);
+	} else if (renderData.dismissed) {
+		return <div>Dismissed</div>;
+	} else if (renderData.rejected) {
+		return <div>Rejected</div>;
+	} else if (renderData.onhold) {
+		const isDeposit = renderData.type === 'deposit';
+		return (
+			<div className="d-flex validate-wrapper align-items-center">
+				<ClockCircleOutlined style={{ margin: '5px' }} />
+				<span className="mr-3">On Hold</span>
+				<Tooltip placement="bottom" title="RELEASE">
+					<div
+						className="anchor"
+						onClick={(e) => {
+							onOpenModal(renderData, 'release');
+							e.preventDefault();
+							e.stopPropagation();
+						}}
+					>
+						release
+					</div>
+				</Tooltip>
+				<div className="mx-3">/</div>
+				<Tooltip placement="bottom" title={isDeposit ? 'BLOCK' : 'REJECT'}>
+					<div
+						className="anchor"
+						onClick={(e) => {
+							onOpenModal(renderData, isDeposit ? 'block' : 'reject');
+							e.preventDefault();
+							e.stopPropagation();
+						}}
+					>
+						{isDeposit ? 'block' : 'reject'}
+					</div>
+				</Tooltip>
+			</div>
+		);
+	}
+
+	const canValidateDismiss =
 		!renderData.status &&
 		!renderData.dismissed &&
 		!renderData.rejected &&
-		renderData.waiting
-	) {
-		return (
-			<div className="d-flex validate-wrapper">
-				<ClockCircleOutlined style={{ margin: '5px' }} />
+		!renderData.processing;
+	const canRetry =
+		!renderData.status &&
+		!renderData.dismissed &&
+		!renderData.rejected &&
+		renderData.waiting;
+
+	return (
+		<div className="d-flex validate-wrapper align-items-center">
+			<ClockCircleOutlined style={{ margin: '5px' }} />
+			<span className="mr-3">Pending</span>
+			{canValidateDismiss && (
+				<>
+					<Tooltip placement="bottom" title="VALIDATE">
+						<div
+							className="anchor"
+							onClick={(e) => {
+								onOpenModal(renderData, 'validate');
+								e.preventDefault();
+								e.stopPropagation();
+							}}
+						>
+							validate
+						</div>
+					</Tooltip>
+					<div className="mx-3">/</div>
+					<Tooltip placement="bottom" title="DISMISS">
+						<div
+							className="anchor"
+							onClick={(e) => {
+								onOpenModal(renderData, 'dismiss');
+								e.preventDefault();
+								e.stopPropagation();
+							}}
+						>
+							dismiss
+						</div>
+					</Tooltip>
+				</>
+			)}
+			{canValidateDismiss && canRetry && <div className="mx-3">/</div>}
+			{canRetry && (
 				<Tooltip placement="bottom" title="RETRY">
 					<div
 						className="anchor"
@@ -124,63 +211,9 @@ export const renderResendContent = (renderData, onOpenModal) => {
 						Retry
 					</div>
 				</Tooltip>
-			</div>
-		);
-	}
-};
-
-export const renderContent = (renderData, onOpenModal) => {
-	if (renderData.status) {
-		return (
-			<div className="d-flex">
-				<CheckCircleOutlined style={{ margin: '5px' }} />
-				Validated
-			</div>
-		);
-	} else if (renderData.dismissed) {
-		return <div>Dismissed</div>;
-	} else if (
-		!renderData.status &&
-		!renderData.dismissed &&
-		!renderData.rejected &&
-		!renderData.processing
-	) {
-		return (
-			<div className="d-flex validate-wrapper">
-				<ClockCircleOutlined style={{ margin: '5px' }} />
-				<Tooltip placement="bottom" title="VALIDATE">
-					<div
-						className="anchor"
-						onClick={(e) => {
-							onOpenModal(renderData, 'validate');
-							e.preventDefault();
-							e.stopPropagation();
-						}}
-					>
-						validate
-					</div>
-				</Tooltip>
-				<div className="mx-3">/</div>
-				<Tooltip
-					placement="bottom"
-					title={renderData.dismissed ? 'UNDO DISMISS' : 'DISMISS'}
-				>
-					<div
-						className="anchor"
-						onClick={(e) => {
-							onOpenModal(renderData, 'dismiss');
-							e.preventDefault();
-							e.stopPropagation();
-						}}
-					>
-						dismiss
-					</div>
-				</Tooltip>
-			</div>
-		);
-	} else {
-		return <ButtonNotAvailable />;
-	}
+			)}
+		</div>
+	);
 };
 
 export const COLUMNS = (currency, onOpenModal) => {
@@ -205,27 +238,23 @@ export const COLUMNS = (currency, onOpenModal) => {
 			key: 'currency',
 			render: (asset) => renderAsset(asset),
 		},
-		{
-			title: 'Status',
-			key: 'status',
-			render: renderStatus,
-		},
 		{ title: 'Amount', dataIndex: 'amount', key: 'amount' },
 		// { title: 'Fee', dataIndex: 'fee', key: 'fee' },
 		// { title: 'Timestamp', dataIndex: 'created_at', key: 'created_at' },
 	];
+	// Admins get a combined Status column with inline validate/dismiss/retry
+	// actions; support sees the status label only.
 	if (!isSupport()) {
-		const adminColumns = [
-			{
-				title: 'Validate/dismiss',
-				render: (renderData) => renderContent(renderData, onOpenModal),
-			},
-			{
-				title: 'Retry',
-				render: (renderData) => renderResendContent(renderData, onOpenModal),
-			},
-		];
-		return columns.concat(adminColumns);
+		columns.push({
+			title: 'Status',
+			render: (renderData) => renderContent(renderData, onOpenModal),
+		});
+	} else {
+		columns.push({
+			title: 'Status',
+			key: 'status',
+			render: renderStatus,
+		});
 	}
 	return columns;
 };
@@ -259,12 +288,19 @@ export const renderRowContent = ({
 	rejected,
 	status,
 	transaction_id,
+	source,
 	coins,
 }) => {
 	const renderFlag = (value) =>
 		value === undefined ? '-' : value ? 'Yes' : 'No';
 	const renderValue = (value) =>
 		value === undefined || value === null || value === '' ? '-' : value;
+	const renderSource = (value) => {
+		const items = Array.isArray(value) ? value : value ? [value] : [];
+		return items
+			.map((item) => (typeof item === 'object' ? JSON.stringify(item) : item))
+			.join(', ');
+	};
 	return (
 		<div>
 			{id !== undefined && <div>Record Id: {id}</div>}
@@ -277,6 +313,9 @@ export const renderRowContent = ({
 			{address && <div>Address: {address}</div>}
 			{transaction_id && <div>Transaction Id: {transaction_id}</div>}
 			<div>Network: {renderValue(network)}</div>
+			{(Array.isArray(source) ? source.length > 0 : !!source) && (
+				<div>Source: {renderSource(source)}</div>
+			)}
 			<div>
 				Status: {renderFlag(status)} | Rejected: {renderFlag(rejected)} |
 				Dismissed: {renderFlag(dismissed)} | Processing:{' '}

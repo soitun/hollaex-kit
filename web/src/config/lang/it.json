@@ -292,6 +292,7 @@
 		"TEXT_2": "Fai clic su Accedi di seguito per procedere."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Registrati come account aziendale",
 		"SIGNUP_TO": "Iscriviti a {0}",
 		"NO_EMAIL": "Non hai ricevuto l'e-mail?",
 		"REQUEST_EMAIL": "Richiedine un altro qui",
@@ -330,6 +331,15 @@
 		"CONFIRM_DESCRIPTION": "Conferma la registrazione del tuo account cliccando sul pulsante sottostante"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Account aziendale",
+			"BANNER": "Questo è un account aziendale",
+			"NAME": "Nome dell'azienda",
+			"REGISTRATION_NUMBER": "Numero di registrazione",
+			"COUNTRY_OF_INCORPORATION": "Paese di costituzione",
+			"BUSINESS_ADDRESS": "Indirizzo aziendale",
+			"PENDING": "Verifica aziendale in attesa"
+		},
 		"INFO_TXT": "Qui puoi monitorare i tuoi progressi verso la verifica e gli aggiornamenti dell'account.",
 		"INFO_TXT_1": "Invia le informazioni pertinenti necessarie per ciascuna sezione di seguito. Solo quando tutte le sezioni avranno completato l'invio, le tue informazioni verranno esaminate e approvate per l'upgrade dell'account.",
 		"COMPLETED": "Completato",
@@ -1054,6 +1064,8 @@
 	"COMPLETE": "Completare",
 	"PENDING": "In attesa di",
 	"REJECTED": "Respinto",
+	"VERIFIED": "Verificato",
+	"TYPE_AMOUNT": "Inserisci l'importo",
 	"ORDERBOOK": "Portafoglio ordini",
 	"CANCEL": "Annulla",
 	"CANCEL_ALL": "Cancella tutto",
@@ -1625,6 +1637,8 @@
 	"REGULAR": "Regolare",
 	"STOPS": "Fermate",
 	"VIEW_ALL": "mostra tutto",
+	"SHOW_LESS": "Mostra meno",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} account",
 	"TRIGGER_PRICE": "Prezzo di scatto",
 	"SPEND_AMOUNT": "Importo spesa",
 	"ESTIMATE_RECEIVE_AMOUNT": "Importo di ricezione stimato",

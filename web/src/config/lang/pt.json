@@ -336,6 +336,7 @@
 		"TEXT_2": "Clique no login abaixo para prosseguir."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Registar como conta empresarial",
 		"SIGNUP_TO": "Inscreva-se para {0}",
 		"NO_EMAIL": "Não recebeu o e-mail?",
 		"REQUEST_EMAIL": "Solicite outro aqui",
@@ -374,6 +375,15 @@
 		"CONFIRM_DESCRIPTION": "Por favor, confirme o cadastro da sua conta clicando no botão abaixo"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Conta empresarial",
+			"BANNER": "Esta é uma conta empresarial",
+			"NAME": "Nome da empresa",
+			"REGISTRATION_NUMBER": "Número de registo",
+			"COUNTRY_OF_INCORPORATION": "País de constituição",
+			"BUSINESS_ADDRESS": "Endereço comercial",
+			"PENDING": "Verificação da empresa pendente"
+		},
 		"INFO_TXT": "Aqui você pode monitorar seu progresso com relação à verificação e upgrade de conta.",
 		"INFO_TXT_1": "Por favor, forneça as informações relevantes e necessárias para cada seção abaixo. Suas informações serão analisadas e aprovadas para um upgrade de conta somente após o envio das informações referentes a todas as seções",
 		"INFO_TXT_2": "* A verificação da parte de identidade exige que você {0} certos documentos.",
@@ -836,6 +846,8 @@
 	"COMPLETE": "Finaliar",
 	"PENDING": "Pendente",
 	"REJECTED": "Rejeitado",
+	"VERIFIED": "Verificado",
+	"TYPE_AMOUNT": "Digite o valor",
 	"ORDERBOOK": "Livro de ordens",
 	"CANCEL": "Cancelar",
 	"CANCEL_ALL": "Cancelar tudo",
@@ -1786,6 +1798,8 @@
 	"REGULAR": "Regular",
 	"STOPS": "paradas",
 	"VIEW_ALL": "ver tudo",
+	"SHOW_LESS": "Ver menos",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} contas",
 	"TRIGGER_PRICE": "preço de gatilho",
 	"SPEND_AMOUNT": "Valor gasto",
 	"ESTIMATE_RECEIVE_AMOUNT": "Valor estimado de recebimento",

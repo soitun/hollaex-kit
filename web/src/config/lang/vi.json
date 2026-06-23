@@ -340,6 +340,7 @@
 		"TEXT_2": "Nhấn vào nút đăng nhập phía dưới để tiếp tục."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Đăng ký tài khoản doanh nghiệp",
 		"SIGNUP_TO": "Đăng ký vào {0}",
 		"NO_EMAIL": "Quý khách không nhận được email?",
 		"REQUEST_EMAIL": "Yêu cầu gửi một email khác",
@@ -378,6 +379,15 @@
 		"CONFIRM_DESCRIPTION": "Vui lòng xác nhận đăng ký tài khoản của bạn bằng cách nhấn nút bên dưới"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Tài khoản doanh nghiệp",
+			"BANNER": "Đây là tài khoản doanh nghiệp",
+			"NAME": "Tên công ty",
+			"REGISTRATION_NUMBER": "Số đăng ký",
+			"COUNTRY_OF_INCORPORATION": "Quốc gia thành lập",
+			"BUSINESS_ADDRESS": "Địa chỉ doanh nghiệp",
+			"PENDING": "Đang chờ xác minh doanh nghiệp"
+		},
 		"INFO_TXT": "Quý khách có thể xác nhận trình tự xác thực và nâng cấp tài khoản tại đây.",
 		"INFO_TXT_1": "Vui lòng nhập các thông tin cần thiết cho mỗi hạng mục phía dưới. Các thông tin của quý khách chỉ được xem xét và chấp nhận khi tất cả các hạng mục được nhập đầy đủ.",
 		"INFO_TXT_2": "* Thủ tục xác thực người dùng đòi hỏi bắt buộc các hồ sơ về {0}.",
@@ -915,6 +925,8 @@
 	"COMPLETE": "Hoàn thành",
 	"PENDING": "Chưa giải quyết",
 	"REJECTED": "Vật bị loại bỏ",
+	"VERIFIED": "Đã xác minh",
+	"TYPE_AMOUNT": "Nhập số tiền",
 	"ORDERBOOK": "SỔ LỆNH",
 	"CANCEL": "Hủy bỏ",
 	"CANCEL_ALL": "Hủy bỏ tất cả",
@@ -1415,6 +1427,8 @@
 	"OPEN_WALLET": "Ví mở",
 	"ALL": "TẤT CẢ",
 	"VIEW_ALL": "XEM CHI TIẾT",
+	"SHOW_LESS": "Thu gọn",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} tài khoản",
 	"MARKET_OPTIONS": {
 		"LIST": "Danh sách",
 		"CARD": "Biểu đồ"

@@ -330,6 +330,7 @@
 		"TEXT_2": "点击下面的登录以继续"
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "注册为企业账户",
 		"SIGNUP_TO": "注册到{0}",
 		"NO_EMAIL": "没有收到邮件？",
 		"REQUEST_EMAIL": "再次请求",
@@ -368,6 +369,15 @@
 		"CONFIRM_DESCRIPTION": "请通过点击下面的按钮确认您的账户注册"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "企业账户",
+			"BANNER": "这是一个企业账户",
+			"NAME": "公司名称",
+			"REGISTRATION_NUMBER": "注册号",
+			"COUNTRY_OF_INCORPORATION": "注册国家",
+			"BUSINESS_ADDRESS": "营业地址",
+			"PENDING": "企业验证待处理"
+		},
 		"INFO_TXT": "在此页面可查看验证及账户升级进度 ",
 		"INFO_TXT_1": "请提交以下各部分所需的相关信息，只有在所有部分提交完成后，你的信息才会被审查和批准账户升级。",
 		"INFO_TXT_2": "*身份认证部分需要{0}某些文件",
@@ -907,6 +917,8 @@
 	"COMPLETE": "Complete",
 	"PENDING": "Pending",
 	"REJECTED": "Rejected",
+	"VERIFIED": "已验证",
+	"TYPE_AMOUNT": "输入金额",
 	"ORDERBOOK": "Order Book",
 	"CANCEL": "Cancel",
 	"CANCEL_ALL": "Cancel All",
@@ -1446,6 +1458,8 @@
 	"CLEAR": "重置",
 	"ORDER_ENTRY_ADVANCED": "高级设置",
 	"VIEW_ALL": "查看更多",
+	"SHOW_LESS": "收起",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} 个账户",
 	"ESTIMATED_PRICE": "成交金额",
 	"TRIGGER_PRICE": "触发价格",
 	"POST_ONLY": "高级现价委托",

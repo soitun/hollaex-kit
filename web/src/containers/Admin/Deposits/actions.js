@@ -99,3 +99,11 @@ export const requestMint = (data) => {
 	};
 	return requestAuthenticated(`/admin/mint`, options);
 };
+
+export const requestReallocate = (data) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/deposit/reallocate`, options);
+};

@@ -36,6 +36,20 @@ export const generateFormValues = (
 ) => {
 	const { fullname, min, increment_unit } = coins[symbol] || DEFAULT_COIN_DATA;
 
+	// per off-ramp method (payment option) overrides for the selected account; `!= null`
+	// so an explicit 0 is honored. Falls back to the asset / fiat-fee defaults when unset.
+	const methodLimits =
+		banks?.find((bankData) => bankData.id === selectedBank)?.offrampLimits ||
+		{};
+	const effectiveMin =
+		methodLimits.min != null && methodLimits.min !== ''
+			? Number(methodLimits.min)
+			: min;
+	const effectiveFee =
+		methodLimits.fee != null && methodLimits.fee !== ''
+			? Number(methodLimits.fee)
+			: withdrawal_fee;
+
 	// `prices[symbol]` can be undefined on first load while oracle prices are still fetching.
 	// Avoid crashing the withdraw page; skip MAX validation until we have a usable price.
 	const currentPrice = prices ? prices[symbol] : undefined;
@@ -50,6 +64,18 @@ export const generateFormValues = (
 		`${currentPrice}` !== '0'
 	) {
 		MAX = mathjs.divide(withdrawal_limit, currentPrice);
+	}
+
+	// per-method max caps the tier/limit-derived MAX (use the more restrictive value)
+	if (
+		methodLimits.max != null &&
+		methodLimits.max !== '' &&
+		Number(methodLimits.max) > 0
+	) {
+		MAX =
+			MAX !== '' && MAX !== 0
+				? mathjs.min(MAX, Number(methodLimits.max))
+				: Number(methodLimits.max);
 	}
 
 	const fields = {};
@@ -132,9 +158,9 @@ export const generateFormValues = (
 
 	if (banks && (banks.length === 1 || selectedBank)) {
 		const amountValidate = [required];
-		if (min) {
+		if (effectiveMin) {
 			amountValidate.push(
-				minValue(min, STRINGS['WITHDRAWALS_MIN_VALUE_ERROR'])
+				minValue(effectiveMin, STRINGS['WITHDRAWALS_MIN_VALUE_ERROR'])
 			);
 		}
 		if (MAX) {
@@ -142,7 +168,7 @@ export const generateFormValues = (
 				maxValue(MAX, STRINGS['WITHDRAWALS_MAX_VALUE_ERROR'])
 			);
 		}
-		amountValidate.push(checkBalance(available, fullname, withdrawal_fee));
+		amountValidate.push(checkBalance(available, fullname, effectiveFee));
 
 		fields.amount = {
 			type: 'number',
@@ -152,11 +178,8 @@ export const generateFormValues = (
 				STRINGS['WITHDRAWALS_FORM_AMOUNT_LABEL'],
 				fullname
 			),
-			placeholder: STRINGS.formatString(
-				STRINGS['WITHDRAWALS_FORM_AMOUNT_PLACEHOLDER'],
-				fullname
-			).join(''),
-			min: min,
+			placeholder: STRINGS['TYPE_AMOUNT'],
+			min: effectiveMin,
 			max: MAX,
 			step: increment_unit,
 			validate: amountValidate,

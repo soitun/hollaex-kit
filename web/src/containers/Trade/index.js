@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import _isEqual from 'lodash/isEqual';
 import { connect } from 'react-redux';
 import mathjs from 'mathjs';
 import EventListener from 'react-event-listener';
@@ -187,6 +188,7 @@ class Trade extends PureComponent {
 		this.sizeTimeOut = '';
 		this.reconnectTimeout = null;
 		this.layoutChangeTimeout = null;
+		this.unmounted = false;
 	}
 
 	UNSAFE_componentWillMount() {
@@ -221,7 +223,7 @@ class Trade extends PureComponent {
 			}
 		}
 
-		if (JSON.stringify(tools) !== JSON.stringify(nextProps.tools)) {
+		if (!_isEqual(tools, nextProps.tools)) {
 			const { layout } = this.state;
 			const newItemsLayout = [];
 			Object.entries(nextProps.tools)
@@ -268,6 +270,7 @@ class Trade extends PureComponent {
 	};
 
 	componentWillUnmount() {
+		this.unmounted = true;
 		document.removeEventListener('resetlayout', this.onResetLayout);
 		this.priceTimeOut && clearTimeout(this.priceTimeOut);
 		this.sizeTimeOut && clearTimeout(this.sizeTimeOut);
@@ -465,9 +468,11 @@ class Trade extends PureComponent {
 		orderbookWs.onclose = (evt) => {
 			this.setState({ wsInitialized: false });
 
-			if (!isIntentionalClosure(evt)) {
+			if (!isIntentionalClosure(evt) && !this.unmounted) {
 				this.reconnectTimeout = setTimeout(() => {
-					this.initializeOrderbookWs(this.props.routeParams.pair, getToken());
+					if (!this.unmounted) {
+						this.initializeOrderbookWs(this.props.routeParams.pair, getToken());
+					}
 				}, 1000);
 			}
 		};

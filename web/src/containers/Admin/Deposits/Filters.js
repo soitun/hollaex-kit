@@ -1,6 +1,11 @@
-import React from 'react';
-import { SearchOutlined } from '@ant-design/icons';
-import { Button, Alert } from 'antd';
+import React, { useState } from 'react';
+import {
+	SearchOutlined,
+	PlusOutlined,
+	MinusCircleOutlined,
+} from '@ant-design/icons';
+import { Button, Alert, Dropdown, Menu } from 'antd';
+import { STATIC_ICONS } from 'config/icons';
 import { SelectValue } from './SelectValues';
 import { FilterInput, FilterDate } from './FilterInput';
 
@@ -10,13 +15,14 @@ const getFilters = (coinOptions) => [
 		placeholder: 'Currency',
 		key: 'currency',
 		className: 'adjacent-fields',
+		showSearch: true,
 		options: coinOptions,
 	},
 	{
 		label: 'Status',
 		placeholder: 'Status',
 		key: 'status',
-		className: 'adjacent-fields pl-2',
+		className: 'adjacent-fields pl-2 filter-status-field',
 		emptyLabel: 'All',
 		options: [
 			{ value: 'true', text: 'Confirmed' },
@@ -25,6 +31,37 @@ const getFilters = (coinOptions) => [
 			{ value: 'rejected', text: 'Rejected' },
 			{ value: 'onhold', text: 'On Hold' },
 		],
+	},
+];
+
+// Optional filters that can be added/removed dynamically via the "+" menu.
+const OPTIONAL_FILTERS = [
+	{ key: 'user_id', label: 'User Id', placeholder: 'User id', type: 'input' },
+	{
+		key: 'transaction_id',
+		label: 'Transaction Id',
+		placeholder: 'Transaction Id or Payment Id',
+		type: 'input',
+	},
+	{ key: 'address', label: 'Address', placeholder: 'Address', type: 'input' },
+	{ key: 'source', label: 'Source', placeholder: 'Source', type: 'input' },
+	{
+		key: 'description',
+		label: 'Description',
+		placeholder: 'Description',
+		type: 'input',
+	},
+	{
+		key: 'start_date',
+		label: 'Start date',
+		placeholder: 'Start date',
+		type: 'date',
+	},
+	{
+		key: 'end_date',
+		label: 'End date',
+		placeholder: 'End date',
+		type: 'date',
 	},
 ];
 
@@ -69,13 +106,58 @@ export const Filters = ({
 	fetched,
 	hasChanges,
 }) => {
+	const [activeFilters, setActiveFilters] = useState(
+		OPTIONAL_FILTERS.filter((f) => params[f.key] !== undefined).map(
+			(f) => f.key
+		)
+	);
+
+	const getCoinLogo = (symbol) => {
+		const coin = coins?.[symbol];
+		if (coin && coin.logo) {
+			return coin.logo;
+		} else if (STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()]) {
+			return STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()];
+		}
+		return STATIC_ICONS.MISSING_ICON;
+	};
+
 	const coinOptions = [];
 	Object.keys(coins).forEach((data) => {
-		coinOptions.push({ value: data, text: data.toUpperCase() });
+		coinOptions.push({
+			value: data,
+			text: data.toUpperCase(),
+			icon: getCoinLogo(data),
+		});
 	});
 	const fieldProps = getFilters(coinOptions);
 	const allowQuery =
 		!loading && (hasChanges || Object.keys(params).length === 0);
+
+	const addFilter = (key) => {
+		if (!activeFilters.includes(key)) {
+			setActiveFilters([...activeFilters, key]);
+		}
+	};
+
+	const removeFilter = (key) => {
+		// clear the value from the query params, then drop the field
+		onChange(key)('');
+		setActiveFilters(activeFilters.filter((item) => item !== key));
+	};
+
+	const availableFilters = OPTIONAL_FILTERS.filter(
+		(f) => !activeFilters.includes(f.key)
+	);
+
+	const addMenu = (
+		<Menu onClick={({ key }) => addFilter(key)}>
+			{availableFilters.map((f) => (
+				<Menu.Item key={f.key}>{f.label}</Menu.Item>
+			))}
+		</Menu>
+	);
+
 	return (
 		<div>
 			<Alert
@@ -93,9 +175,7 @@ export const Filters = ({
 				/>
 			)}
 			<div className="filters-wrapper">
-				{/* <div className="d-flex f-1" /> */}
 				<div className="filters-wrapper-filters d-flex flex-direction-row">
-					{/* <div className="d-flex"> */}
 					{fieldProps.map(({ key, description, ...rest }, index) => (
 						<SelectValue
 							key={key}
@@ -106,46 +186,53 @@ export const Filters = ({
 							{...rest}
 						/>
 					))}
-					{/* </div> */}
-					{/* <div className="d-flex"> */}
-					<FilterInput
-						onChange={onChange('user_id')}
-						label={'User Id'}
-						defaultValue={params.user_id}
-						className={'adjacent-fields pl-2'}
-						placeholder="User id"
-					/>
-					<FilterInput
-						onChange={onChange('transaction_id')}
-						label="Transaction Id"
-						className={'adjacent-fields pl-2'}
-						defaultValue={params.transaction_id}
-						placeholder="Transaction Id or Payment Id"
-					/>
-					{/* </div> */}
-					<FilterInput
-						onChange={onChange('address')}
-						label="Address"
-						defaultValue={params.address}
-						placeholder="Address"
-						className={'adjacent-fields pl-2'}
-					/>
-					{/* <div className="d-flex"> */}
-					<FilterDate
-						onChange={onChange('start_date')}
-						label={'Start date'}
-						defaultValue={params.start_date}
-						className={'adjacent-fields pl-2'}
-						placeholder="Start date"
-					/>
-					<FilterDate
-						onChange={onChange('end_date')}
-						label={'End date'}
-						defaultValue={params.end_date}
-						className={'adjacent-fields pl-2'}
-						placeholder="End date"
-					/>
-					{/* </div> */}
+					{OPTIONAL_FILTERS.filter((f) => activeFilters.includes(f.key)).map(
+						(f) => (
+							<div
+								className="adjacent-fields pl-2 filter-removable"
+								key={f.key}
+							>
+								<MinusCircleOutlined
+									className="filter-remove-icon"
+									onClick={() => removeFilter(f.key)}
+									title={`Remove ${f.label}`}
+								/>
+								{f.type === 'date' ? (
+									<FilterDate
+										onChange={onChange(f.key)}
+										label={f.label}
+										defaultValue={params[f.key]}
+										placeholder={f.placeholder}
+									/>
+								) : (
+									<FilterInput
+										onChange={onChange(f.key)}
+										label={f.label}
+										defaultValue={params[f.key]}
+										placeholder={f.placeholder}
+									/>
+								)}
+							</div>
+						)
+					)}
+					{availableFilters.length > 0 && (
+						<div className="adjacent-fields pl-2 filter-more-toggle">
+							<Dropdown
+								overlay={addMenu}
+								trigger={['click']}
+								placement="bottomLeft"
+								overlayClassName="filter-add-menu"
+							>
+								<Button
+									type="primary"
+									icon={<PlusOutlined />}
+									className="filter-more-button"
+								>
+									Add filter
+								</Button>
+							</Dropdown>
+						</div>
+					)}
 				</div>
 				<div className="filters-wrapper-buttons pl-2">
 					<Button

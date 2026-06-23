@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import _isEqual from 'lodash/isEqual';
 import classnames from 'classnames';
 import { connect } from 'react-redux';
 import { ReactSVG } from 'react-svg';
@@ -43,7 +44,7 @@ class TradeHistory extends Component {
 	}
 
 	componentDidUpdate(prevProps, prevState) {
-		if (JSON.stringify(this.props.data) !== JSON.stringify(prevProps.data)) {
+		if (!_isEqual(this.props.data, prevProps.data)) {
 			this.generateData(this.props.data);
 		}
 

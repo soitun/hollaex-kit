@@ -40,6 +40,7 @@ const {
 	INVALID_USERNAME,
 	ACCOUNT_NOT_VERIFIED,
 	INVALID_VERIFICATION_LEVEL,
+	SUBACCOUNT_TIER_NOT_EDITABLE,
 	USER_EMAIL_NOT_VERIFIED,
 	USER_PHONE_NOT_VERIFIED,
 	VERIFICATION_CODE_EXPIRED,
@@ -298,6 +299,7 @@ const signUpUser = async (email, password, opts = {}, version) => {
 				const createdUser = await getModel('user').create({
 					email,
 					password: resolvedPassword,
+					is_company: opts.is_company === true,
 					verification_level: 1,
 					email_verified: isPhoneSignup ? false : (opts.email_verified || false),
 					phone_number_verified: false,
@@ -1891,48 +1893,95 @@ const updateUserDiscount = (userId, discount, auditInfo) => {
 		});
 };
 
+// Applies a verification level change to a single user instance:
+// persists it, publishes the event and sends the upgrade email.
+const applyVerificationLevelChange = async (user, newLevel, domain) => {
+	const previousLevel = user.verification_level;
+	if (previousLevel === newLevel) {
+		return user;
+	}
+
+	const updatedUser = await user.update(
+		{ verification_level: newLevel },
+		{ fields: ['verification_level'], returning: true }
+	);
+
+	publisher.publish(EVENTS_CHANNEL, JSON.stringify({
+		type: 'user',
+		data: {
+			action: 'verification_level',
+			user_id: updatedUser.id,
+			previous_level: previousLevel,
+			current_level: updatedUser.verification_level,
+		}
+	}));
+
+	if (previousLevel < updatedUser.verification_level) {
+		sendEmail(
+			MAILTYPE.ACCOUNT_UPGRADE,
+			updatedUser.email,
+			getKitTier(updatedUser.verification_level).name,
+			updatedUser.settings,
+			domain
+		);
+	}
+
+	return updatedUser;
+};
+
+// Cascades a verification level change to every active subaccount of a master
+// account so subaccounts stay in sync with the main account's tier.
+const changeSubaccountsVerificationLevel = async (masterId, newLevel, domain) => {
+	const SubaccountModel = getModel('subaccount');
+	const UserModel = getModel('user');
+
+	const links = await dbQuery.findAll('subaccount', {
+		where: { master_id: masterId, active: true },
+		include: [
+			{
+				model: UserModel,
+				as: 'sub'
+			}
+		]
+	}, SubaccountModel);
+
+	for (const link of links) {
+		const sub = link.sub;
+		// Skip missing links and unverified subaccounts (mirrors the
+		// ACCOUNT_NOT_VERIFIED guard on the main account) instead of failing
+		// the whole cascade.
+		if (!sub || sub.verification_level === 0) {
+			continue;
+		}
+		await applyVerificationLevelChange(sub, newLevel, domain);
+	}
+};
+
 const changeUserVerificationLevelById = (userId, newLevel, domain) => {
 	if (!isValidTierLevel(newLevel)) {
 		return reject(new Error(INVALID_VERIFICATION_LEVEL(newLevel)));
 	}
 
-	let currentVerificationLevel = 0;
 	return getUserByKitId(userId, false)
 		.then((user) => {
 			if (!user) {
 				throw new Error(USER_NOT_FOUND);
 			}
+			// Subaccount tiers are not editable directly; they only change as
+			// part of the cascade when their master account's tier is updated.
+			if (user.is_subaccount) {
+				throw new Error(SUBACCOUNT_TIER_NOT_EDITABLE);
+			}
 			if (user.verification_level === 0) {
 				throw new Error(ACCOUNT_NOT_VERIFIED);
 			}
-			currentVerificationLevel = user.verification_level;
-			return user.update(
-				{ verification_level: newLevel },
-				{ fields: ['verification_level'], returning: true }
-			);
+			return applyVerificationLevelChange(user, newLevel, domain);
 		})
 		.then((user) => {
-			if (currentVerificationLevel !== user.verification_level) {
-				publisher.publish(EVENTS_CHANNEL, JSON.stringify({
-					type: 'user',
-					data: {
-						action: 'verification_level',
-						user_id: user.id,
-						previous_level: currentVerificationLevel,
-						current_level: user.verification_level,
-					}
-				}));
-			}
-			if (currentVerificationLevel < user.verification_level) {
-				sendEmail(
-					MAILTYPE.ACCOUNT_UPGRADE,
-					user.email,
-					getKitTier(user.verification_level).name,
-					user.settings,
-					domain
-				);
-			}
-			return;
+			// Keep all subaccounts in sync with the main account's tier. When
+			// the target is itself a subaccount this resolves to an empty set.
+			return changeSubaccountsVerificationLevel(user.id, newLevel, domain)
+				.then(() => user);
 		});
 };
 
@@ -2611,11 +2660,17 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 					updateData[field] = value;
 				}
 				break;
-			case 'dob':
-				if (isDatetime(value)) {
-					updateData[field] = value;
+			case 'dob': {
+				// dob is a calendar date, not an instant. Accept either a
+				// plain 'YYYY-MM-DD' string or a (legacy) ISO datetime from
+				// older clients, and normalize to a date-only string at UTC
+				// so the stored day never shifts with timezone.
+				const dobMoment = moment.utc(value, ['YYYY-MM-DD', moment.ISO_8601], true);
+				if (dobMoment.isValid()) {
+					updateData[field] = dobMoment.format('YYYY-MM-DD');
 				}
 				break;
+			}
 			case 'address':
 				if (isPlainObject(value)) {
 					updateData[field] = {
@@ -2664,6 +2719,157 @@ const updateUserInfo = async (userId, data = {}, auditInfo) => {
 
 	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, updateData, oldValues);
 	return omitUserFields(user.dataValues);
+};
+
+const getUserCompany = async (userId) => {
+	if (!isInteger(userId) || userId <= 0) {
+		throw new Error('UserId must be a positive integer');
+	}
+
+	return dbQuery.findOne('company', {
+		where: { user_id: userId },
+		raw: true
+	});
+};
+
+const getAllCompaniesAdmin = (opts = {
+	search: null,
+	country_of_incorporation: null,
+	status: null,
+	limit: null,
+	page: null,
+	order_by: null,
+	order: null,
+	start_date: null,
+	end_date: null
+}) => {
+	const pagination = paginationQuery(opts.limit, opts.page);
+	const timeframe = timeframeQuery(opts.start_date, opts.end_date);
+
+	let orderBy = 'id';
+	let order = 'desc';
+	if (opts.order_by) {
+		orderBy = opts.order_by;
+	}
+	if (opts.order) {
+		order = opts.order;
+	}
+	const ordering = orderingQuery(orderBy, order);
+
+	let query = {
+		where: {
+			created_at: timeframe,
+			...(opts.country_of_incorporation != null && { country_of_incorporation: opts.country_of_incorporation }),
+			...(opts.status != null && { status: opts.status }),
+			[Op.and]: []
+		},
+		include: [
+			{
+				model: getModel('user'),
+				as: 'user',
+				attributes: ['id', 'email', 'full_name', 'verification_level', 'is_company']
+			}
+		],
+		order: [ordering],
+		// The search clause references the joined user table ($user.email$); subQuery
+		// must be disabled so the join is available alongside limit/offset.
+		subQuery: false
+	};
+
+	if (opts.search) {
+		query.where[Op.and].push({
+			[Op.or]: [
+				{ name: { [Op.iLike]: `%${opts.search}%` } },
+				{ registration_number: { [Op.iLike]: `%${opts.search}%` } },
+				{ '$user.email$': { [Op.iLike]: `%${opts.search}%` } }
+			]
+		});
+	}
+
+	// Apply an upper bound on the owner's verification level when the requester's
+	// role is restricted, mirroring the Users admin view so company accounts can't
+	// be used to view identities the operator isn't allowed to see.
+	if (isNumber(opts.max_verification_level)) {
+		query.where[Op.and].push({ '$user.verification_level$': { [Op.lte]: opts.max_verification_level } });
+	}
+
+	query = { ...query, ...pagination };
+
+	return dbQuery.findAndCountAllWithRows('company', query);
+};
+
+const updateUserCompany = async (userId, data = {}, auditInfo = {}) => {
+	if (!isInteger(userId) || userId <= 0) {
+		throw new Error('UserId must be a positive integer');
+	}
+	if (!isPlainObject(data)) {
+		throw new Error('Update data must be an object');
+	}
+
+	const user = await getUserByKitId(userId, false);
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	const Company = getModel('company');
+	let company = await Company.findOne({ where: { user_id: userId } });
+
+	const updateData = {};
+	let isCompany; // explicit is_company override, if provided
+	for (const field in data) {
+		const value = data[field];
+
+		switch (field) {
+			case 'name':
+			case 'registration_number':
+			case 'country_of_incorporation':
+				if (isString(value)) {
+					updateData[field] = value;
+				}
+				break;
+			case 'business_address':
+				if (isPlainObject(value)) {
+					updateData[field] = {
+						...((company && company.business_address) || {}),
+						...pick(value, ['address', 'city', 'country', 'postal_code'])
+					};
+				}
+				break;
+			case 'status':
+				if (isInteger(value)) {
+					updateData[field] = value;
+				}
+				break;
+			case 'is_company':
+				if (isBoolean(value)) {
+					isCompany = value;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	const oldValues = company ? omit(company.dataValues, ['created_at', 'updated_at']) : {};
+
+	if (company) {
+		if (Object.keys(updateData).length > 0) {
+			company = await company.update(updateData, { fields: Object.keys(updateData) });
+		}
+	} else {
+		company = await Company.create({ user_id: userId, ...updateData });
+	}
+
+	// Keep the user's is_company flag in sync. An explicit value in the request
+	// wins (so an account can be reverted to individual); otherwise editing
+	// company info implies this is a company account.
+	const targetIsCompany = isCompany !== undefined ? isCompany : true;
+	if (user.is_company !== targetIsCompany) {
+		await user.update({ is_company: targetIsCompany }, { fields: ['is_company'] });
+	}
+
+	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, { ...updateData, ...(isCompany !== undefined && { is_company: isCompany }) }, oldValues);
+	return { ...company.dataValues, is_company: targetIsCompany };
 };
 
 const getExchangeUserSessions = (opts = {
@@ -5841,6 +6047,9 @@ module.exports = {
 	mapNetworkIdToKitId,
 	mapKitIdToNetworkId,
 	updateUserInfo,
+	getUserCompany,
+	getAllCompaniesAdmin,
+	updateUserCompany,
 	updateLoginAttempt,
 	getExchangeUserSessions,
 	revokeExchangeUserSession,

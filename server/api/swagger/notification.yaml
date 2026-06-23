@@ -28,6 +28,42 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/MessageResponse"
+  /notification/deposit/check:
+    x-swagger-router-controller: notification
+    post:
+      operationId: checkDepositAddresses
+      description: Check deposit source addresses against the address blacklist
+      tags:
+        - Notification
+      parameters:
+        - name: data
+          description: Deposit source addresses to screen
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - addresses
+            properties:
+              addresses:
+                type: array
+                items:
+                  type: string
+              network:
+                type: string
+              currency:
+                type: string
+              txid:
+                type: string
+              user_id:
+                type: number
+      responses:
+        200:
+          description: Success
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
   /notification/withdrawal:
     x-swagger-router-controller: notification
     post:

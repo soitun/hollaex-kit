@@ -2684,6 +2684,66 @@ class HollaExNetwork {
 	}
 
 	/**
+	 * Reallocate an on-hold deposit to a different user ("block"). Voids the
+	 * original (never-credited) deposit and credits the chosen receiver instead.
+	 * @param {string} transactionId - Transaction id of the on-hold deposit.
+	 * @param {string} address - Deposit address of the on-hold deposit. Required
+	 *   because one transaction id can map to multiple deposit rows (one per
+	 *   credited address); (address, transaction_id, type) is unique.
+	 * @param {number} receiverId - Network id of the user to credit instead.
+	 * @param {object} opts - Optional parameters.
+	 * @param {string} opts.description - Description for the reallocated deposit.
+	 * @param {object} opts.additionalHeaders - Additional headers.
+	 * @return {object} The original and new deposit records.
+	 */
+	reallocateDeposit(
+		transactionId,
+		address,
+		receiverId,
+		opts = {
+			description: null,
+			additionalHeaders: null
+		}
+	) {
+		checkKit(this.exchange_id);
+
+		if (!transactionId) {
+			return reject(parameterError('transactionId', 'cannot be null'));
+		}
+
+		if (!address) {
+			return reject(parameterError('address', 'cannot be null'));
+		}
+
+		if (!receiverId) {
+			return reject(parameterError('receiverId', 'cannot be null'));
+		}
+
+		const verb = 'POST';
+		const path = `${this.baseUrl}/network/${this.exchange_id}/deposit/reallocate`;
+		const data = {
+			transaction_id: transactionId,
+			address,
+			receiver_id: receiverId
+		};
+
+		if (opts.description) {
+			data.description = opts.description;
+		}
+
+		const headers = generateHeaders(
+			isPlainObject(opts.additionalHeaders) ? { ...this.headers, ...opts.additionalHeaders } : this.headers,
+			this.apiSecret,
+			verb,
+			path,
+			this.apiExpiresAfter,
+			data
+		);
+
+		return createRequest(verb, `${this.apiUrl}${path}`, headers, { data });
+	}
+
+	/**
 	 * Burn an asset you own to a user
 	 * @param {number} userId; - Network id of user.
 	 * @param {string} currency - Currency to burn.
