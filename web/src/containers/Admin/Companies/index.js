@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
-import { Table, Button, Input, Select, InputNumber } from 'antd';
+import { Table, Button, Input, Select } from 'antd';
 import {
 	PlusCircleOutlined,
 	MinusCircleOutlined,
@@ -15,6 +15,13 @@ import { requestCompanies } from './actions';
 import '../ListUsers/index.css';
 
 const { Option } = Select;
+
+const STATUS_OPTIONS = [
+	{ value: 0, label: 'Not provided' },
+	{ value: 1, label: 'Pending' },
+	{ value: 2, label: 'Rejected' },
+	{ value: 3, label: 'Verified' },
+];
 
 class Companies extends Component {
 	constructor(props) {
@@ -235,17 +242,31 @@ class Companies extends Component {
 					</div>
 					<div style={{ display: 'flex', flexDirection: 'column' }}>
 						<label>Status:</label>
-						<InputNumber
+						<Select
+							allowClear
+							className="select-box"
+							style={{ width: 150 }}
+							placeholder="Select status"
 							value={status}
-							placeholder="Status"
-							style={{ width: 120 }}
 							onChange={(value) =>
 								this.setState({ status: value ?? undefined })
 							}
-							onPressEnter={this.applyFilters}
-						/>
+						>
+							{STATUS_OPTIONS.map((option) => (
+								<Option value={option.value} key={option.value}>
+									{option.label}
+								</Option>
+							))}
+						</Select>
 					</div>
-					<div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+					<div
+						style={{
+							display: 'flex',
+							flexDirection: 'row',
+							alignItems: 'center',
+							gap: 12,
+						}}
+					>
 						<Button
 							onClick={this.applyFilters}
 							icon={<SearchOutlined />}
@@ -261,7 +282,6 @@ class Companies extends Component {
 						<div
 							onClick={this.resetFilters}
 							style={{
-								textAlign: 'center',
 								cursor: 'pointer',
 								textDecoration: 'underline',
 								color: 'white',
