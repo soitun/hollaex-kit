@@ -40,6 +40,7 @@ const {
 	INVALID_USERNAME,
 	ACCOUNT_NOT_VERIFIED,
 	INVALID_VERIFICATION_LEVEL,
+	SUBACCOUNT_TIER_NOT_EDITABLE,
 	USER_EMAIL_NOT_VERIFIED,
 	USER_PHONE_NOT_VERIFIED,
 	VERIFICATION_CODE_EXPIRED,
@@ -1965,6 +1966,11 @@ const changeUserVerificationLevelById = (userId, newLevel, domain) => {
 		.then((user) => {
 			if (!user) {
 				throw new Error(USER_NOT_FOUND);
+			}
+			// Subaccount tiers are not editable directly; they only change as
+			// part of the cascade when their master account's tier is updated.
+			if (user.is_subaccount) {
+				throw new Error(SUBACCOUNT_TIER_NOT_EDITABLE);
 			}
 			if (user.verification_level === 0) {
 				throw new Error(ACCOUNT_NOT_VERIFIED);
