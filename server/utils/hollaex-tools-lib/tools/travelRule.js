@@ -103,6 +103,37 @@ const hasKytHoldMarker = (description = '') => {
 	return /\[[a-z0-9_-]+-reviewed\]/i.test(desc);
 };
 
+/**
+ * Determines whether a held deposit may be auto-released through the travel-rule
+ * user flow. A held deposit is released ONLY when travel rule is the SOLE reason
+ * it is on hold — the `onhold` flag is a single boolean shared by every hold
+ * mechanism, so releasing blindly would override an unrelated hold.
+ *
+ * Returns null when the deposit may be released, or a human-readable reason string
+ * (stored as the record `note`) explaining why it must stay on hold:
+ *   - a KYT plugin flagged it (marker in the deposit description)
+ *   - auto-deposit is disabled, so it awaits manual admin approval
+ *   - a source address is (now) blacklisted
+ */
+const getDepositHoldReason = async ({ description, network, addresses } = {}) => {
+	if (hasKytHoldMarker(description)) {
+		return 'KYT review hold — flagged by a KYT plugin';
+	}
+	if (getKitConfig()?.auto_deposit?.active === false) {
+		return 'Auto-deposit disabled — awaiting manual admin approval';
+	}
+	// lazy require avoids a load-order cycle with the blockchain tools
+	const { areAddressesBlacklisted } = require('./blockchain');
+	const blacklisted = await areAddressesBlacklisted(
+		Array.isArray(addresses) ? addresses : (addresses ? [addresses] : []),
+		network
+	);
+	if (blacklisted.length > 0) {
+		return `Blacklisted source address: ${blacklisted.join(', ')}`;
+	}
+	return null;
+};
+
 const recordWithdrawalCompliance = async ({
 	user_id,
 	transaction_id,
@@ -197,7 +228,7 @@ const getTravelRuleRecords = async ({ transaction_id, user_id, type } = {}) => {
  * Resolves a pending deposit travel-rule record: persists the user-provided info
  * and flips the status ('released' or 'kept'). Returns the updated row.
  */
-const resolveDeposit = async (record, { address, is_own_address, purpose, counterparty_type, counterparty_name, vasp_name, status }) => {
+const resolveDeposit = async (record, { address, is_own_address, purpose, counterparty_type, counterparty_name, vasp_name, status, note }) => {
 	if (address !== undefined && address !== null) {
 		record.address = address;
 	}
@@ -216,6 +247,9 @@ const resolveDeposit = async (record, { address, is_own_address, purpose, counte
 	if (vasp_name !== undefined) {
 		record.vasp_name = vasp_name || null;
 	}
+	if (note !== undefined) {
+		record.note = note || null;
+	}
 	if (status) {
 		record.status = status;
 	}
@@ -232,6 +266,7 @@ module.exports = {
 	convertToNative,
 	isAboveThreshold,
 	hasKytHoldMarker,
+	getDepositHoldReason,
 	recordWithdrawalCompliance,
 	createDepositHold,
 	findByTxid,

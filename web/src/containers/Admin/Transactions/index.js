@@ -299,6 +299,7 @@ class Transactions extends Component {
 			['Currency', record.currency],
 			['Amount', record.amount],
 			['Amount (native)', record.amount_native],
+			['Note', record.note],
 		];
 		return (
 			<div key={record.id} className="travel-rule-detail mb-3">

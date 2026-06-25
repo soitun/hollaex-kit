@@ -81,6 +81,13 @@ module.exports = function (sequelize, DataTypes) {
 				type: DataTypes.STRING,
 				allowNull: false,
 				defaultValue: 'recorded'
+			},
+			// when a deposit stays on hold after the user provides travel-rule info,
+			// the reason it remains held (KYT review, auto-deposit disabled, blacklisted
+			// source). null once released or when travel rule was the only hold reason.
+			note: {
+				type: DataTypes.STRING,
+				allowNull: true
 			}
 		},
 		{
