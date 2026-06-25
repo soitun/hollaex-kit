@@ -234,6 +234,10 @@ const submitDepositTravelRule = (req, res) => {
 		'transaction_id', transaction_id
 	);
 
+	// A pending TravelRule record is the positive proof that travel rule is what
+	// holds this deposit — it is created only when checkDepositAddresses holds the
+	// deposit for travel rule. No record => the hold has another cause (e.g. auto-
+	// deposit disabled or blacklist) and this flow must NOT clear it.
 	toolsLib.travelRule.findByTxid(transaction_id, { user_id: userId, type: 'deposit', status: 'pending' })
 		.then(async (record) => {
 			if (!record) {
@@ -254,11 +258,28 @@ const submitDepositTravelRule = (req, res) => {
 				loggerDeposits.error(req.uuid, 'controllers/deposit/submitDepositTravelRule/fetch', err.message);
 			}
 
+			// the `onhold` flag is shared by every hold mechanism, so only release when
+			// travel rule is the SOLE reason the deposit is held. Otherwise keep it on
+			// hold and record why (KYT review, auto-deposit disabled, blacklisted source).
 			const description = (deposit && deposit.description) || '';
-			const kytHeld = toolsLib.travelRule.hasKytHoldMarker(description);
+			// source address(es) captured at deposit time (stored as JSON when multiple)
+			let sourceAddresses = [];
+			if (record.address) {
+				try {
+					const parsed = JSON.parse(record.address);
+					sourceAddresses = Array.isArray(parsed) ? parsed : [record.address];
+				} catch (e) {
+					sourceAddresses = [record.address];
+				}
+			}
+			const holdReason = await toolsLib.travelRule.getDepositHoldReason({
+				description,
+				network: record.network,
+				addresses: sourceAddresses
+			});
 
-			if (!kytHeld) {
-				// release the deposit (credit it) and mark the record released
+			if (!holdReason) {
+				// travel rule was the only hold — credit the deposit and release it
 				await toolsLib.wallet.updatePendingMint(transaction_id, {
 					status: true,
 					onhold: false,
@@ -273,12 +294,13 @@ const submitDepositTravelRule = (req, res) => {
 					counterparty_type,
 					counterparty_name,
 					vasp_name,
-					status: 'released'
+					status: 'released',
+					note: null
 				});
 				return res.json({ message: 'Success', released: true });
 			}
 
-			// a KYT plugin also flagged this deposit — keep it on hold, just save the info
+			// another hold reason remains — keep it on hold, save the info and the reason
 			await toolsLib.travelRule.resolveDeposit(record, {
 				address: source_address,
 				is_own_address,
@@ -286,21 +308,23 @@ const submitDepositTravelRule = (req, res) => {
 				counterparty_type,
 				counterparty_name,
 				vasp_name,
-				status: 'kept'
+				status: 'kept',
+				note: holdReason
 			});
 
-			// notify operator that travel-rule info was provided but a KYT hold remains
+			// notify operator that travel-rule info was provided but a hold remains
 			try {
 				sendEmail(
 					MAILTYPE.ALERT,
 					null,
 					{
-						type: 'Travel rule info provided on KYT-held deposit',
+						type: 'Travel rule info provided on held deposit',
 						data: {
 							user_id: userId,
 							transaction_id,
 							currency: record.currency,
-							amount: record.amount
+							amount: record.amount,
+							reason: holdReason
 						}
 					},
 					{}
