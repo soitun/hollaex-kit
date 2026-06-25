@@ -221,7 +221,10 @@ const sendRequestWithdrawalEmail = (user_id, address, amount, currency, version,
 			if (!opts.skipValidate) {
 				const withdrawal = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
 					is_own_address: opts.is_own_address,
-					purpose: opts.purpose
+					purpose: opts.purpose,
+					counterparty_type: opts.counterparty_type,
+					counterparty_name: opts.counterparty_name,
+					vasp_name: opts.vasp_name
 				});
 				fee = withdrawal.fee;
 				fee_coin = withdrawal.fee_coin;
@@ -246,7 +249,10 @@ const sendRequestWithdrawalEmail = (user_id, address, amount, currency, version,
 					// travel-rule fields carried through to the confirm step (validated again
 					// and recorded after the withdrawal performs)
 					is_own_address: opts.is_own_address != null ? opts.is_own_address : null,
-					purpose: opts.purpose || null
+					purpose: opts.purpose || null,
+					counterparty_type: opts.counterparty_type || null,
+					counterparty_name: opts.counterparty_name || null,
+					vasp_name: opts.vasp_name || null
 				},
 				opts.domain,
 				opts.ip,
@@ -427,7 +433,10 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 	// validateWithdrawal already enforces the address blacklist, so no extra check here
 	const { fee_markup, travel_rule_amount_native } = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
 		is_own_address: opts.is_own_address,
-		purpose: opts.purpose
+		purpose: opts.purpose,
+		counterparty_type: opts.counterparty_type,
+		counterparty_name: opts.counterparty_name,
+		vasp_name: opts.vasp_name
 	});
 	const result = await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
 
@@ -444,7 +453,10 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 				amount,
 				amount_native: travel_rule_amount_native,
 				is_own_address: opts.is_own_address,
-				purpose: opts.purpose
+				purpose: opts.purpose,
+				counterparty_type: opts.counterparty_type,
+				counterparty_name: opts.counterparty_name,
+				vasp_name: opts.vasp_name
 			});
 		} catch (err) {
 			loggerWithdrawals.error('tools/wallet/performDirectWithdrawal/travelRule', err.message);
@@ -640,7 +652,8 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 	if (travelRuleCheck.above) {
 		const hasInfo = travelRuleOpts
 			&& travelRuleOpts.purpose
-			&& travelRuleOpts.is_own_address != null;
+			&& travelRuleOpts.is_own_address != null
+			&& travelRuleOpts.counterparty_type;
 		if (!hasInfo) {
 			throw new Error(TRAVEL_RULE_INFO_REQUIRED);
 		}

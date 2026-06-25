@@ -221,7 +221,10 @@ const submitDepositTravelRule = (req, res) => {
 		transaction_id,
 		is_own_address,
 		purpose,
-		source_address
+		source_address,
+		counterparty_type,
+		counterparty_name,
+		vasp_name
 	} = req.swagger.params.data.value;
 
 	loggerDeposits.verbose(
@@ -267,6 +270,9 @@ const submitDepositTravelRule = (req, res) => {
 					address: source_address,
 					is_own_address,
 					purpose,
+					counterparty_type,
+					counterparty_name,
+					vasp_name,
 					status: 'released'
 				});
 				return res.json({ message: 'Success', released: true });
@@ -277,6 +283,9 @@ const submitDepositTravelRule = (req, res) => {
 				address: source_address,
 				is_own_address,
 				purpose,
+				counterparty_type,
+				counterparty_name,
+				vasp_name,
 				status: 'kept'
 			});
 

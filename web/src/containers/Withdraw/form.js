@@ -201,7 +201,13 @@ class Form extends Component {
 		});
 	};
 
-	onSubmitTravelRule = ({ is_own_address, purpose }) => {
+	onSubmitTravelRule = ({
+		is_own_address,
+		purpose,
+		counterparty_type,
+		counterparty_name,
+		vasp_name,
+	}) => {
 		const { pendingWithdrawPayload, pendingWithdrawCurrency } = this.state;
 		if (!pendingWithdrawPayload) return;
 		this.setState({ travelRuleSubmitting: true });
@@ -210,6 +216,9 @@ class Form extends Component {
 				...pendingWithdrawPayload,
 				is_own_address,
 				purpose,
+				counterparty_type,
+				counterparty_name,
+				vasp_name,
 			})
 			.then((response) => {
 				this.setState({

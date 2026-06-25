@@ -52,6 +52,12 @@ export const requestDepositsDownload = (query) => {
 		});
 };
 
+// Fetch travel-rule compliance records for a single transaction (admin detail view).
+export const requestTravelRule = (transaction_id) => {
+	const queryValues = querystring.stringify({ transaction_id });
+	return requestAuthenticated(`/admin/travel-rule?${queryValues}`);
+};
+
 export const completeDeposits = (values) => {
 	const options = {
 		method: 'PUT',

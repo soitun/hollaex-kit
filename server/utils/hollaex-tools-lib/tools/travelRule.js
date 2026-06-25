@@ -19,6 +19,10 @@ const TRAVEL_RULE_PURPOSES = [
 	'Other'
 ];
 
+// Counterparty service-provider types offered to users. The user first picks one,
+// then identifies the counterparty (name, and the VASP/provider name for exchanges).
+const TRAVEL_RULE_COUNTERPARTY_TYPES = ['exchange_vasp', 'self_custody'];
+
 // KYT plugin review markers (see ../hollaex-plugins amlbot/scorechain). A deposit
 // description containing any of these was held/flagged by a KYT plugin and must
 // NOT be auto-released through the travel-rule user flow. The generic `-reviewed]`
@@ -108,7 +112,10 @@ const recordWithdrawalCompliance = async ({
 	amount,
 	amount_native,
 	is_own_address,
-	purpose
+	purpose,
+	counterparty_type,
+	counterparty_name,
+	vasp_name
 }) => {
 	return getModel('travelRule').create({
 		user_id,
@@ -121,6 +128,9 @@ const recordWithdrawalCompliance = async ({
 		amount_native,
 		is_own_address: is_own_address === undefined ? null : is_own_address,
 		purpose: purpose || null,
+		counterparty_type: counterparty_type || null,
+		counterparty_name: counterparty_name || null,
+		vasp_name: vasp_name || null,
 		status: 'recorded'
 	});
 };
@@ -163,10 +173,31 @@ const findByTxid = async (transaction_id, opts = {}) => {
 };
 
 /**
+ * Admin: fetch travel-rule compliance records, optionally filtered by transaction
+ * id and/or user id. Newest first. Used by the admin transactions detail view.
+ */
+const getTravelRuleRecords = async ({ transaction_id, user_id, type } = {}) => {
+	const where = {};
+	if (transaction_id) {
+		where.transaction_id = transaction_id;
+	}
+	if (user_id != null) {
+		where.user_id = user_id;
+	}
+	if (type) {
+		where.type = type;
+	}
+	return getModel('travelRule').findAll({
+		where,
+		order: [['created_at', 'DESC']]
+	});
+};
+
+/**
  * Resolves a pending deposit travel-rule record: persists the user-provided info
  * and flips the status ('released' or 'kept'). Returns the updated row.
  */
-const resolveDeposit = async (record, { address, is_own_address, purpose, status }) => {
+const resolveDeposit = async (record, { address, is_own_address, purpose, counterparty_type, counterparty_name, vasp_name, status }) => {
 	if (address !== undefined && address !== null) {
 		record.address = address;
 	}
@@ -175,6 +206,15 @@ const resolveDeposit = async (record, { address, is_own_address, purpose, status
 	}
 	if (purpose !== undefined) {
 		record.purpose = purpose || null;
+	}
+	if (counterparty_type !== undefined) {
+		record.counterparty_type = counterparty_type || null;
+	}
+	if (counterparty_name !== undefined) {
+		record.counterparty_name = counterparty_name || null;
+	}
+	if (vasp_name !== undefined) {
+		record.vasp_name = vasp_name || null;
 	}
 	if (status) {
 		record.status = status;
@@ -185,6 +225,7 @@ const resolveDeposit = async (record, { address, is_own_address, purpose, status
 
 module.exports = {
 	TRAVEL_RULE_PURPOSES,
+	TRAVEL_RULE_COUNTERPARTY_TYPES,
 	KYT_HOLD_MARKERS,
 	getTravelRuleConfig,
 	isTravelRuleActive,
@@ -194,5 +235,6 @@ module.exports = {
 	recordWithdrawalCompliance,
 	createDepositHold,
 	findByTxid,
+	getTravelRuleRecords,
 	resolveDeposit
 };

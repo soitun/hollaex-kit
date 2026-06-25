@@ -1602,6 +1602,18 @@ paths:
                 type: string
                 maxLength: 256
                 description: Originating address of the deposit
+              counterparty_type:
+                type: string
+                maxLength: 64
+                description: Counterparty service-provider type (exchange_vasp | self_custody)
+              counterparty_name:
+                type: string
+                maxLength: 256
+                description: Name of the counterparty person/entity (the sender)
+              vasp_name:
+                type: string
+                maxLength: 256
+                description: Name of the exchange/VASP (when counterparty_type is exchange_vasp)
       responses:
         200:
           description: Success
@@ -1800,6 +1812,18 @@ paths:
                 type: string
                 maxLength: 256
                 description: Travel rule - purpose of the transaction (or free text when "Other")
+              counterparty_type:
+                type: string
+                maxLength: 64
+                description: Travel rule - counterparty service-provider type (exchange_vasp | self_custody)
+              counterparty_name:
+                type: string
+                maxLength: 256
+                description: Travel rule - name of the counterparty person/entity
+              vasp_name:
+                type: string
+                maxLength: 256
+                description: Travel rule - name of the exchange/VASP (when counterparty_type is exchange_vasp)
       responses:
         200:
           description: Success

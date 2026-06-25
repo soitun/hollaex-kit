@@ -80,7 +80,10 @@ const requestWithdrawal = (req, res) => {
 		version,
 		verification_method,
 		is_own_address,
-		purpose
+		purpose,
+		counterparty_type,
+		counterparty_name,
+		vasp_name
 	} = req.swagger.params.data.value;
 	const domain = req.headers['x-real-origin'];
 	const ip = req.headers['x-real-ip'];
@@ -109,6 +112,9 @@ const requestWithdrawal = (req, res) => {
 					network,
 					is_own_address,
 					purpose,
+					counterparty_type,
+					counterparty_name,
+					vasp_name,
 					additionalHeaders: {
 						'x-forwarded-for': req.headers['x-forwarded-for']
 					}
@@ -134,7 +140,10 @@ const requestWithdrawal = (req, res) => {
 				domain,
 				verification_method,
 				is_own_address,
-				purpose
+				purpose,
+				counterparty_type,
+				counterparty_name,
+				vasp_name
 			})
 				.then(() => {
 					return res.json({ message: 'Success' });
@@ -202,7 +211,10 @@ const performWithdrawal = (req, res) => {
 				withdrawal,
 				toolsLib.wallet.validateWithdrawal(user, withdrawal.address, withdrawal.amount, withdrawal.currency, withdrawal.network, null, {
 					is_own_address: withdrawal.is_own_address,
-					purpose: withdrawal.purpose
+					purpose: withdrawal.purpose,
+					counterparty_type: withdrawal.counterparty_type,
+					counterparty_name: withdrawal.counterparty_name,
+					vasp_name: withdrawal.vasp_name
 				})
 			]);
 		})
@@ -274,7 +286,10 @@ const performWithdrawal = (req, res) => {
 						amount: withdrawal.amount,
 						amount_native: validation.travel_rule_amount_native,
 						is_own_address: withdrawal.is_own_address,
-						purpose: withdrawal.purpose
+						purpose: withdrawal.purpose,
+						counterparty_type: withdrawal.counterparty_type,
+						counterparty_name: withdrawal.counterparty_name,
+						vasp_name: withdrawal.vasp_name
 					});
 				} catch (err) {
 					loggerWithdrawals.error(req.uuid, 'controller/withdrawal/performWithdrawal/travelRule', err.message);
@@ -309,7 +324,10 @@ const performDirectWithdrawal = (req, res) => {
 		amount,
 		network,
 		is_own_address,
-		purpose
+		purpose,
+		counterparty_type,
+		counterparty_name,
+		vasp_name
 	} = req.swagger.params.data.value;
 
 	const domain = req.headers['x-real-origin'];
@@ -337,6 +355,9 @@ const performDirectWithdrawal = (req, res) => {
 			network,
 			is_own_address,
 			purpose,
+			counterparty_type,
+			counterparty_name,
+			vasp_name,
 			additionalHeaders: {
 				'x-forwarded-for': req.headers['x-forwarded-for']
 			}
