@@ -257,7 +257,8 @@ exports.KIT_CONFIG_KEYS = [
 	'auto_withdrawal',
 	'force_two_factor_authentication_withdrawal',
 	'cloudflare_ipcountry',
-	'blockchain'
+	'blockchain',
+	'travel_rule'
 ];
 
 exports.KIT_SECRETS_KEYS = [

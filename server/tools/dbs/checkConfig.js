@@ -82,7 +82,8 @@ Status.findOne()
 			auto_deposit: existingKitConfigurations.auto_deposit || { active: true },
 			auto_withdrawal: existingKitConfigurations.auto_withdrawal || { active: true },
 			force_two_factor_authentication_withdrawal: existingKitConfigurations.force_two_factor_authentication_withdrawal || { active: false },
-			cloudflare_ipcountry: existingKitConfigurations.cloudflare_ipcountry || { active: false }
+			cloudflare_ipcountry: existingKitConfigurations.cloudflare_ipcountry || { active: false },
+			travel_rule: existingKitConfigurations.travel_rule || { active: false, threshold: 0 }
 		};
 
 		const existingPasskey = existingSecrets.passkey || {};

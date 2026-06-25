@@ -121,6 +121,7 @@ class GeneralContent extends Component {
 			confirmText: null,
 			googleOAuth: {},
 			isActiveOAuth: false,
+			travelRuleThreshold: '',
 			cloudflareTurnstile: {
 				enabled: false,
 				site_key: '',
@@ -145,6 +146,7 @@ class GeneralContent extends Component {
 			nativeCurrencies: customCurrencies,
 			googleOAuth: constants?.google_oauth || {},
 			isActiveOAuth: !!constants?.google_oauth?.client_id,
+			travelRuleThreshold: constants?.kit?.travel_rule?.threshold ?? '',
 		});
 	}
 
@@ -2097,6 +2099,93 @@ class GeneralContent extends Component {
 										}}
 									/>
 								</div>
+							</div>
+						</div>
+						<div className="divider"></div>
+						<div className="general-wrapper mb-5">
+							<div
+								className="sub-title d-flex align-items-center"
+								id="travel-rule"
+							>
+								<Image
+									icon={STATIC_ICONS['TRAVEL_RULE_ICON']}
+									wrapperClassName="travel-rule-icon mr-2"
+									iconId="TRAVEL_RULE_ICON"
+								/>
+								Travel Rule
+							</div>
+							<div className="description">
+								<div>
+									Require originator/beneficiary information for transactions at
+									or above a threshold value (in{' '}
+									{(
+										_get(constants, 'kit.native_currency', BASE_CURRENCY) || ''
+									).toUpperCase()}
+									). When enabled, qualifying withdrawals prompt the user for
+									the purpose and whether the receiver is themselves, and
+									qualifying deposits are placed on hold until the user provides
+									the source of funds.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(constants, 'kit.travel_rule.active', false)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													travel_rule: {
+														active: checked,
+														threshold:
+															Number(this.state.travelRuleThreshold) || 0,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+								<div
+									className={
+										_get(constants, 'kit.travel_rule.active', false)
+											? 'mt-3'
+											: 'mt-3 disabled-content'
+									}
+								>
+									Threshold amount (
+									{(
+										_get(constants, 'kit.native_currency', BASE_CURRENCY) || ''
+									).toUpperCase()}
+									)
+								</div>
+								<Input
+									type="number"
+									min={0}
+									placeholder="Input threshold amount"
+									className="mt-2"
+									style={{ maxWidth: 300 }}
+									value={this.state.travelRuleThreshold}
+									disabled={!_get(constants, 'kit.travel_rule.active', false)}
+									onChange={(e) => {
+										this.setState({ travelRuleThreshold: e.target.value });
+									}}
+								/>
+								{_get(constants, 'kit.travel_rule.active', false) && (
+									<Button
+										className="no-border green-btn mt-3 minimal-btn"
+										type="primary"
+										onClick={() => {
+											this.handleSubmitGeneral({
+												kit: {
+													travel_rule: {
+														active: true,
+														threshold:
+															Number(this.state.travelRuleThreshold) || 0,
+													},
+												},
+											});
+										}}
+									>
+										Save & Apply
+									</Button>
+								)}
 							</div>
 						</div>
 						<div className="divider"></div>

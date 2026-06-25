@@ -61,6 +61,11 @@ export const performWithdraw = (currency, values) => {
 	return axios.post(ENDPOINTS.WITHDRAW(currency), values);
 };
 
+// Submit travel-rule source info for an on-hold deposit.
+export const submitDepositTravelRule = (values) => {
+	return axios.post('/user/deposit/travel-rule', values);
+};
+
 export const requestWithdrawFee = (currency = 'btc') => {
 	return (dispatch) => {
 		dispatch({ type: ACTION_KEYS.USER_WITHDRAWALS_BTC_FEE_PENDING });

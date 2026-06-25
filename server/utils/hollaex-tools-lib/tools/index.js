@@ -16,6 +16,7 @@ const stake = require('./stake');
 const p2p = require('./p2p');
 const verification = require('./verification');
 const blockchain = require('./blockchain');
+const travelRule = require('./travelRule');
 
 module.exports = {
 	...common,
@@ -32,5 +33,6 @@ module.exports = {
 	broker,
 	stake,
 	p2p,
-	verification
+	verification,
+	travelRule
 };

@@ -78,7 +78,9 @@ const requestWithdrawal = (req, res) => {
 		currency,
 		network,
 		version,
-		verification_method
+		verification_method,
+		is_own_address,
+		purpose
 	} = req.swagger.params.data.value;
 	const domain = req.headers['x-real-origin'];
 	const ip = req.headers['x-real-ip'];
@@ -105,6 +107,8 @@ const requestWithdrawal = (req, res) => {
 			if (whitelisted) {
 				return toolsLib.wallet.performDirectWithdrawal(id, address, currency, amount, {
 					network,
+					is_own_address,
+					purpose,
 					additionalHeaders: {
 						'x-forwarded-for': req.headers['x-forwarded-for']
 					}
@@ -128,7 +132,9 @@ const requestWithdrawal = (req, res) => {
 				otpCode: otp_code,
 				ip,
 				domain,
-				verification_method
+				verification_method,
+				is_own_address,
+				purpose
 			})
 				.then(() => {
 					return res.json({ message: 'Success' });
@@ -194,10 +200,13 @@ const performWithdrawal = (req, res) => {
 
 			return all([
 				withdrawal,
-				toolsLib.wallet.validateWithdrawal(user, withdrawal.address, withdrawal.amount, withdrawal.currency, withdrawal.network)
+				toolsLib.wallet.validateWithdrawal(user, withdrawal.address, withdrawal.amount, withdrawal.currency, withdrawal.network, null, {
+					is_own_address: withdrawal.is_own_address,
+					purpose: withdrawal.purpose
+				})
 			]);
 		})
-		.then(async ([withdrawal]) => {
+		.then(async ([withdrawal, validation]) => {
 			if (isEmail(withdrawal.address)) {
 				const receiver = await toolsLib.user.getUserByEmail(withdrawal.address);
 				if (!receiver) {
@@ -210,7 +219,8 @@ const performWithdrawal = (req, res) => {
 							'x-forwarded-for': req.headers['x-forwarded-for']
 						}
 					}),
-					withdrawal
+					withdrawal,
+					validation
 				]);
 			} else if (toolsLib.getKitCoin(withdrawal.currency).type === 'fiat') {
 				// burn the asset
@@ -226,7 +236,8 @@ const performWithdrawal = (req, res) => {
 							fee: withdrawal.fee
 						}
 					),
-					withdrawal
+					withdrawal,
+					validation
 				]);
 			} else {
 				// blockchain type to sent to the network
@@ -244,15 +255,35 @@ const performWithdrawal = (req, res) => {
 							}
 						}
 					),
-					withdrawal
+					withdrawal,
+					validation
 				]);
 			}
 		})
-		.then(([ { transaction_id }, { fee } ]) => {
+		.then(async ([ result, withdrawal, validation ]) => {
+			// Record a travel-rule compliance row (one per transaction) when the
+			// withdrawal qualified. amount_native is only set when above threshold.
+			if (validation && validation.travel_rule_amount_native != null) {
+				try {
+					await toolsLib.travelRule.recordWithdrawalCompliance({
+						user_id: withdrawal.user_id,
+						transaction_id: result?.transaction_id || withdrawal.transaction_id,
+						address: withdrawal.address,
+						network: withdrawal.network,
+						currency: withdrawal.currency,
+						amount: withdrawal.amount,
+						amount_native: validation.travel_rule_amount_native,
+						is_own_address: withdrawal.is_own_address,
+						purpose: withdrawal.purpose
+					});
+				} catch (err) {
+					loggerWithdrawals.error(req.uuid, 'controller/withdrawal/performWithdrawal/travelRule', err.message);
+				}
+			}
 			return res.json({
 				message: 'Withdrawal successful',
-				fee,
-				transaction_id
+				fee: withdrawal.fee,
+				transaction_id: result?.transaction_id
 			});
 		})
 		.catch((err) => {
@@ -276,7 +307,9 @@ const performDirectWithdrawal = (req, res) => {
 		address,
 		currency,
 		amount,
-		network
+		network,
+		is_own_address,
+		purpose
 	} = req.swagger.params.data.value;
 
 	const domain = req.headers['x-real-origin'];
@@ -302,6 +335,8 @@ const performDirectWithdrawal = (req, res) => {
 		amount,
 		{
 			network,
+			is_own_address,
+			purpose,
 			additionalHeaders: {
 				'x-forwarded-for': req.headers['x-forwarded-for']
 			}

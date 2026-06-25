@@ -2,8 +2,10 @@
 
 const { loggerDeposits } = require('../../config/logger');
 const { ROLES } = require('../../constants');
-const { API_KEY_NOT_PERMITTED } = require('../../messages');
+const { API_KEY_NOT_PERMITTED, TRAVEL_RULE_HOLD_NOT_FOUND } = require('../../messages');
 const toolsLib = require('hollaex-tools-lib');
+const { sendEmail } = require('../../mail');
+const { MAILTYPE } = require('../../mail/strings');
 const { errorMessageConverter } = require('../../utils/conversion');
 
 const getAdminDeposits = (req, res) => {
@@ -208,8 +210,108 @@ const downloadDepositsCsv = (req, res) => {
 			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		});
 };
+// Travel rule: the user supplies source info for a deposit that was put on hold
+// (>= threshold in native currency). If the only reason it is on hold is the travel
+// rule (a pending TravelRule record exists) AND the deposit carries no KYT plugin
+// marker (amlbot/scorechain), it is auto-released. Otherwise the info is saved and
+// the deposit stays on hold for the KYT plugin / admin to resolve.
+const submitDepositTravelRule = (req, res) => {
+	const userId = req.auth.sub.id;
+	const {
+		transaction_id,
+		is_own_address,
+		purpose,
+		source_address
+	} = req.swagger.params.data.value;
+
+	loggerDeposits.verbose(
+		req.uuid,
+		'controllers/deposit/submitDepositTravelRule',
+		'user_id', userId,
+		'transaction_id', transaction_id
+	);
+
+	toolsLib.travelRule.findByTxid(transaction_id, { user_id: userId, type: 'deposit', status: 'pending' })
+		.then(async (record) => {
+			if (!record) {
+				throw new Error(TRAVEL_RULE_HOLD_NOT_FOUND);
+			}
+
+			// fetch the on-hold deposit to inspect its description for KYT plugin markers
+			let deposit;
+			try {
+				const deposits = await toolsLib.wallet.getUserDepositsByKitId(
+					userId, null, null, null, null, null, null, 50, 1, null, null, null, null,
+					transaction_id, null, null, null,
+					{ onhold: true }
+				);
+				const rows = (deposits && deposits.data) || [];
+				deposit = rows.find((d) => d.transaction_id === transaction_id) || rows[0];
+			} catch (err) {
+				loggerDeposits.error(req.uuid, 'controllers/deposit/submitDepositTravelRule/fetch', err.message);
+			}
+
+			const description = (deposit && deposit.description) || '';
+			const kytHeld = toolsLib.travelRule.hasKytHoldMarker(description);
+
+			if (!kytHeld) {
+				// release the deposit (credit it) and mark the record released
+				await toolsLib.wallet.updatePendingMint(transaction_id, {
+					status: true,
+					onhold: false,
+					additionalHeaders: {
+						'x-forwarded-for': req.headers['x-forwarded-for']
+					}
+				});
+				await toolsLib.travelRule.resolveDeposit(record, {
+					address: source_address,
+					is_own_address,
+					purpose,
+					status: 'released'
+				});
+				return res.json({ message: 'Success', released: true });
+			}
+
+			// a KYT plugin also flagged this deposit — keep it on hold, just save the info
+			await toolsLib.travelRule.resolveDeposit(record, {
+				address: source_address,
+				is_own_address,
+				purpose,
+				status: 'kept'
+			});
+
+			// notify operator that travel-rule info was provided but a KYT hold remains
+			try {
+				sendEmail(
+					MAILTYPE.ALERT,
+					null,
+					{
+						type: 'Travel rule info provided on KYT-held deposit',
+						data: {
+							user_id: userId,
+							transaction_id,
+							currency: record.currency,
+							amount: record.amount
+						}
+					},
+					{}
+				);
+			} catch (err) {
+				loggerDeposits.error(req.uuid, 'controllers/deposit/submitDepositTravelRule/alert', err.message);
+			}
+
+			return res.json({ message: 'Success', released: false });
+		})
+		.catch((err) => {
+			loggerDeposits.error('controllers/deposit/submitDepositTravelRule', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 module.exports = {
 	getAdminDeposits,
 	getUserDeposits,
-	downloadDepositsCsv
+	downloadDepositsCsv,
+	submitDepositTravelRule
 };
