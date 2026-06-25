@@ -60,6 +60,22 @@ module.exports = function (sequelize, DataTypes) {
 				type: DataTypes.STRING,
 				allowNull: true
 			},
+			// counterparty service-provider type: 'exchange_vasp' | 'self_custody'
+			counterparty_type: {
+				type: DataTypes.STRING,
+				allowNull: true
+			},
+			// name of the counterparty person/entity (originator for deposits,
+			// beneficiary for withdrawals)
+			counterparty_name: {
+				type: DataTypes.STRING,
+				allowNull: true
+			},
+			// name of the exchange/VASP when counterparty_type === 'exchange_vasp'
+			vasp_name: {
+				type: DataTypes.STRING,
+				allowNull: true
+			},
 			// withdrawals: 'recorded'. deposits: 'pending' -> 'released' | 'kept'
 			status: {
 				type: DataTypes.STRING,
