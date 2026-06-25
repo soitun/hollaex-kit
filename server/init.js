@@ -100,7 +100,8 @@ const checkStatus = () => {
 			auto_deposit: {},
 			auto_withdrawal: {},
 			force_two_factor_authentication_withdrawal: {},
-			cloudflare_ipcountry: { active: false }
+			cloudflare_ipcountry: { active: false },
+			travel_rule: { active: false, threshold: 0 }
 		},
 		email: {}
 	};

@@ -476,6 +476,13 @@ definitions:
           - v4
       verification_method:
         $ref: '#/definitions/RequestVerificationMethod'
+      is_own_address:
+        type: boolean
+        description: Travel rule - whether the receiver of the withdrawal is the user themselves
+      purpose:
+        type: string
+        maxLength: 256
+        description: Travel rule - purpose of the transaction (or free text when "Other")
   OtpRequest:
     type: object
     required:

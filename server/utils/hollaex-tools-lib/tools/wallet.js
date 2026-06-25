@@ -2,6 +2,7 @@
 
 const { SERVER_PATH } = require('../constants');
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
+const { loggerWithdrawals } = require(`${SERVER_PATH}/config/logger`);
 const { WITHDRAWALS_REQUEST_KEY } = require(`${SERVER_PATH}/constants`);
 const { sendVerificationCode } = require('./verification');
 const { verifyOtpBeforeAction } = require('./security');
@@ -26,11 +27,13 @@ const {
 	WITHDRAWAL_OTP_REQUIRED,
 	WITHDRAWAL_LIMIT_ERROR,
 	WITHDRAWAL_DAILY_LIMIT_REACHED,
-	WITHDRAWAL_MONTHLY_LIMIT_REACHED
+	WITHDRAWAL_MONTHLY_LIMIT_REACHED,
+	TRAVEL_RULE_INFO_REQUIRED
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
 const { enforceAddressNotBlacklisted } = require('./blockchain');
+const { isAboveThreshold, recordWithdrawalCompliance } = require('./travelRule');
 const { client } = require('./database/redis');
 const crypto = require('crypto');
 const uuid = require('uuid/v4');
@@ -216,12 +219,15 @@ const sendRequestWithdrawalEmail = (user_id, address, amount, currency, version,
 		})
 		.then(async (user) => {
 			if (!opts.skipValidate) {
-				const withdrawal = await validateWithdrawal(user, address, amount, currency, opts.network);
+				const withdrawal = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
+					is_own_address: opts.is_own_address,
+					purpose: opts.purpose
+				});
 				fee = withdrawal.fee;
 				fee_coin = withdrawal.fee_coin;
 				fee_markup =  withdrawal.fee_markup;
 			}
-			
+
 
 			return withdrawalRequestEmail(
 				user,
@@ -236,7 +242,11 @@ const sendRequestWithdrawalEmail = (user_id, address, amount, currency, version,
 					address,
 					currency,
 					network: opts.network,
-					verification_method: opts.verification_method
+					verification_method: opts.verification_method,
+					// travel-rule fields carried through to the confirm step (validated again
+					// and recorded after the withdrawal performs)
+					is_own_address: opts.is_own_address != null ? opts.is_own_address : null,
+					purpose: opts.purpose || null
 				},
 				opts.domain,
 				opts.ip,
@@ -415,8 +425,33 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 }) {
 	const user = await getUserByKitId(userId);
 	// validateWithdrawal already enforces the address blacklist, so no extra check here
-	const { fee_markup } = await validateWithdrawal(user, address, amount, currency, opts.network);
-	return await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
+	const { fee_markup, travel_rule_amount_native } = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
+		is_own_address: opts.is_own_address,
+		purpose: opts.purpose
+	});
+	const result = await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
+
+	// Record a travel-rule compliance row (one per transaction) when the
+	// withdrawal qualified. travel_rule_amount_native is only set when above threshold.
+	if (travel_rule_amount_native != null) {
+		try {
+			await recordWithdrawalCompliance({
+				user_id: user.id,
+				transaction_id: result?.transaction_id,
+				address,
+				network: opts.network,
+				currency,
+				amount,
+				amount_native: travel_rule_amount_native,
+				is_own_address: opts.is_own_address,
+				purpose: opts.purpose
+			});
+		} catch (err) {
+			loggerWithdrawals.error('tools/wallet/performDirectWithdrawal/travelRule', err.message);
+		}
+	}
+
+	return result;
 }
 
 const performWithdrawalNetwork = async (networkId, address, currency, amount, opts = {
@@ -534,7 +569,7 @@ const calculateWithdrawalMax = async (user_id, currency, selectedNetwork, bankId
 	return { amount };
 };
 
-const validateWithdrawal = async (user, address, amount, currency, network = null, method = null) => {
+const validateWithdrawal = async (user, address, amount, currency, network = null, method = null, travelRuleOpts = {}) => {
 	const coinConfiguration = getKitCoin(currency);
 	const coinMarkup = getKitConfig()?.coin_customizations?.[currency];
 	if (!subscribedToCoin(currency)) {
@@ -598,6 +633,19 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		throw new Error(WITHDRAWAL_OTP_REQUIRED);
 	}
 
+	// Travel rule: when active and the native-currency value is >= threshold, the
+	// user must supply the purpose and whether the receiver is themselves. There is
+	// no address dedup — the info is required for every qualifying withdrawal.
+	const travelRuleCheck = await isAboveThreshold(currency, amount);
+	if (travelRuleCheck.above) {
+		const hasInfo = travelRuleOpts
+			&& travelRuleOpts.purpose
+			&& travelRuleOpts.is_own_address != null;
+		if (!hasInfo) {
+			throw new Error(TRAVEL_RULE_INFO_REQUIRED);
+		}
+	}
+
 	// per off-ramp method (payment option) min/max enforcement; `!= null` so 0 is honored
 	const methodConfig = getOfframpMethodConfig(currency, method);
 	if (methodConfig) {
@@ -659,7 +707,8 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 	return {
 		fee,
 		fee_coin,
-		...((coinMarkup?.fee_markups?.[network]?.withdrawal?.value && coinMarkup?.fee_markups?.[network]?.withdrawal?.symbol === fee_coin) && { fee_markup: coinMarkup.fee_markups[network].withdrawal?.value })
+		...((coinMarkup?.fee_markups?.[network]?.withdrawal?.value && coinMarkup?.fee_markups?.[network]?.withdrawal?.symbol === fee_coin) && { fee_markup: coinMarkup.fee_markups[network].withdrawal?.value }),
+		...(travelRuleCheck.above && { travel_rule_amount_native: travelRuleCheck.amountNative })
 	};
 };
 

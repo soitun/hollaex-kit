@@ -12,6 +12,7 @@ import { getFormatTimestamp } from 'utils/utils';
 import { formatToCurrency } from 'utils/currency';
 import { CURRENCY_PRICE_FORMAT } from 'config/constants';
 
+import { message } from 'antd';
 import {
 	getOrdersHistory,
 	getUserOrders as getUserTrades,
@@ -20,8 +21,10 @@ import {
 	withdrawalCancel,
 	downloadUserTrades,
 	activeTabFromWallet,
+	submitDepositTravelRule,
 } from 'actions/walletActions';
 import { cancelOrder } from 'actions/orderAction';
+import TravelRuleModal from 'containers/Withdraw/TravelRuleModal';
 
 import {
 	IconTitle,
@@ -80,6 +83,9 @@ class TransactionsHistory extends Component {
 		current_order_id: '',
 		showCancelOrderDialog: false,
 		selectedOrder: null,
+		travelRuleDialogOpen: false,
+		travelRuleSubmitting: false,
+		travelRuleTxId: null,
 	};
 
 	cancelOrderTimeout = null;
@@ -204,9 +210,7 @@ class TransactionsHistory extends Component {
 			this.onCloseDialog();
 			this.requestData(nextProps.symbol);
 		}
-		if (
-			!_isEqual(nextProps.orders?.data, orders?.data)
-		) {
+		if (!_isEqual(nextProps.orders?.data, orders?.data)) {
 			this.generateHeaders(
 				nextProps.symbol,
 				nextProps.coins,
@@ -510,7 +514,8 @@ class TransactionsHistory extends Component {
 					symbol,
 					coins,
 					this.withdrawalPopup,
-					ICONS
+					ICONS,
+					this.depositTravelRulePopup
 				),
 				withdrawals: generateWithdrawalsHeaders(
 					symbol,
@@ -759,6 +764,52 @@ class TransactionsHistory extends Component {
 	};
 	onClose = () => {
 		this.onCloseDialog();
+	};
+
+	// Open the travel-rule source form for an on-hold deposit.
+	depositTravelRulePopup = (transaction_id) => {
+		if (transaction_id) {
+			this.setState({
+				travelRuleDialogOpen: true,
+				travelRuleTxId: transaction_id,
+			});
+		}
+	};
+
+	onCloseTravelRule = () => {
+		this.setState({
+			travelRuleDialogOpen: false,
+			travelRuleSubmitting: false,
+			travelRuleTxId: null,
+		});
+	};
+
+	onSubmitDepositTravelRule = (values) => {
+		const { travelRuleTxId } = this.state;
+		if (!travelRuleTxId) return;
+		this.setState({ travelRuleSubmitting: true });
+		submitDepositTravelRule({ transaction_id: travelRuleTxId, ...values })
+			.then((res) => {
+				this.setState({
+					travelRuleDialogOpen: false,
+					travelRuleSubmitting: false,
+					travelRuleTxId: null,
+				});
+				message.success(
+					res?.data?.released
+						? STRINGS['TRAVEL_RULE.DEPOSIT_RELEASED'] ||
+								'Your deposit has been released.'
+						: STRINGS['TRAVEL_RULE.DEPOSIT_INFO_SAVED'] ||
+								'Your information has been saved. The deposit remains under review.'
+				);
+				this.requestData(this.props.symbol);
+			})
+			.catch((err) => {
+				this.setState({ travelRuleSubmitting: false });
+				message.error(
+					err?.response?.data?.message || err.message || 'Something went wrong'
+				);
+			});
 	};
 
 	handleNext = (pageCount, pageNumber) => {
@@ -1127,6 +1178,23 @@ class TransactionsHistory extends Component {
 							</div>
 						</div>
 					</div>
+				</Dialog>
+				<Dialog
+					isOpen={this.state.travelRuleDialogOpen}
+					label="travel-rule-deposit-modal"
+					onCloseDialog={this.onCloseTravelRule}
+					shouldCloseOnOverlayClick={false}
+					showCloseText={true}
+				>
+					{this.state.travelRuleDialogOpen && (
+						<TravelRuleModal
+							onSubmit={this.onSubmitDepositTravelRule}
+							onCancel={this.onCloseTravelRule}
+							loading={this.state.travelRuleSubmitting}
+							subjectLabel="The sender is myself"
+							showSourceAddress={true}
+						/>
+					)}
 				</Dialog>
 				{selectedOrder && (
 					<Dialog
