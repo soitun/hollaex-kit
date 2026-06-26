@@ -60,6 +60,7 @@ import {
 	changePair,
 	setPairs,
 	setCurrencies,
+	setValuationCurrencies,
 	setUserPayments,
 	setOnramp,
 	setOfframp,
@@ -84,6 +85,7 @@ import {
 } from 'actions/appActions';
 // import { setPricesAndAsset } from 'actions/assetActions';
 import { hasTheme } from 'utils/theme';
+import { setValuationCoinsCache } from 'utils/valuationCoins';
 import { generateRCStrings } from 'utils/string';
 import { LANGUAGE_KEY, DEFAULT_PINNED_COINS } from 'config/constants';
 import {
@@ -193,7 +195,13 @@ const getConfigs = async () => {
 	});
 
 	const { data: constants = {} } = await requestConstant();
-	const { coins: coin_icons = {} } = constants;
+	// Merge display-only valuation currencies into the icon source so their logos
+	// resolve in the `icons` config map (keyed by SYMBOL_ICON), without adding them
+	// to the tradeable `coins` list.
+	const coin_icons = {
+		...(constants.coins || {}),
+		...(constants.valuation_assets || {}),
+	};
 	const {
 		app: { pair },
 	} = store.getState();
@@ -204,6 +212,8 @@ const getConfigs = async () => {
 	}
 
 	store.dispatch(setCurrencies(constants.coins));
+	store.dispatch(setValuationCurrencies(constants.valuation_assets));
+	setValuationCoinsCache(constants.valuation_assets);
 	store.dispatch(setUserPayments(kitData.user_payments));
 	store.dispatch(setOnramp(kitData.onramp));
 	store.dispatch(setOfframp(kitData.offramp));

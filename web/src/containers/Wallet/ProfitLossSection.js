@@ -22,6 +22,7 @@ import {
 import { fetchBalanceHistory, fetchPlHistory } from './actions';
 import './_ProfitLoss.scss';
 import { BASE_CURRENCY, DEFAULT_COIN_DATA } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { sortedAssetsSelector } from './utils';
 import {
 	calculateOraclePrice,
@@ -458,7 +459,7 @@ const ProfitLossSection = ({
 				{sortedCoins.map((coin, index) => {
 					if (!coin) return null;
 					const { symbol } = coin;
-					const baseCoin = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+					const baseCoin = resolveDisplayCoin(coins, BASE_CURRENCY);
 					const selectedCoin = assets.find((coin) => coin[0] === symbol);
 					const { increment_unit } = selectedCoin;
 					const oraclePrice = oraclePrices[coin?.symbol];
@@ -1153,8 +1154,10 @@ const ProfitLossSection = ({
 													const getBalancePercentage = chartData.filter(
 														(coin) => coin.symbol === symbol
 													);
-													const baseCoin =
-														coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+													const baseCoin = resolveDisplayCoin(
+														coins,
+														BASE_CURRENCY
+													);
 													const oraclePrice = oraclePrices[key];
 													const price = pricesInNative[BASE_CURRENCY]
 														? wsPrice / pricesInNative[BASE_CURRENCY]

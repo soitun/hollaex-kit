@@ -16,6 +16,7 @@ import {
 	SET_ORDER_LIMITS,
 	SET_TICKER_FROM_TRADE,
 	SET_CURRENCIES,
+	SET_VALUATION_CURRENCIES,
 	SET_USER_PAYMENTS,
 	SET_ONRAMP,
 	SET_OFFRAMP,
@@ -200,6 +201,7 @@ const INITIAL_STATE = {
 	tickers: {},
 	orderLimits: {},
 	coins: {},
+	valuation_coins: {},
 	constants: {},
 	config_level: {},
 	info: { is_trial: false, active: true, status: true },
@@ -346,6 +348,11 @@ const reducer = (state = INITIAL_STATE, { type, payload = {} }) => {
 			return {
 				...state,
 				coins: modifyCoinsData(payload.coins),
+			};
+		case SET_VALUATION_CURRENCIES:
+			return {
+				...state,
+				valuation_coins: modifyCoinsData(payload.coins || {}),
 			};
 		case OVERWRITE_CURRENCY_NAMES:
 			return {

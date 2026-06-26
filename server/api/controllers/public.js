@@ -33,6 +33,10 @@ const getConstants = (req, res) => {
 			quicktrade: toolsLib.getQuickTrades(),
 			transactionLimits: toolsLib.getTransactionLimits(),
 			networkQuickTrades: toolsLib.getNetworkQuickTrades(),
+			// Display-only currencies (e.g. fiat used purely for price/valuation
+			// display). These are NOT exchange wallet assets and are intentionally
+			// kept separate from `coins`.
+			valuation_assets: toolsLib.getKitConfig().valuation_assets || {},
 			network: HOLLAEX_NETWORK_ENDPOINT
 		});
 	} catch (err) {

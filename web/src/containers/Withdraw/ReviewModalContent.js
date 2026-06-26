@@ -5,6 +5,7 @@ import Image from 'components/Image';
 import { Button } from 'components';
 import { formatToCurrency } from 'utils/currency';
 import { CURRENCY_PRICE_FORMAT, DEFAULT_COIN_DATA } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import withConfig from 'components/ConfigProvider/withConfig';
 import { EditWrapper } from 'components';
 import { getNetworkNameByKey } from 'utils/wallet';
@@ -45,7 +46,7 @@ const ReviewModalContent = ({
 		localStorage.getItem('base_currnecy') || WS_QUOTE_CURRENCY;
 	const { min, fullname, withdrawal_fees, network } =
 		coins[currency || baseCurrency] || DEFAULT_COIN_DATA;
-	const baseCoin = coins[baseCurrency] || DEFAULT_COIN_DATA;
+	const baseCoin = resolveDisplayCoin(coins, baseCurrency);
 	const fee_coin = data.fee_coin ? data.fee_coin : '';
 	const fee_type = data.fee_type ? data.fee_type : '';
 	const isPercentage = fee_type === 'percentage';

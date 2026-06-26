@@ -505,6 +505,7 @@ class AppBar extends Component {
 			selectable_native_currencies,
 			setUserData,
 			coins,
+			valuation_coins,
 		} = this.props;
 		const {
 			securityPending,
@@ -528,6 +529,7 @@ class AppBar extends Component {
 						setUserData={setUserData}
 						user={user}
 						coins={coins}
+						valuation_coins={valuation_coins}
 					/>
 				)}
 				{isMobile ? (
@@ -768,6 +770,7 @@ const mapStateToProps = (state) => {
 		theme: state.app.theme,
 		pair: state.app.pair,
 		coins: state.app.coins,
+		valuation_coins: state.app.valuation_coins,
 		enabledPlugins: state.app.enabledPlugins,
 		constants: state.app.constants,
 		activeLanguage: state.app.language,

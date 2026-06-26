@@ -18,6 +18,7 @@ import {
 	CURRENCY_PRICE_FORMAT,
 	DEFAULT_COIN_DATA,
 } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { getFormatTimestamp } from 'utils/utils';
 import { formatToCurrency, formatBaseAmount } from 'utils/currency';
 import { Loading } from 'containers/DigitalAssets/components/utils';
@@ -663,7 +664,7 @@ export const generateTradeHeaders = (
 			exportToCsv: ({ price = 0, size = 0, quick, symbol }) => {
 				if (pairs[symbol]) {
 					const { increment_price, pair_base } = pairs[symbol];
-					const { min, ...rest } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+					const { min, ...rest } = resolveDisplayCoin(coins, BASE_CURRENCY);
 					return STRINGS.formatString(
 						CURRENCY_PRICE_FORMAT,
 						formatToCurrency(
@@ -679,7 +680,7 @@ export const generateTradeHeaders = (
 			renderCell: ({ price = 0, size = 0, quick, symbol }, key, index) => {
 				if (pairs[symbol]) {
 					const { increment_price, pair_base } = pairs[symbol];
-					const { min, ...rest } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+					const { min, ...rest } = resolveDisplayCoin(coins, BASE_CURRENCY);
 					return (
 						<td key={index}>
 							{STRINGS.formatString(

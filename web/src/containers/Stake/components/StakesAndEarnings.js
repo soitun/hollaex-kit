@@ -5,14 +5,11 @@ import { EditWrapper } from 'components';
 import ConnectWrapper from './ConnectWrapper';
 import STRINGS from 'config/localizedStrings';
 import { formatToCurrency } from 'utils/currency';
-import {
-	BASE_CURRENCY,
-	CURRENCY_PRICE_FORMAT,
-	DEFAULT_COIN_DATA,
-} from 'config/constants';
+import { BASE_CURRENCY, CURRENCY_PRICE_FORMAT } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 
 const StakesAndEarnings = ({ totalEarningsValue, totalStakesValue, coins }) => {
-	const { min, display_name = '' } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+	const { min, display_name = '' } = resolveDisplayCoin(coins, BASE_CURRENCY);
 
 	const totalStakesString = STRINGS.formatString(
 		CURRENCY_PRICE_FORMAT,
