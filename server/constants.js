@@ -248,6 +248,7 @@ exports.KIT_CONFIG_KEYS = [
 	'referral_history_config',
 	'chain_trade_config',
 	'selectable_native_currencies',
+	'valuation_assets',
 	'auto_trade_config',
 	'suspicious_login',
 	'apps',

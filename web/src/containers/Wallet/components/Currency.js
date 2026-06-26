@@ -2,10 +2,11 @@ import React from 'react';
 import { Link } from 'react-router';
 import { CurrencyBall } from 'components';
 import { BASE_CURRENCY, DEFAULT_COIN_DATA } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { calculateOraclePrice, formatToCurrency } from 'utils/currency';
 
 const Currency = ({ currency, balance, coins, searchResult }) => {
-	const baseCurrency = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+	const baseCurrency = resolveDisplayCoin(coins, BASE_CURRENCY);
 
 	const sortedSearchResults = Object.entries(searchResult)
 		.filter(([key]) => balance.hasOwnProperty(`${key}_balance`))

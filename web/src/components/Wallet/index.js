@@ -95,6 +95,7 @@ class Wallet extends Component {
 		const {
 			balance,
 			coins,
+			valuation_coins = {},
 			// fetching,
 			// prices,
 			// totalAsset,
@@ -106,7 +107,10 @@ class Wallet extends Component {
 		}
 		const BASE_CURRENCY =
 			localStorage.getItem('base_currnecy') || WS_QUOTE_CURRENCY;
-		const baseCoin = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+		const baseCoin =
+			coins[BASE_CURRENCY] ||
+			valuation_coins[BASE_CURRENCY] ||
+			DEFAULT_COIN_DATA;
 		const currency = this.props.symbol.split('-');
 		// const { display_name = '' } = coins[BASE_CURRENCY] || {};
 		// const hasScrollbar = sections.length > 7;
@@ -309,6 +313,7 @@ const mapStateToProps = (state, ownProps) => ({
 	totalAsset: state.asset.totalAsset,
 	activeLanguage: state.app.language,
 	coins: state.app.coins,
+	valuation_coins: state.app.valuation_coins,
 	fetching: state.auth.fetching,
 	assets: assetsSelector(state),
 });

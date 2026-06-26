@@ -61,6 +61,7 @@ export const RISK_PORTFOLIO_ORDER_WARING = 'RISK_PORTFOLIO_ORDER_WARING';
 export const RISKY_ORDER = 'RISKY_ORDER';
 export const LOGOUT_CONFORMATION = 'LOGOUT_CONFORMATION';
 export const SET_CURRENCIES = 'SET_CURRENCIES';
+export const SET_VALUATION_CURRENCIES = 'SET_VALUATION_CURRENCIES';
 export const OVERWRITE_CURRENCY_NAMES = 'OVERWRITE_CURRENCY_NAMES';
 export const SET_USER_PAYMENTS = 'SET_USER_PAYMENTS';
 export const SET_ONRAMP = 'SET_ONRAMP';
@@ -497,6 +498,15 @@ export const setOrderLimits = (data) => ({
 
 export const setCurrencies = (coins) => ({
 	type: SET_CURRENCIES,
+	payload: {
+		coins,
+	},
+});
+
+// Display-only currencies (e.g. fiat used purely for price/valuation display).
+// Kept separate from `coins` so they never appear as wallet/market assets.
+export const setValuationCurrencies = (coins = {}) => ({
+	type: SET_VALUATION_CURRENCIES,
 	payload: {
 		coins,
 	},
