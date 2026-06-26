@@ -185,10 +185,7 @@ const Step2 = ({
 									alt="coins"
 									className="coin-icon"
 								/>
-								<span>
-									{`${coin?.fullname} (${coin?.symbol})`}
-									{`${coin?.issuer ? ' - ' + coin?.issuer : ''}`}
-								</span>
+								<span>{`${coin?.fullname} (${coin?.symbol})`}</span>
 							</div>
 							<Checkbox
 								checked={isSelected}
