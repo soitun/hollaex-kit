@@ -62,6 +62,15 @@ paths:
       responses:
         200:
           description: Success
+          schema:
+            type: object
+            properties:
+              allowed:
+                type: boolean
+              blacklisted:
+                type: array
+                items:
+                  type: string
         default:
           description: Error
           schema:

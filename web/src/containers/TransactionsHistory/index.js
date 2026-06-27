@@ -463,7 +463,7 @@ class TransactionsHistory extends Component {
 
 	generateHeaders(symbol, coins, discount, prices) {
 		const { orders } = this.props;
-		const { pairs, icons: ICONS } = this.props;
+		const { pairs, icons: ICONS, travelRuleActive } = this.props;
 		let type = STRINGS['TIME'];
 		const ordersArray = Array.isArray(orders?.data) ? orders.data : [];
 
@@ -515,7 +515,8 @@ class TransactionsHistory extends Component {
 					coins,
 					this.withdrawalPopup,
 					ICONS,
-					this.depositTravelRulePopup
+					this.depositTravelRulePopup,
+					travelRuleActive
 				),
 				withdrawals: generateWithdrawalsHeaders(
 					symbol,
@@ -1258,6 +1259,7 @@ const mapStateToProps = (store) => ({
 	cancelData: store.wallet.withdrawalCancelData,
 	discount: store.user.discount || 0,
 	getActiveTabFromWallet: store.wallet.activeTabFromWallet,
+	travelRuleActive: store.app.constants?.travel_rule?.active === true,
 });
 
 const mapDispatchToProps = (dispatch) => ({
