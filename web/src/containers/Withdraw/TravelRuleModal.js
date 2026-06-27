@@ -67,16 +67,19 @@ const TravelRuleModal = ({
 
 	return (
 		<div className="travel-rule-modal d-flex flex-column">
-			<div className="dialog-title bold">Travel rule information</div>
-			<div className="mt-2">
-				This transaction requires additional information for compliance. Please
-				provide the details below.
+			<div className="travel-rule-modal__header">
+				<div className="dialog-title bold">Travel rule information</div>
+				<div className="travel-rule-modal__intro">
+					This transaction requires additional information for compliance.
+					Please provide the details below.
+				</div>
 			</div>
 
-			<div className="mt-4">
-				<div className="mb-1">Service provider type</div>
+			<div className="travel-rule-modal__field">
+				<div className="travel-rule-modal__label">Service provider type</div>
 				<Select
 					className="w-100"
+					dropdownClassName="custom-select-style"
 					placeholder="Select the counterparty type"
 					value={counterpartyType}
 					onChange={onChangeType}
@@ -90,8 +93,8 @@ const TravelRuleModal = ({
 			</div>
 
 			{isExchange && (
-				<div className="mt-3">
-					<div className="mb-1">Exchange / VASP name</div>
+				<div className="travel-rule-modal__field">
+					<div className="travel-rule-modal__label">Exchange / VASP name</div>
 					<Input
 						value={vaspName}
 						onChange={(e) => setVaspName(e.target.value)}
@@ -102,7 +105,7 @@ const TravelRuleModal = ({
 			)}
 
 			{isSelfCustody && (
-				<div className="mt-3">
+				<div className="travel-rule-modal__field travel-rule-modal__field--checkbox">
 					<Checkbox
 						checked={isOwnAddress}
 						onChange={(e) => setIsOwnAddress(e.target.checked)}
@@ -113,8 +116,8 @@ const TravelRuleModal = ({
 			)}
 
 			{needsName && (
-				<div className="mt-3">
-					<div className="mb-1">
+				<div className="travel-rule-modal__field">
+					<div className="travel-rule-modal__label">
 						{isExchange ? 'Account holder name' : 'Counterparty name'}
 					</div>
 					<Input
@@ -126,10 +129,11 @@ const TravelRuleModal = ({
 				</div>
 			)}
 
-			<div className="mt-3">
-				<div className="mb-1">Purpose of transaction</div>
+			<div className="travel-rule-modal__field">
+				<div className="travel-rule-modal__label">Purpose of transaction</div>
 				<Select
 					className="w-100"
+					dropdownClassName="custom-select-style"
 					placeholder="Select a purpose"
 					value={purpose}
 					onChange={(value) => setPurpose(value)}
@@ -143,8 +147,8 @@ const TravelRuleModal = ({
 			</div>
 
 			{isOther && (
-				<div className="mt-3">
-					<div className="mb-1">Please specify</div>
+				<div className="travel-rule-modal__field">
+					<div className="travel-rule-modal__label">Please specify</div>
 					<Input
 						value={customPurpose}
 						onChange={(e) => setCustomPurpose(e.target.value)}
@@ -154,13 +158,17 @@ const TravelRuleModal = ({
 				</div>
 			)}
 
-			<div className="d-flex mt-4">
-				<Button className="mr-2 w-50" onClick={onCancel} disabled={loading}>
+			<div className="travel-rule-modal__actions d-flex">
+				<Button
+					className="travel-rule-modal__cancel"
+					onClick={onCancel}
+					disabled={loading}
+				>
 					Cancel
 				</Button>
 				<Button
 					type="primary"
-					className="w-50"
+					className="travel-rule-modal__submit"
 					disabled={!isValid || loading}
 					loading={loading}
 					onClick={() =>
