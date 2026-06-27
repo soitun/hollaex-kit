@@ -203,22 +203,34 @@ class GeneralContent extends Component {
 	// NOT listed exchange assets, so the end-user UI can show their logo/name/decimals
 	// without them ever becoming wallet/market assets. Listed exchange coins already
 	// have metadata in the public constants, so they are skipped here.
+	//
+	// `valuation_assets` is full-replaced (not merged) on the server, so this must
+	// return the COMPLETE set for the selected currencies. When `networkCoins` has
+	// not loaded yet (async fetch slow/failed), fall back to the already-stored
+	// metadata for that symbol so a save never silently wipes existing valuation
+	// assets — see resolution of the wipe-on-save data-loss issue.
 	buildValuationAssets = () => {
 		const { coins } = this.props;
+		const existing = this.props.constants?.kit?.valuation_assets || {};
 		const valuationAssets = {};
 		(this.state.nativeCurrencies || []).forEach((symbol) => {
 			if (coins?.[symbol]) return;
 			const meta = this.state.networkCoins?.[symbol];
-			if (!meta) return;
-			valuationAssets[symbol] = {
-				symbol,
-				fullname: meta.fullname || symbol.toUpperCase(),
-				display_name: meta.display_name || symbol.toUpperCase(),
-				logo: meta.logo || '',
-				increment_unit: meta.increment_unit ?? 0.0001,
-				min: meta.min ?? 0.0001,
-				type: meta.type || 'fiat',
-			};
+			if (meta) {
+				valuationAssets[symbol] = {
+					symbol,
+					fullname: meta.fullname || symbol.toUpperCase(),
+					display_name: meta.display_name || symbol.toUpperCase(),
+					logo: meta.logo || '',
+					increment_unit: meta.increment_unit ?? 0.0001,
+					min: meta.min ?? 0.0001,
+					type: meta.type || 'fiat',
+				};
+			} else if (existing[symbol]) {
+				// no network metadata available right now — keep what was saved
+				// before instead of dropping the currency's display data
+				valuationAssets[symbol] = existing[symbol];
+			}
 		});
 		return valuationAssets;
 	};
