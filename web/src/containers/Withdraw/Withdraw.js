@@ -868,6 +868,9 @@ const RenderWithdraw = ({
 		}
 	};
 
+	// Identity (KYC) must be approved (id_data.status === 3) before any withdrawal
+	const is_verified = user?.id_data?.status === 3;
+
 	return (
 		<div>
 			{user?.is_subaccount ? (
@@ -903,6 +906,32 @@ const RenderWithdraw = ({
 							</Button>
 						</>
 					)}
+				</div>
+			) : !is_verified ? (
+				<div className="withdrawal-block">
+					<Image
+						iconId="WITHDRAWAL_BLOCK"
+						icon={Icons['WITHDRAWAL_BLOCK']}
+						wrapperClassName="withdrawal-block-icon mb-4"
+					/>
+					<EditWrapper stringId="WITHDRAWAL_IDENTITY_VERIFICATION.TITLE">
+						<span className="fs-16 bold">
+							{STRINGS['WITHDRAWAL_IDENTITY_VERIFICATION.TITLE']}
+						</span>
+					</EditWrapper>
+					<EditWrapper stringId="WITHDRAWAL_IDENTITY_VERIFICATION.DESCRIPTION">
+						{STRINGS['WITHDRAWAL_IDENTITY_VERIFICATION.DESCRIPTION']}
+					</EditWrapper>
+					<Button
+						className="withdrawal-block-btn mt-3"
+						onClick={() =>
+							router.push('/verification?identity&initial_tab=kyc')
+						}
+					>
+						<EditWrapper stringId="WITHDRAWAL_IDENTITY_VERIFICATION.BUTTON">
+							{STRINGS['WITHDRAWAL_IDENTITY_VERIFICATION.BUTTON']}
+						</EditWrapper>
+					</Button>
 				</div>
 			) : (
 				<div

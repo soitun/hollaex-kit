@@ -92,8 +92,24 @@ const {
 	USER_PHONE_ALREADY_VERIFIED,
 	PASSWORD_NOT_SET,
 	INVALID_COIN,
-	INVALID_NETWORK
+	INVALID_NETWORK,
+	DISPOSABLE_EMAIL_NOT_ALLOWED
 } = require(`${SERVER_PATH}/messages`);
+// Set of known disposable/temporary email domains, sourced from
+// https://github.com/disposable-email-domains/disposable-email-domains
+const DISPOSABLE_EMAIL_DOMAINS = new Set(
+	require('../data/disposable-email-domains.json')
+);
+const isDisposableEmail = (email) => {
+	if (!email || typeof email !== 'string') {
+		return false;
+	}
+	const domain = email.split('@')[1];
+	if (!domain) {
+		return false;
+	}
+	return DISPOSABLE_EMAIL_DOMAINS.has(domain.trim().toLowerCase());
+};
 const { publisher, client } = require('./database/redis');
 const {
 	CONFIGURATION_CHANNEL,
@@ -257,6 +273,9 @@ const signUpUser = async (email, password, opts = {}, version) => {
 			throw new Error(PROVIDE_VALID_EMAIL);
 		}
 		email = email.toLowerCase();
+		if (isDisposableEmail(email)) {
+			throw new Error(DISPOSABLE_EMAIL_NOT_ALLOWED);
+		}
 	}
 
 	let existingUser = false;

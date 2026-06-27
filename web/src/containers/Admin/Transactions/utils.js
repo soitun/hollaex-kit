@@ -12,6 +12,38 @@ export const renderBoolean = (value) => (
 	<LegacyIcon type={value ? 'check-circle' : 'close-circle-o'} />
 );
 
+// Derive a single human-readable status label from the transaction flags.
+export const getStatusLabel = ({
+	status,
+	dismissed,
+	rejected,
+	onhold,
+	processing,
+	waiting,
+} = {}) => {
+	if (status) {
+		return 'Completed';
+	}
+	if (dismissed) {
+		return 'Dismissed';
+	}
+	if (rejected) {
+		return 'Rejected';
+	}
+	if (onhold) {
+		return 'On Hold';
+	}
+	if (processing) {
+		return 'Processing';
+	}
+	if (waiting) {
+		return 'Waiting';
+	}
+	return 'Pending';
+};
+
+export const renderStatus = (_, record) => getStatusLabel(record);
+
 const ButtonNotAvailable = () => <CloseSquareOutlined />;
 export const renderValidation = ({ status, completeDeposit, updatingItem }) =>
 	!status ? (
@@ -79,6 +111,7 @@ export const COLUMNS = (currency, type) => {
 		{ title: 'Currency', dataIndex: 'currency', key: 'currency' },
 
 		{ title: 'Amount', dataIndex: 'amount', key: 'amount' },
+		{ title: 'Status', key: 'status', render: renderStatus },
 		// { title: 'Fee', dataIndex: 'fee', key: 'fee' },
 		// { title: 'Timestamp', dataIndex: 'created_at', key: 'created_at' },
 	];
@@ -102,12 +135,19 @@ export const renderRowContent = ({
 	amount,
 	fee,
 	created_at,
+	updated_at,
 	currency,
 	fee_coin,
 	type,
 	coins,
 	network,
 	source,
+	status,
+	dismissed,
+	rejected,
+	onhold,
+	processing,
+	waiting,
 	viewTravelRule,
 }) => {
 	const renderSource = (value) => {
@@ -116,6 +156,8 @@ export const renderRowContent = ({
 			.map((item) => (typeof item === 'object' ? JSON.stringify(item) : item))
 			.join(', ');
 	};
+	const renderFlag = (value) =>
+		value === undefined ? '-' : value ? 'Yes' : 'No';
 	return (
 		<div>
 			{address && <div>Address: {address}</div>}
@@ -136,7 +178,24 @@ export const renderRowContent = ({
 			{(Array.isArray(source) ? source.length > 0 : !!source) && (
 				<div>Source: {renderSource(source)}</div>
 			)}
+			<div>
+				Status:{' '}
+				{getStatusLabel({
+					status,
+					dismissed,
+					rejected,
+					onhold,
+					processing,
+					waiting,
+				})}
+			</div>
+			<div>
+				Completed: {renderFlag(status)} | Rejected: {renderFlag(rejected)} |
+				Dismissed: {renderFlag(dismissed)} | On Hold: {renderFlag(onhold)} |
+				Processing: {renderFlag(processing)} | Waiting: {renderFlag(waiting)}
+			</div>
 			<div>Timestamp: {formatDate(created_at)}</div>
+			{updated_at && <div>Last update: {formatDate(updated_at)}</div>}
 			{description && <div>Description: {description}</div>}
 			{viewTravelRule && (
 				<div className="mt-2">
