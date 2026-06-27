@@ -1193,7 +1193,6 @@ class TransactionsHistory extends Component {
 							onCancel={this.onCloseTravelRule}
 							loading={this.state.travelRuleSubmitting}
 							subjectLabel="The sender is myself"
-							showSourceAddress={true}
 						/>
 					)}
 				</Dialog>

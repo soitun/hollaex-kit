@@ -33,7 +33,6 @@ const TravelRuleModal = ({
 	onCancel,
 	loading = false,
 	subjectLabel = 'The receiver is myself',
-	showSourceAddress = false,
 }) => {
 	const [counterpartyType, setCounterpartyType] = useState(undefined);
 	const [isOwnAddress, setIsOwnAddress] = useState(false);
@@ -41,7 +40,6 @@ const TravelRuleModal = ({
 	const [vaspName, setVaspName] = useState('');
 	const [purpose, setPurpose] = useState(undefined);
 	const [customPurpose, setCustomPurpose] = useState('');
-	const [sourceAddress, setSourceAddress] = useState('');
 
 	const isExchange = counterpartyType === 'exchange_vasp';
 	const isSelfCustody = counterpartyType === 'self_custody';
@@ -57,8 +55,7 @@ const TravelRuleModal = ({
 		!!counterpartyType &&
 		!!resolvedPurpose &&
 		(!isExchange || !!vaspName.trim()) &&
-		(!needsName || !!counterpartyName.trim()) &&
-		(!showSourceAddress || !!sourceAddress.trim());
+		(!needsName || !!counterpartyName.trim());
 
 	const onChangeType = (value) => {
 		setCounterpartyType(value);
@@ -157,18 +154,6 @@ const TravelRuleModal = ({
 				</div>
 			)}
 
-			{showSourceAddress && (
-				<div className="mt-3">
-					<div className="mb-1">Originating address</div>
-					<Input
-						value={sourceAddress}
-						onChange={(e) => setSourceAddress(e.target.value)}
-						placeholder="Enter the source address"
-						maxLength={256}
-					/>
-				</div>
-			)}
-
 			<div className="d-flex mt-4">
 				<Button className="mr-2 w-50" onClick={onCancel} disabled={loading}>
 					Cancel
@@ -185,9 +170,6 @@ const TravelRuleModal = ({
 							counterparty_type: counterpartyType,
 							counterparty_name: needsName ? counterpartyName.trim() : '',
 							vasp_name: isExchange ? vaspName.trim() : '',
-							...(showSourceAddress
-								? { source_address: sourceAddress.trim() }
-								: {}),
 						})
 					}
 				>
