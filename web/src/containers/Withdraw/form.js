@@ -31,6 +31,7 @@ import Fiat from './Fiat';
 import Image from 'components/Image';
 import STRINGS from 'config/localizedStrings';
 import ReviewModalContent from './ReviewModalContent';
+import TravelRuleModal from './TravelRuleModal';
 import QRScanner from './QRScanner';
 import TransactionsHistory from 'containers/TransactionsHistory';
 import RenderWithdraw from './Withdraw';
@@ -65,6 +66,10 @@ class Form extends Component {
 		currency: '',
 		renderFiat: false,
 		whitelistedAddresses: [],
+		travelRuleDialogOpen: false,
+		travelRuleSubmitting: false,
+		pendingWithdrawPayload: null,
+		pendingWithdrawCurrency: '',
 	};
 
 	componentDidMount() {
@@ -169,6 +174,73 @@ class Form extends Component {
 		this.setState({ dialogIsOpen: false, dialogOtpOpen: false });
 	};
 
+	// The server gates qualifying withdrawals with the TRAVEL_RULE_INFO_REQUIRED
+	// message until the purpose / receiver info is supplied. Detect that response
+	// and collect the info via a modal, then resubmit with the fields attached.
+	isTravelRuleError = (err) => {
+		const msg =
+			(err && err.errors && err.errors._error) || (err && err.message) || '';
+		return (
+			typeof msg === 'string' && msg.toLowerCase().indexOf('travel rule') > -1
+		);
+	};
+
+	openTravelRuleDialog = (payload, currency) => {
+		this.setState({
+			travelRuleDialogOpen: true,
+			pendingWithdrawPayload: payload,
+			pendingWithdrawCurrency: currency,
+		});
+	};
+
+	onCloseTravelRule = () => {
+		this.setState({
+			travelRuleDialogOpen: false,
+			travelRuleSubmitting: false,
+			pendingWithdrawPayload: null,
+		});
+	};
+
+	onSubmitTravelRule = ({
+		is_own_address,
+		purpose,
+		counterparty_type,
+		counterparty_name,
+		vasp_name,
+	}) => {
+		const { pendingWithdrawPayload, pendingWithdrawCurrency } = this.state;
+		if (!pendingWithdrawPayload) return;
+		this.setState({ travelRuleSubmitting: true });
+		return this.props
+			.onSubmitWithdrawReq({
+				...pendingWithdrawPayload,
+				is_own_address,
+				purpose,
+				counterparty_type,
+				counterparty_name,
+				vasp_name,
+			})
+			.then((response) => {
+				this.setState({
+					travelRuleDialogOpen: false,
+					travelRuleSubmitting: false,
+					pendingWithdrawPayload: null,
+				});
+				this.onCloseDialog();
+				this.props.onSubmitSuccess(
+					{ ...response, currency: pendingWithdrawCurrency },
+					this.props.dispatch
+				);
+				return response;
+			})
+			.catch((err) => {
+				this.setState({ travelRuleSubmitting: false });
+				const error = { _error: err.message, ...err.errors };
+				this.props.onSubmitFail(err.errors || err, this.props.dispatch);
+				this.props.dispatch(stopSubmit(FORM_NAME, error));
+			});
+	};
+
 	onAcceptDialog = () => {
 		const {
 			data,
@@ -231,11 +303,12 @@ class Form extends Component {
 			if (!coins[currentCurrency]?.network) {
 				delete values.network;
 			}
+			const payload = {
+				...values,
+				amount: math.eval(values.amount),
+			};
 			return this.props
-				.onSubmitWithdrawReq({
-					...values,
-					amount: math.eval(values.amount),
-				})
+				.onSubmitWithdrawReq(payload)
 				.then((response) => {
 					// onSubmitWithdrawReq already resolves to the unwrapped
 					// withdrawal body (including `direct` for trusted addresses),
@@ -249,6 +322,10 @@ class Form extends Component {
 					return response;
 				})
 				.catch((err) => {
+					if (this.isTravelRuleError(err)) {
+						this.openTravelRuleDialog(payload, currentCurrency);
+						return;
+					}
 					const error = { _error: err.message, ...err.errors };
 					this.props.onSubmitFail(err.errors || err, this.props.dispatch);
 					this.onCloseDialog();
@@ -312,12 +389,13 @@ class Form extends Component {
 		if (!coins[currentCurrency]?.network) {
 			delete values.network;
 		}
+		const payload = {
+			...values,
+			amount: math.eval(values.amount),
+			otp_code,
+		};
 		return this.props
-			.onSubmitWithdrawReq({
-				...values,
-				amount: math.eval(values.amount),
-				otp_code,
-			})
+			.onSubmitWithdrawReq(payload)
 			.then((response) => {
 				this.onCloseDialog();
 				// `response` is the already-unwrapped withdrawal body; spread it
@@ -329,6 +407,10 @@ class Form extends Component {
 				return response;
 			})
 			.catch((err) => {
+				if (this.isTravelRuleError(err)) {
+					this.openTravelRuleDialog(payload, this.props.currency);
+					return;
+				}
 				if (err instanceof SubmissionError) {
 					if (err.errors && !err.errors.otp_code) {
 						const error = { _error: err.message, ...err.errors };
@@ -554,6 +636,22 @@ class Form extends Component {
 								<QRScanner
 									closeQRScanner={closeQRScanner}
 									getQRData={getQRData}
+								/>
+							)}
+						</Dialog>
+						<Dialog
+							isOpen={this.state.travelRuleDialogOpen}
+							label="travel-rule-modal"
+							onCloseDialog={this.onCloseTravelRule}
+							shouldCloseOnOverlayClick={false}
+							showCloseText={true}
+						>
+							{this.state.travelRuleDialogOpen && (
+								<TravelRuleModal
+									onSubmit={this.onSubmitTravelRule}
+									onCancel={this.onCloseTravelRule}
+									loading={this.state.travelRuleSubmitting}
+									subjectLabel="The receiver is myself"
 								/>
 							)}
 						</Dialog>

@@ -476,6 +476,25 @@ definitions:
           - v4
       verification_method:
         $ref: '#/definitions/RequestVerificationMethod'
+      is_own_address:
+        type: boolean
+        description: Travel rule - whether the receiver of the withdrawal is the user themselves
+      purpose:
+        type: string
+        maxLength: 256
+        description: Travel rule - purpose of the transaction (or free text when "Other")
+      counterparty_type:
+        type: string
+        maxLength: 64
+        description: Travel rule - counterparty service-provider type (exchange_vasp | self_custody)
+      counterparty_name:
+        type: string
+        maxLength: 256
+        description: Travel rule - name of the counterparty person/entity
+      vasp_name:
+        type: string
+        maxLength: 256
+        description: Travel rule - name of the exchange/VASP (when counterparty_type is exchange_vasp)
   OtpRequest:
     type: object
     required:

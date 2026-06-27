@@ -55,6 +55,7 @@ const PAGE_SIZE = 50;
 
 const AssetsBlock = ({
 	coins,
+	valuation_coins = {},
 	pairs,
 	totalAssets,
 	baseCurrency: baseCurrencyProp,
@@ -655,7 +656,10 @@ const AssetsBlock = ({
 									index
 								) => {
 									const markets = getAllAvailableMarkets(key, quicktrade);
-									const baseCoin = coins[baseCurrency] || DEFAULT_COIN_DATA;
+									const baseCoin =
+										coins[baseCurrency] ||
+										valuation_coins[baseCurrency] ||
+										DEFAULT_COIN_DATA;
 									const balanceText =
 										key === baseCurrency
 											? formatCurrencyByIncrementalUnit(balance, increment_unit)
@@ -1007,6 +1011,7 @@ const mapStateToProps = ({
 	app: {
 		wallet_sort: { mode, is_descending },
 		quicktrade,
+		valuation_coins,
 		constants: {
 			balance_history_config,
 			info,
@@ -1027,6 +1032,7 @@ const mapStateToProps = ({
 	valid_languages,
 	language,
 	selectable_native_currencies,
+	valuation_coins,
 	user,
 });
 

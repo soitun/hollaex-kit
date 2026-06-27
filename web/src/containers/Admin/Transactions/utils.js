@@ -108,6 +108,7 @@ export const renderRowContent = ({
 	coins,
 	network,
 	source,
+	viewTravelRule,
 }) => {
 	const renderSource = (value) => {
 		const items = Array.isArray(value) ? value : value ? [value] : [];
@@ -137,6 +138,25 @@ export const renderRowContent = ({
 			)}
 			<div>Timestamp: {formatDate(created_at)}</div>
 			{description && <div>Description: {description}</div>}
+			{viewTravelRule && (
+				<div className="mt-2">
+					<span
+						className="pointer underline-text blue-link"
+						onClick={(e) => {
+							e.stopPropagation();
+							viewTravelRule();
+						}}
+					>
+						View travel rule details
+					</span>
+				</div>
+			)}
 		</div>
 	);
+};
+
+// Counterparty type slugs -> human labels (mirrors TRAVEL_RULE_COUNTERPARTY_TYPES).
+export const TRAVEL_RULE_TYPE_LABELS = {
+	exchange_vasp: 'Exchange / VASP',
+	self_custody: 'Self-custody wallet',
 };

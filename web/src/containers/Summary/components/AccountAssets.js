@@ -7,16 +7,16 @@ import { DonutChart, Carousel, EditWrapper, NotLoggedIn } from 'components';
 import STRINGS from 'config/localizedStrings';
 import {
 	BASE_CURRENCY,
-	DEFAULT_COIN_DATA,
 	SHOW_TOTAL_ASSETS,
 	SHOW_SUMMARY_ACCOUNT_DETAILS,
 } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { formatToCurrency } from 'utils/currency';
 import { isLoggedIn } from 'utils/token';
 import AssetCard from './AssetCard';
 
 const AccountAssets = ({ chartData = [], totalAssets, balance, coins }) => {
-	const baseValue = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+	const baseValue = resolveDisplayCoin(coins, BASE_CURRENCY);
 	const assetCards = () => {
 		if (!chartData.length) {
 			let chartLoading = [];

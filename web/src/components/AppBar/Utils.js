@@ -419,6 +419,7 @@ export const LanguageDisplayPopup = ({
 	isCurrency = false,
 	setBaseCurrency = () => {},
 	coins,
+	valuation_coins = {},
 }) => {
 	const currency =
 		selectable_native_currencies?.length > 0
@@ -594,13 +595,15 @@ export const LanguageDisplayPopup = ({
 							listHeight={90}
 						>
 							{selectable_native_currencies?.map((data) => {
+								const coinData = coins[data] || valuation_coins[data] || {};
 								return (
 									<Option key={data} value={data}>
 										<Coin
 											type={isMobile ? 'CS8' : 'CS4'}
-											iconId={coins[data]?.icon_id}
+											iconId={coinData?.icon_id}
 										/>
-										<span>{coins[data]?.fullname}</span>({data?.toUpperCase()})
+										<span>{coinData?.fullname || data?.toUpperCase()}</span>(
+										{data?.toUpperCase()})
 									</Option>
 								);
 							})}

@@ -333,7 +333,7 @@ const handleCurrencyWithdrawal = (req, res) => {
 };
 
 const checkDepositAddresses = (req, res) => {
-	const { addresses, network, currency, txid, user_id } = req.swagger.params.data.value;
+	const { addresses, network, currency, amount, txid, user_id } = req.swagger.params.data.value;
 
 	loggerNotification.verbose(
 		'controller/notification/checkDepositAddresses data',
@@ -341,6 +341,8 @@ const checkDepositAddresses = (req, res) => {
 		network,
 		'currency',
 		currency,
+		'amount',
+		amount,
 		'txid',
 		txid,
 		'user_id',
@@ -364,8 +366,40 @@ const checkDepositAddresses = (req, res) => {
 				);
 				// kit owns operator alerting for blacklisted deposit sources (throttled)
 				await toolsLib.wallet.alertBlacklistedDeposit(blacklisted, network, user_id);
+				return res.json({ allowed: false, blacklisted });
 			}
-			return res.json({ allowed: blacklisted.length === 0, blacklisted });
+
+			// Travel rule: hold qualifying deposits (>= threshold in native currency) and
+			// record a pending compliance row. No dedup — every qualifying deposit is held.
+			// Blacklist takes precedence above and never reaches here, so blacklisted holds
+			// never get a travel-rule record and can't be auto-released by the user flow.
+			if (toolsLib.travelRule.isTravelRuleActive()) {
+				const { above, amountNative } = await toolsLib.travelRule.isAboveThreshold(currency, amount);
+				if (above) {
+					try {
+						const user = await toolsLib.user.getUserByNetworkId(user_id);
+						await toolsLib.travelRule.createDepositHold({
+							user_id: user && user.id,
+							transaction_id: txid,
+							address: addresses,
+							network,
+							currency,
+							amount,
+							amount_native: amountNative
+						});
+					} catch (err) {
+						// Hold the deposit regardless; an admin can release manually if the
+						// record could not be created.
+						loggerNotification.error(
+							'controller/notification/checkDepositAddresses/travelRule',
+							err.message
+						);
+					}
+					return res.json({ allowed: false, blacklisted: [] });
+				}
+			}
+
+			return res.json({ allowed: true, blacklisted: [] });
 		})
 		.catch((err) => {
 			loggerNotification.error(

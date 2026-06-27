@@ -2,6 +2,7 @@ import React, { Fragment } from 'react';
 
 // import { CurrencyBall } from '../../../components';
 import { DEFAULT_COIN_DATA, BASE_CURRENCY } from '../../../config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import STRINGS from '../../../config/localizedStrings';
 import { formatToCurrency } from '../../../utils/currency';
 import { EditWrapper } from 'components';
@@ -64,7 +65,7 @@ const getLimitValue = (limit, increment_unit) => {
 // };
 
 const getRows = (coins, level, tiers) => {
-	const { increment_unit } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+	const { increment_unit } = resolveDisplayCoin(coins, BASE_CURRENCY);
 
 	const { /*deposit_limit,*/ withdrawal_limit } = tiers[level] || {};
 
@@ -104,7 +105,7 @@ const getRows = (coins, level, tiers) => {
 };
 
 const LimitsBlock = ({ level, coins, tiers, title }) => {
-	const { display_name } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+	const { display_name } = resolveDisplayCoin(coins, BASE_CURRENCY);
 
 	return (
 		<div>

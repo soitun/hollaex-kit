@@ -2624,6 +2624,39 @@ paths:
         - Token: []
       x-security-types:
         - bearer
+  /admin/travel-rule:
+    x-swagger-router-controller: travelRule
+    get:
+      operationId: getAdminTravelRule
+      description: Obtain travel-rule compliance records for a transaction or user.
+      tags:
+        - Admin
+      parameters:
+        - in: query
+          name: transaction_id
+          description: unique transaction id
+          required: false
+          type: string
+          maxLength: 256
+        - in: query
+          name: user_id
+          description: Id of the user
+          required: false
+          type: number
+      responses:
+        200:
+          description: Success
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-token-permissions:
+        - can_read
   /admin/deposits:
     x-swagger-router-controller: deposit
     get:

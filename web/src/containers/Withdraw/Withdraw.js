@@ -45,6 +45,7 @@ import { getAddressBookDetails } from 'containers/Wallet/actions';
 import { getDecimals, handlePopupContainer } from 'utils/utils';
 import { roundNumber, toFixed } from 'utils/currency';
 import { DEFAULT_COIN_DATA } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { setScannedAddress } from 'actions/walletActions';
 import { getNetworkNameByKey } from 'utils/wallet';
 import { checkAccountStatus, getMainAccountToken, setToken } from 'utils/token';
@@ -741,7 +742,8 @@ const RenderWithdraw = ({
 					(getWithdrawCurrency || currency) && feeCoin?.toUpperCase()
 			  }`;
 
-	const incrementUnit = coins[baseCurrency]?.increment_unit || 0.0001;
+	const incrementUnit =
+		resolveDisplayCoin(coins, baseCurrency).increment_unit || 0.0001;
 	const decimalPoint = new BigNumber(incrementUnit).dp();
 	const estimatedFormat = `≈ ${new BigNumber(estimatedWithdrawValue)
 		.decimalPlaces(decimalPoint)

@@ -8,11 +8,8 @@ import AccountAssets from './components/AccountAssets';
 import AccountDetails from './components/AccountDetails';
 import Markets from './components/Markets';
 
-import {
-	BASE_CURRENCY,
-	DEFAULT_COIN_DATA,
-	SHOW_TOTAL_ASSETS,
-} from 'config/constants';
+import { BASE_CURRENCY, SHOW_TOTAL_ASSETS } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 // import { formatAverage, formatBaseAmount } from 'utils/currency';
 import STRINGS from 'config/localizedStrings';
 
@@ -39,7 +36,7 @@ const MobileSummary = ({
 	referral_history_config,
 	sparkLineChartData,
 }) => {
-	const { fullname } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+	const { fullname } = resolveDisplayCoin(coins, BASE_CURRENCY);
 	// const Title = STRINGS.formatString(STRINGS["SUMMARY.LEVEL_OF_ACCOUNT"],verification_level);
 	return (
 		<div

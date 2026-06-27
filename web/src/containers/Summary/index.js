@@ -23,10 +23,10 @@ import {
 } from 'actions/appActions';
 import {
 	BASE_CURRENCY,
-	DEFAULT_COIN_DATA,
 	// SHOW_SUMMARY_ACCOUNT_DETAILS,
 	SHOW_TOTAL_ASSETS,
 } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import STRINGS from 'config/localizedStrings';
 import { formatAverage, formatBaseAmount } from 'utils/currency';
 import { getLastMonthVolume } from './components/utils';
@@ -166,7 +166,7 @@ class Summary extends Component {
 			currentTradingAccount,
 		} = this.state;
 
-		const { fullname } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+		const { fullname } = resolveDisplayCoin(coins, BASE_CURRENCY);
 		const totalAssets = formatAverage(formatBaseAmount(totalAsset));
 		const level = selectedAccount
 			? selectedAccount
