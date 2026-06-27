@@ -41,6 +41,7 @@ exports.PASSWORD_ALREADY_SET = 'Password is already set';
 exports.PASSWORD_NOT_SET = 'Password is not set';
 exports.VERIFICATION_EMAIL_MESSAGE = 'A verification code has been sent to your email with the code if your email is in the system';
 exports.PROVIDE_VALID_EMAIL = 'Please provide a valid email';
+exports.DISPOSABLE_EMAIL_NOT_ALLOWED = 'Disposable email addresses are not allowed';
 exports.PROVIDE_VALID_PHONE = 'Please provide a valid phone number';
 exports.PROVIDE_VALID_EMAIL_CODE = 'Provide a valid email or a valid verification code';
 exports.INVALID_VERIFICATION_CODE = 'Invalid verification code';
