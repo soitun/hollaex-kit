@@ -748,7 +748,8 @@ export const generateWithdrawalsHeaders = (
 	coins = {},
 	withdrawalPopup,
 	ICONS,
-	depositTravelRulePopup
+	depositTravelRulePopup,
+	travelRuleActive = false
 ) => {
 	return [
 		// {
@@ -946,9 +947,12 @@ export const generateWithdrawalsHeaders = (
 					status === false &&
 					dismissed === false &&
 					rejected === false &&
-					depositTravelRulePopup
+					depositTravelRulePopup &&
+					travelRuleActive
 				) {
-					// Travel-rule held deposit — let the user provide the source of funds
+					// Travel-rule held deposit — let the user provide the source of funds.
+					// Gated on travelRuleActive: deposits held for other reasons (KYT,
+					// blacklist, fail-closed network errors) must not show this prompt.
 					return (
 						<td key={index}>
 							<div
