@@ -293,6 +293,7 @@ exports.EMAIL_EXISTS = 'This email already exists';
 exports.CANNOT_CHANGE_DELETED_EMAIL = 'Cannot change deleted email';
 exports.FAILED_GET_QUOTE = 'Failed to get the quote';
 exports.WITHDRAWAL_DISABLED = 'Withdrawal disabled for this user';
+exports.WITHDRAWAL_IDENTITY_NOT_VERIFIED = 'Identity verification is required before making a withdrawal. Please complete your identity verification.';
 exports.WITHDRAWAL_OTP_REQUIRED = 'Two-factor authentication (OTP) must be enabled to withdraw';
 exports.WITHDRAWAL_ADDRESS_NOT_ALLOWED = 'Withdrawals to this address are not allowed';
 exports.TRAVEL_RULE_INFO_REQUIRED = 'Travel rule information is required for this transaction. Please provide the purpose of the transaction and whether the receiver is yourself.';

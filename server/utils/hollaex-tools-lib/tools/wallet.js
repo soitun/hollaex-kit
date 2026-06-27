@@ -24,6 +24,7 @@ const {
 	INVALID_NETWORK,
 	NETWORK_REQUIRED,
 	WITHDRAWAL_DISABLED,
+	WITHDRAWAL_IDENTITY_NOT_VERIFIED,
 	WITHDRAWAL_OTP_REQUIRED,
 	WITHDRAWAL_LIMIT_ERROR,
 	WITHDRAWAL_DAILY_LIMIT_REACHED,
@@ -636,7 +637,11 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 	} else if (user.is_subaccount) {
 		throw new Error(WITHDRAWAL_DISABLED);
 	} else if(user.withdrawal_blocked && moment().isBefore(moment(user.withdrawal_blocked))) {
-		throw new Error(WITHDRAWAL_DISABLED);	
+		throw new Error(WITHDRAWAL_DISABLED);
+	} else if (!user.id_data || user.id_data.status !== 3) {
+		// Identity (KYC) must be approved (id_data.status === 3) before any
+		// withdrawal — applies to fiat, crypto and email transfers alike.
+		throw new Error(WITHDRAWAL_IDENTITY_NOT_VERIFIED);
 	}
 
 	// Enforce 2FA for withdrawals when feature flag is enabled

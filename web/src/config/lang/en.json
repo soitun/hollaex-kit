@@ -1241,6 +1241,11 @@
 		"DESCRIPTION_1": "Sub Accounts are not allowed to make withdrawals",
 		"DESCRIPTION_2": "To make withdrawals please switch to your main account"
 	},
+	"WITHDRAWAL_IDENTITY_VERIFICATION": {
+		"TITLE": "Identity verification required",
+		"DESCRIPTION": "You must verify your identity before you can make any withdrawals. Please complete your identity verification to continue.",
+		"BUTTON": "Verify identity"
+	},
 	"LOGIN_CONFIRMATION": {
 		"LOGIN_CONFIRM_FINAL": "Login Confirmation",
 		"FREEZE_CONFIRM_FINAL": "Freeze your account",
