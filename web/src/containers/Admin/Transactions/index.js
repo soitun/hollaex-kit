@@ -427,9 +427,14 @@ class Transactions extends Component {
 											: () => {},
 									updatingItem: loadingItem && index === indexItem,
 									dismissingItem: dismissingItem && index === indexItem,
-									viewTravelRule: this.props.travelRuleActive
-										? () => this.openTravelRule(deposit.transaction_id)
-										: undefined,
+									// Only offer the travel-rule detail link for transactions that
+									// actually have a travel-rule record (has_travel_rule is a
+									// server-derived flag), not every transaction while the
+									// feature is active.
+									viewTravelRule:
+										this.props.travelRuleActive && deposit.has_travel_rule
+											? () => this.openTravelRule(deposit.transaction_id)
+											: undefined,
 								};
 							})}
 							expandedRowRender={(vals) => renderRowContent({ ...vals, coins })}

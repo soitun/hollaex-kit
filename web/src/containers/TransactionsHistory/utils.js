@@ -933,6 +933,7 @@ export const generateWithdrawalsHeaders = (
 					rejected,
 					waiting,
 					onhold,
+					travel_rule_hold,
 					id,
 					amount,
 					type,
@@ -944,6 +945,7 @@ export const generateWithdrawalsHeaders = (
 				if (
 					type === 'deposit' &&
 					onhold === true &&
+					travel_rule_hold === true &&
 					status === false &&
 					dismissed === false &&
 					rejected === false &&
@@ -951,8 +953,10 @@ export const generateWithdrawalsHeaders = (
 					travelRuleActive
 				) {
 					// Travel-rule held deposit — let the user provide the source of funds.
-					// Gated on travelRuleActive: deposits held for other reasons (KYT,
-					// blacklist, fail-closed network errors) must not show this prompt.
+					// Gated on travel_rule_hold (a server-derived flag, true only when the
+					// deposit is actually held for travel rule): deposits held for other
+					// reasons (KYT, blacklist, fail-closed network errors) must not show
+					// this prompt.
 					return (
 						<td key={index}>
 							<div
