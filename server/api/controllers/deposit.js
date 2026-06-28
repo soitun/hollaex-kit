@@ -2,7 +2,7 @@
 
 const { loggerDeposits } = require('../../config/logger');
 const { ROLES } = require('../../constants');
-const { API_KEY_NOT_PERMITTED, TRAVEL_RULE_HOLD_NOT_FOUND } = require('../../messages');
+const { API_KEY_NOT_PERMITTED, TRAVEL_RULE_HOLD_NOT_FOUND, TRAVEL_RULE_INFO_REQUIRED } = require('../../messages');
 const toolsLib = require('hollaex-tools-lib');
 const { sendEmail } = require('../../mail');
 const { MAILTYPE } = require('../../mail/strings');
@@ -242,6 +242,12 @@ const submitDepositTravelRule = (req, res) => {
 		.then(async (record) => {
 			if (!record) {
 				throw new Error(TRAVEL_RULE_HOLD_NOT_FOUND);
+			}
+
+			// Purpose is the only required field before the hold can be cleared; the
+			// source address is read from the blockchain and the rest is optional.
+			if (typeof purpose !== 'string' || purpose.trim().length === 0) {
+				throw new Error(TRAVEL_RULE_INFO_REQUIRED);
 			}
 
 			// Persist the user-provided travel-rule info FIRST, while the deposit is
