@@ -2615,6 +2615,9 @@ class HollaExNetwork {
 			updatedAddress: null,
 			email: true,
 			updatedDescription: null,
+			addHoldReason: null,
+			clearHoldReason: null,
+			clearHoldSource: null,
 			additionalHeaders: null
 		}
 	) {
@@ -2663,6 +2666,18 @@ class HollaExNetwork {
 
 		if (opts.updatedDescription) {
 			data.updated_description = opts.updatedDescription;
+		}
+
+		if (opts.addHoldReason) {
+			data.add_hold_reason = opts.addHoldReason;
+		}
+
+		if (opts.clearHoldReason) {
+			data.clear_hold_reason = opts.clearHoldReason;
+		}
+
+		if (opts.clearHoldSource) {
+			data.clear_hold_source = opts.clearHoldSource;
 		}
 
 		if (isBoolean(opts.email)) {
@@ -2888,6 +2903,9 @@ class HollaExNetwork {
 			updatedAddress: null,
 			email: true,
 			updatedDescription: null,
+			addHoldReason: null,
+			clearHoldReason: null,
+			clearHoldSource: null,
 			additionalHeaders: null
 		}
 	) {
@@ -2936,6 +2954,18 @@ class HollaExNetwork {
 
 		if (opts.updatedDescription) {
 			data.updated_description = opts.updatedDescription;
+		}
+
+		if (opts.addHoldReason) {
+			data.add_hold_reason = opts.addHoldReason;
+		}
+
+		if (opts.clearHoldReason) {
+			data.clear_hold_reason = opts.clearHoldReason;
+		}
+
+		if (opts.clearHoldSource) {
+			data.clear_hold_source = opts.clearHoldSource;
 		}
 
 		if (isBoolean(opts.email)) {

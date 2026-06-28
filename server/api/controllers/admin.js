@@ -1147,7 +1147,9 @@ const putMint = (req, res) => {
 		processing,
 		waiting,
 		email,
-		description
+		description,
+		clear_hold_reason,
+		clear_hold_source
 	} = req.swagger.params.data.value;
 
 	loggerAdmin.info(
@@ -1182,6 +1184,10 @@ const putMint = (req, res) => {
 		updatedAddress: updated_address,
 		email,
 		updatedDescription: description,
+		// operator clearing a non-travel_rule hold reason (blacklist/scorechain/kyt/
+		// future). The network releases the deposit only if no other reason remains.
+		clearHoldReason: clear_hold_reason,
+		clearHoldSource: clear_hold_source,
 		additionalHeaders: {
 			'x-forwarded-for': req.headers['x-forwarded-for']
 		}
