@@ -366,7 +366,9 @@ const checkDepositAddresses = (req, res) => {
 				);
 				// kit owns operator alerting for blacklisted deposit sources (throttled)
 				await toolsLib.wallet.alertBlacklistedDeposit(blacklisted, network, user_id);
-				return res.json({ allowed: false, blacklisted });
+				// `reason` tells the network which structured hold-reason type to record
+				// on the deposit note (see ../hollaex-network holdReasons).
+				return res.json({ allowed: false, blacklisted, reason: 'blacklist' });
 			}
 
 			// Travel rule: hold qualifying deposits (>= threshold in native currency) and
@@ -395,7 +397,7 @@ const checkDepositAddresses = (req, res) => {
 							err.message
 						);
 					}
-					return res.json({ allowed: false, blacklisted: [] });
+					return res.json({ allowed: false, blacklisted: [], reason: 'travel_rule' });
 				}
 			}
 

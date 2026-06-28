@@ -2,7 +2,7 @@
 
 const { loggerDeposits } = require('../../config/logger');
 const { ROLES } = require('../../constants');
-const { API_KEY_NOT_PERMITTED, TRAVEL_RULE_HOLD_NOT_FOUND } = require('../../messages');
+const { API_KEY_NOT_PERMITTED, TRAVEL_RULE_HOLD_NOT_FOUND, TRAVEL_RULE_INFO_REQUIRED } = require('../../messages');
 const toolsLib = require('hollaex-tools-lib');
 const { sendEmail } = require('../../mail');
 const { MAILTYPE } = require('../../mail/strings');
@@ -244,73 +244,54 @@ const submitDepositTravelRule = (req, res) => {
 				throw new Error(TRAVEL_RULE_HOLD_NOT_FOUND);
 			}
 
-			// fetch the on-hold deposit to inspect its description for KYT plugin markers
-			let deposit;
-			try {
-				const deposits = await toolsLib.wallet.getUserDepositsByKitId(
-					userId, null, null, null, null, null, null, 50, 1, null, null, null, null,
-					transaction_id, null, null, null,
-					{ onhold: true }
-				);
-				const rows = (deposits && deposits.data) || [];
-				deposit = rows.find((d) => d.transaction_id === transaction_id) || rows[0];
-			} catch (err) {
-				loggerDeposits.error(req.uuid, 'controllers/deposit/submitDepositTravelRule/fetch', err.message);
+			// Purpose is the only required field before the hold can be cleared; the
+			// source address is read from the blockchain and the rest is optional.
+			if (typeof purpose !== 'string' || purpose.trim().length === 0) {
+				throw new Error(TRAVEL_RULE_INFO_REQUIRED);
 			}
 
-			// the `onhold` flag is shared by every hold mechanism, so only release when
-			// travel rule is the SOLE reason the deposit is held. Otherwise keep it on
-			// hold and record why (KYT review, auto-deposit disabled, blacklisted source).
-			const description = (deposit && deposit.description) || '';
-			// source address(es) captured at deposit time (stored as JSON when multiple)
-			let sourceAddresses = [];
-			if (record.address) {
-				try {
-					const parsed = JSON.parse(record.address);
-					sourceAddresses = Array.isArray(parsed) ? parsed : [record.address];
-				} catch (e) {
-					sourceAddresses = [record.address];
-				}
-			}
-			const holdReason = await toolsLib.travelRule.getDepositHoldReason({
-				description,
-				network: record.network,
-				addresses: sourceAddresses
-			});
-
-			if (!holdReason) {
-				// travel rule was the only hold — credit the deposit and release it
-				await toolsLib.wallet.updatePendingMint(transaction_id, {
-					status: true,
-					onhold: false,
-					additionalHeaders: {
-						'x-forwarded-for': req.headers['x-forwarded-for']
-					}
-				});
-				await toolsLib.travelRule.resolveDeposit(record, {
-					address: source_address,
-					is_own_address,
-					purpose,
-					counterparty_type,
-					counterparty_name,
-					vasp_name,
-					status: 'released',
-					note: null
-				});
-				return res.json({ message: 'Success', released: true });
-			}
-
-			// another hold reason remains — keep it on hold, save the info and the reason
+			// Persist the user-provided travel-rule info FIRST, while the deposit is
+			// still on hold, so the compliance data is captured even if clearing the
+			// hold (or anything after) fails. Status stays 'pending' until the release
+			// outcome below is known.
 			await toolsLib.travelRule.resolveDeposit(record, {
 				address: source_address,
 				is_own_address,
 				purpose,
 				counterparty_type,
 				counterparty_name,
-				vasp_name,
-				status: 'kept',
-				note: holdReason
+				vasp_name
 			});
+
+			// Now clear ONLY the travel_rule hold reason. The `onhold` flag is shared
+			// by every hold mechanism, so the network is the gate: it deactivates the
+			// travel_rule reason on the deposit note and credits/releases the deposit
+			// only when no other reason remains active. This user flow can never clear
+			// another reason (blacklist/KYT/etc) — those require an operator.
+			const updated = await toolsLib.wallet.updatePendingMint(transaction_id, {
+				clearHoldReason: 'travel_rule',
+				additionalHeaders: {
+					'x-forwarded-for': req.headers['x-forwarded-for']
+				}
+			});
+
+			// the network cleared onhold => travel rule was the last active reason
+			const released = updated && updated.onhold === false;
+
+			if (released) {
+				// finalize: travel rule was the last hold; the deposit is released
+				await toolsLib.travelRule.resolveDeposit(record, { status: 'released', note: null });
+				return res.json({ message: 'Success', released: true });
+			}
+
+			// other hold reason(s) remain — finalize the record with which reason(s)
+			// still hold the deposit (from the structured note the network returned).
+			const remaining = (updated && Array.isArray(updated.note) ? updated.note : [])
+				.filter((e) => e && e.active)
+				.map((e) => e.label || e.type);
+			const remainingReason = remaining.length ? remaining.join(', ') : 'other hold';
+
+			await toolsLib.travelRule.resolveDeposit(record, { status: 'kept', note: remainingReason });
 
 			// notify operator that travel-rule info was provided but a hold remains
 			try {
@@ -324,7 +305,7 @@ const submitDepositTravelRule = (req, res) => {
 							transaction_id,
 							currency: record.currency,
 							amount: record.amount,
-							reason: holdReason
+							reason: remainingReason
 						}
 					},
 					{}

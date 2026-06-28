@@ -1537,6 +1537,14 @@ definitions:
       description:
         type: string
         maxLength: 256
+      clear_hold_reason:
+        type: string
+        maxLength: 256
+        description: "Operator: deactivate the matching hold reason on the deposit note; the deposit is released only when no active reason remains."
+      clear_hold_source:
+        type: string
+        maxLength: 256
+        description: "Optional source discriminator paired with clear_hold_reason (e.g. KYT provider)."
   ReallocateDepositRequest:
     type: object
     required:

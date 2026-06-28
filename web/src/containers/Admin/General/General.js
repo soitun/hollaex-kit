@@ -382,7 +382,9 @@ class GeneralContent extends Component {
 			new_user_is_activated: isSignUpActive,
 			email_verification_required,
 			google_oauth,
+			travel_rule,
 		} = kit;
+		const travelRuleThreshold = travel_rule?.threshold ?? '';
 		initialNameValues = { ...initialNameValues, api_name };
 		initialLanguageValues = {
 			...initialLanguageValues,
@@ -418,6 +420,7 @@ class GeneralContent extends Component {
 			isSignUpActive,
 			initialEmailVerificationValues,
 			initialGoogleOAuthValues,
+			travelRuleThreshold,
 			showDisableSignUpsConfirmation: false,
 			cloudflareTurnstile: {
 				enabled: turnstileEnabled,

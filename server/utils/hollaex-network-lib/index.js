@@ -2615,6 +2615,9 @@ class HollaExNetwork {
 			updatedAddress: null,
 			email: true,
 			updatedDescription: null,
+			addHoldReason: null,
+			clearHoldReason: null,
+			clearHoldSource: null,
 			additionalHeaders: null
 		}
 	) {
@@ -2644,14 +2647,32 @@ class HollaExNetwork {
 		const verb = 'PUT';
 		const path = `${this.baseUrl}/network/${this.exchange_id}/mint`;
 		const data = {
-			transaction_id: transactionId,
-			status,
-			rejected,
-			dismissed,
-			processing,
-			waiting,
-			onhold
+			transaction_id: transactionId
 		};
+
+		// Only forward lifecycle state the caller explicitly set. Sending a defaulted
+		// `false` for every omitted field makes a metadata- or hold-reason-only update
+		// look stateful to the network (its stateProvided guard keys off whether any
+		// of these booleans are present), which would clear `onhold` and release a
+		// held transaction as a side effect.
+		if (isBoolean(opts.status)) {
+			data.status = opts.status;
+		}
+		if (isBoolean(opts.rejected)) {
+			data.rejected = opts.rejected;
+		}
+		if (isBoolean(opts.dismissed)) {
+			data.dismissed = opts.dismissed;
+		}
+		if (isBoolean(opts.processing)) {
+			data.processing = opts.processing;
+		}
+		if (isBoolean(opts.waiting)) {
+			data.waiting = opts.waiting;
+		}
+		if (isBoolean(opts.onhold)) {
+			data.onhold = opts.onhold;
+		}
 
 		if (opts.updatedTransactionId) {
 			data.updated_transaction_id = opts.updatedTransactionId;
@@ -2663,6 +2684,18 @@ class HollaExNetwork {
 
 		if (opts.updatedDescription) {
 			data.updated_description = opts.updatedDescription;
+		}
+
+		if (opts.addHoldReason) {
+			data.add_hold_reason = opts.addHoldReason;
+		}
+
+		if (opts.clearHoldReason) {
+			data.clear_hold_reason = opts.clearHoldReason;
+		}
+
+		if (opts.clearHoldSource) {
+			data.clear_hold_source = opts.clearHoldSource;
 		}
 
 		if (isBoolean(opts.email)) {
@@ -2888,6 +2921,9 @@ class HollaExNetwork {
 			updatedAddress: null,
 			email: true,
 			updatedDescription: null,
+			addHoldReason: null,
+			clearHoldReason: null,
+			clearHoldSource: null,
 			additionalHeaders: null
 		}
 	) {
@@ -2917,14 +2953,32 @@ class HollaExNetwork {
 		const verb = 'PUT';
 		const path = `${this.baseUrl}/network/${this.exchange_id}/burn`;
 		const data = {
-			transaction_id: transactionId,
-			status,
-			rejected,
-			dismissed,
-			processing,
-			waiting,
-			onhold
+			transaction_id: transactionId
 		};
+
+		// Only forward lifecycle state the caller explicitly set. Sending a defaulted
+		// `false` for every omitted field makes a metadata- or hold-reason-only update
+		// look stateful to the network (its stateProvided guard keys off whether any
+		// of these booleans are present), which would clear `onhold` and release a
+		// held transaction as a side effect.
+		if (isBoolean(opts.status)) {
+			data.status = opts.status;
+		}
+		if (isBoolean(opts.rejected)) {
+			data.rejected = opts.rejected;
+		}
+		if (isBoolean(opts.dismissed)) {
+			data.dismissed = opts.dismissed;
+		}
+		if (isBoolean(opts.processing)) {
+			data.processing = opts.processing;
+		}
+		if (isBoolean(opts.waiting)) {
+			data.waiting = opts.waiting;
+		}
+		if (isBoolean(opts.onhold)) {
+			data.onhold = opts.onhold;
+		}
 
 		if (opts.updatedTransactionId) {
 			data.updated_transaction_id = opts.updatedTransactionId;
@@ -2936,6 +2990,18 @@ class HollaExNetwork {
 
 		if (opts.updatedDescription) {
 			data.updated_description = opts.updatedDescription;
+		}
+
+		if (opts.addHoldReason) {
+			data.add_hold_reason = opts.addHoldReason;
+		}
+
+		if (opts.clearHoldReason) {
+			data.clear_hold_reason = opts.clearHoldReason;
+		}
+
+		if (opts.clearHoldSource) {
+			data.clear_hold_source = opts.clearHoldSource;
 		}
 
 		if (isBoolean(opts.email)) {
