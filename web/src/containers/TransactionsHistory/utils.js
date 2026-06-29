@@ -18,7 +18,6 @@ import {
 	CURRENCY_PRICE_FORMAT,
 	DEFAULT_COIN_DATA,
 } from 'config/constants';
-import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { getFormatTimestamp } from 'utils/utils';
 import { formatToCurrency, formatBaseAmount } from 'utils/currency';
 import { Loading } from 'containers/DigitalAssets/components/utils';
