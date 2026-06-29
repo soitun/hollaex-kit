@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 import {
 	InfoCircleTwoTone,
 	PlusSquareOutlined,
@@ -18,7 +19,6 @@ import {
 	CURRENCY_PRICE_FORMAT,
 	DEFAULT_COIN_DATA,
 } from 'config/constants';
-import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { getFormatTimestamp } from 'utils/utils';
 import { formatToCurrency, formatBaseAmount } from 'utils/currency';
 import { Loading } from 'containers/DigitalAssets/components/utils';
@@ -885,7 +885,17 @@ export const generateWithdrawalsHeaders = (
 			key: 'created_at',
 			exportToCsv: ({ created_at = '' }) => created_at,
 			renderCell: ({ created_at = '' }, key, index) => {
-				return <td key={index}>{getFormatTimestamp(created_at)}</td>;
+				return (
+					<td key={index}>
+						{created_at ? (
+							<Tooltip title={getFormatTimestamp(created_at)}>
+								{moment(created_at).fromNow()}
+							</Tooltip>
+						) : (
+							'-'
+						)}
+					</td>
+				);
 			},
 		},
 		{

@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 
 // import { CurrencyBall } from '../../../components';
-import { DEFAULT_COIN_DATA, BASE_CURRENCY } from '../../../config/constants';
+import { BASE_CURRENCY } from '../../../config/constants';
 import { resolveDisplayCoin } from 'utils/valuationCoins';
 import STRINGS from '../../../config/localizedStrings';
 import { formatToCurrency } from '../../../utils/currency';

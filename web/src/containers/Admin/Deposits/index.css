@@ -238,3 +238,11 @@
 	align-items: center;
 	gap: 2%;
 }
+
+/* The popup forces white text; keep the warning alert readable on its light
+   background by restoring dark text inside it. */
+.Validate-Dismiss-popup .ant-alert-warning,
+.Validate-Dismiss-popup .ant-alert-warning .ant-alert-message,
+.Validate-Dismiss-popup .ant-alert-warning .ant-alert-description {
+	color: rgba(0, 0, 0, 0.85);
+}

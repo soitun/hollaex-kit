@@ -299,13 +299,14 @@ const submitDepositTravelRule = (req, res) => {
 					MAILTYPE.ALERT,
 					null,
 					{
-						type: 'Travel rule info provided on held deposit',
+						type: 'Travel rule info submitted — deposit still on hold, please review',
 						data: {
+							message: `The user submitted the required travel rule information, but this deposit is still on hold and was NOT released because another hold reason is still active: "${remainingReason}". The travel rule requirement is now satisfied — please review this transaction and release it manually if the remaining hold is cleared.`,
 							user_id: userId,
 							transaction_id,
 							currency: record.currency,
 							amount: record.amount,
-							reason: remainingReason
+							remaining_hold_reason: remainingReason
 						}
 					},
 					{}

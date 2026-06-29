@@ -376,7 +376,9 @@ class Deposits extends Component {
 				waiting: false,
 			};
 		} else if (statusType === 'release') {
-			// Take off hold -> back to pending so it gets processed automatically.
+			// Take the transaction off hold. The network finalizes it by type: a
+			// released deposit is credited/completed, a released withdrawal goes back
+			// to pending for the withdrawal cron to send on-chain.
 			body = {
 				...body,
 				status: false,

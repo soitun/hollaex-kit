@@ -10,9 +10,13 @@ import {
 	dismissDeposit,
 	requestDepositsDownload,
 	requestTravelRule,
+	requestBurn,
+	requestMint,
+	requestReallocate,
 } from './actions';
 import { renderRowContent, COLUMNS, TRAVEL_RULE_TYPE_LABELS } from './utils';
 import { Filters } from './Filters';
+import ValidateDismiss from '../Deposits/ValidateDismiss';
 
 // import { Table, Button, Input, Select, Alert } from 'antd';
 // import { renderRowContent, COLUMNS, SELECT_KEYS } from './utils';
@@ -69,6 +73,9 @@ class Transactions extends Component {
 		travelRuleData: [],
 		travelRuleError: '',
 		travelRuleTxId: null,
+		isOpen: false,
+		statusType: '',
+		validateData: {},
 	};
 
 	UNSAFE_componentWillMount() {
@@ -349,6 +356,109 @@ class Transactions extends Component {
 		this.setState({ currentTablePage: count });
 	};
 
+	onOpenModal = (validateData, statusType) => {
+		this.setState({ isOpen: true, validateData, statusType });
+	};
+
+	onCancelModal = () => {
+		this.setState({ isOpen: false, statusType: '' });
+	};
+
+	// Re-run the active query so the table reflects the transaction's new state.
+	refreshDeposits = () => {
+		this.requestDeposits(
+			{
+				...this.props.initialData,
+				...conditionHandler(this.state.queryParams),
+			},
+			this.props.queryParams
+		);
+	};
+
+	handleConfirm = (formValues) => {
+		const { statusType, validateData } = this.state;
+		// Determine the funding direction from the row, since this table mixes
+		// deposits and withdrawals.
+		const isDeposit = validateData.type === 'deposit';
+
+		// Block an on-hold deposit: reject it for the original user and reallocate
+		// the funds to an admin-chosen recipient (category 'block', no email).
+		if (statusType === 'block') {
+			requestReallocate({
+				transaction_id: formValues.transaction_id,
+				// address disambiguates which deposit row to reallocate, since one
+				// transaction_id can map to multiple rows (one per credited address)
+				address: formValues.address,
+				receiver_id: Number(formValues.receiver_id),
+				...(formValues.description
+					? { description: formValues.description }
+					: {}),
+			})
+				.then(() => {
+					this.refreshDeposits();
+					this.onCancelModal();
+				})
+				.catch((error) => {
+					const message = error.data ? error.data.message : error.message;
+					this.setState({ error: message });
+					this.onCancelModal();
+				});
+			return;
+		}
+
+		let body = {
+			transaction_id: formValues.transaction_id,
+			updated_transaction_id: formValues.updated_transaction_id,
+			rejected: false,
+			processing: false,
+			waiting: false,
+		};
+		if (formValues.description) {
+			body = {
+				...body,
+				description: formValues.description,
+			};
+		}
+		if (statusType === 'release') {
+			// Take the transaction off hold. The network finalizes it by type: a
+			// released deposit is credited/completed, a released withdrawal goes back
+			// to pending for the withdrawal cron to send on-chain.
+			body = {
+				...body,
+				status: false,
+				dismissed: false,
+				rejected: false,
+				processing: false,
+				waiting: false,
+			};
+		} else if (statusType === 'reject') {
+			// On-hold withdrawal rejection -> dismissed.
+			body = {
+				...body,
+				dismissed: true,
+				status: false,
+			};
+		} else {
+			body = {
+				...body,
+				dismissed: true,
+				status: false,
+			};
+		}
+
+		const request = isDeposit ? requestMint : requestBurn;
+		request(body)
+			.then(() => {
+				this.refreshDeposits();
+				this.onCancelModal();
+			})
+			.catch((error) => {
+				const message = error.data ? error.data.message : error.message;
+				this.setState({ error: message });
+				this.onCancelModal();
+			});
+	};
+
 	render() {
 		const {
 			deposits,
@@ -370,7 +480,7 @@ class Transactions extends Component {
 			hideUserColumn,
 			queryParams: { currency, type },
 		} = this.props;
-		const columns = COLUMNS(currency, type);
+		const columns = COLUMNS(currency, type, this.onOpenModal);
 		return (
 			<div className="app_container-content admin-user-container">
 				<div>
@@ -469,6 +579,21 @@ class Transactions extends Component {
 							this.renderTravelRuleRecord(record)
 						)
 					)}
+				</Modal>
+				<Modal
+					visible={this.state.isOpen}
+					footer={null}
+					onCancel={this.onCancelModal}
+					width="37rem"
+				>
+					{this.state.isOpen ? (
+						<ValidateDismiss
+							validateData={this.state.validateData}
+							statusType={this.state.statusType}
+							onCancel={this.onCancelModal}
+							handleConfirm={this.handleConfirm}
+						/>
+					) : null}
 				</Modal>
 			</div>
 		);

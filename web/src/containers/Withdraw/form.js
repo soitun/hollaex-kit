@@ -651,7 +651,7 @@ class Form extends Component {
 									onSubmit={this.onSubmitTravelRule}
 									onCancel={this.onCloseTravelRule}
 									loading={this.state.travelRuleSubmitting}
-									subjectLabel="The receiver is myself"
+									subjectLabelId="TRAVEL_RULE.RECEIVER_IS_MYSELF"
 								/>
 							)}
 						</Dialog>

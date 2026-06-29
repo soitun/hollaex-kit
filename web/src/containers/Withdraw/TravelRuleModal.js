@@ -1,23 +1,35 @@
 import React, { useState } from 'react';
 import { Button, Checkbox, Input, Select } from 'antd';
+import STRINGS from 'config/localizedStrings';
+import { EditWrapper } from 'components';
 
 // Fixed purpose/source list — mirrors TRAVEL_RULE_PURPOSES in the kit's
-// server/utils/hollaex-tools-lib/tools/travelRule.js. "Other" reveals a free-text input.
+// server/utils/hollaex-tools-lib/tools/travelRule.js. The `value` is the
+// canonical English string the server validates against and must never be
+// localized; only the displayed `labelId` is translated. "Other" reveals a
+// free-text input.
 export const TRAVEL_RULE_PURPOSES = [
-	'Personal transfer',
-	'Investment',
-	'Purchase of goods/services',
-	'Salary/income',
-	'Gift',
-	'Trading',
-	'Other',
+	{
+		value: 'Personal transfer',
+		labelId: 'TRAVEL_RULE.PURPOSE_PERSONAL_TRANSFER',
+	},
+	{ value: 'Investment', labelId: 'TRAVEL_RULE.PURPOSE_INVESTMENT' },
+	{
+		value: 'Purchase of goods/services',
+		labelId: 'TRAVEL_RULE.PURPOSE_PURCHASE',
+	},
+	{ value: 'Salary/income', labelId: 'TRAVEL_RULE.PURPOSE_SALARY' },
+	{ value: 'Gift', labelId: 'TRAVEL_RULE.PURPOSE_GIFT' },
+	{ value: 'Trading', labelId: 'TRAVEL_RULE.PURPOSE_TRADING' },
+	{ value: 'Other', labelId: 'TRAVEL_RULE.PURPOSE_OTHER' },
 ];
 
 // Counterparty service-provider types — mirrors TRAVEL_RULE_COUNTERPARTY_TYPES on
 // the server. The user picks the type first, then identifies the counterparty.
+// As with purposes, `value` stays canonical English; only `labelId` is localized.
 export const TRAVEL_RULE_COUNTERPARTY_TYPES = [
-	{ value: 'exchange_vasp', label: 'Exchange / VASP' },
-	{ value: 'self_custody', label: 'Self-custody wallet' },
+	{ value: 'exchange_vasp', labelId: 'TRAVEL_RULE.COUNTERPARTY_EXCHANGE' },
+	{ value: 'self_custody', labelId: 'TRAVEL_RULE.COUNTERPARTY_SELF_CUSTODY' },
 ];
 
 const { Option } = Select;
@@ -26,13 +38,13 @@ const { Option } = Select;
  * Collects travel-rule info for a transaction at or above the configured threshold.
  * Used for both withdrawals (receiver) and deposits (sender). The user first selects
  * the counterparty service-provider type, then identifies who the counterparty is.
- * `subjectLabel` customises the self-checkbox wording.
+ * `subjectLabelId` customises the self-checkbox wording (receiver vs sender).
  */
 const TravelRuleModal = ({
 	onSubmit,
 	onCancel,
 	loading = false,
-	subjectLabel = 'The receiver is myself',
+	subjectLabelId = 'TRAVEL_RULE.RECEIVER_IS_MYSELF',
 }) => {
 	const [counterpartyType, setCounterpartyType] = useState(undefined);
 	const [isOwnAddress, setIsOwnAddress] = useState(false);
@@ -68,25 +80,34 @@ const TravelRuleModal = ({
 	return (
 		<div className="travel-rule-modal d-flex flex-column">
 			<div className="travel-rule-modal__header">
-				<div className="dialog-title bold">Travel rule information</div>
+				<div className="dialog-title bold">
+					<EditWrapper stringId="TRAVEL_RULE.TITLE">
+						{STRINGS['TRAVEL_RULE.TITLE']}
+					</EditWrapper>
+				</div>
 				<div className="travel-rule-modal__intro">
-					This transaction requires additional information for compliance.
-					Please provide the details below.
+					<EditWrapper stringId="TRAVEL_RULE.INTRO">
+						{STRINGS['TRAVEL_RULE.INTRO']}
+					</EditWrapper>
 				</div>
 			</div>
 
 			<div className="travel-rule-modal__field">
-				<div className="travel-rule-modal__label">Service provider type</div>
+				<div className="travel-rule-modal__label">
+					<EditWrapper stringId="TRAVEL_RULE.SERVICE_PROVIDER_TYPE">
+						{STRINGS['TRAVEL_RULE.SERVICE_PROVIDER_TYPE']}
+					</EditWrapper>
+				</div>
 				<Select
 					className="w-100"
 					dropdownClassName="custom-select-style"
-					placeholder="Select the counterparty type"
+					placeholder={STRINGS['TRAVEL_RULE.SELECT_COUNTERPARTY_TYPE']}
 					value={counterpartyType}
 					onChange={onChangeType}
 				>
 					{TRAVEL_RULE_COUNTERPARTY_TYPES.map((item) => (
 						<Option key={item.value} value={item.value}>
-							{item.label}
+							{STRINGS[item.labelId]}
 						</Option>
 					))}
 				</Select>
@@ -94,11 +115,15 @@ const TravelRuleModal = ({
 
 			{isExchange && (
 				<div className="travel-rule-modal__field">
-					<div className="travel-rule-modal__label">Exchange / VASP name</div>
+					<div className="travel-rule-modal__label">
+						<EditWrapper stringId="TRAVEL_RULE.VASP_NAME">
+							{STRINGS['TRAVEL_RULE.VASP_NAME']}
+						</EditWrapper>
+					</div>
 					<Input
 						value={vaspName}
 						onChange={(e) => setVaspName(e.target.value)}
-						placeholder="e.g. Coinbase, Binance"
+						placeholder={STRINGS['TRAVEL_RULE.VASP_NAME_PLACEHOLDER']}
 						maxLength={256}
 					/>
 				</div>
@@ -110,7 +135,7 @@ const TravelRuleModal = ({
 						checked={isOwnAddress}
 						onChange={(e) => setIsOwnAddress(e.target.checked)}
 					>
-						{subjectLabel}
+						{STRINGS[subjectLabelId]}
 					</Checkbox>
 				</div>
 			)}
@@ -118,29 +143,43 @@ const TravelRuleModal = ({
 			{needsName && (
 				<div className="travel-rule-modal__field">
 					<div className="travel-rule-modal__label">
-						{isExchange ? 'Account holder name' : 'Counterparty name'}
+						<EditWrapper
+							stringId={
+								isExchange
+									? 'TRAVEL_RULE.ACCOUNT_HOLDER_NAME'
+									: 'TRAVEL_RULE.COUNTERPARTY_NAME'
+							}
+						>
+							{isExchange
+								? STRINGS['TRAVEL_RULE.ACCOUNT_HOLDER_NAME']
+								: STRINGS['TRAVEL_RULE.COUNTERPARTY_NAME']}
+						</EditWrapper>
 					</div>
 					<Input
 						value={counterpartyName}
 						onChange={(e) => setCounterpartyName(e.target.value)}
-						placeholder="Full name of the person or entity"
+						placeholder={STRINGS['TRAVEL_RULE.NAME_PLACEHOLDER']}
 						maxLength={256}
 					/>
 				</div>
 			)}
 
 			<div className="travel-rule-modal__field">
-				<div className="travel-rule-modal__label">Purpose of transaction</div>
+				<div className="travel-rule-modal__label">
+					<EditWrapper stringId="TRAVEL_RULE.PURPOSE_LABEL">
+						{STRINGS['TRAVEL_RULE.PURPOSE_LABEL']}
+					</EditWrapper>
+				</div>
 				<Select
 					className="w-100"
 					dropdownClassName="custom-select-style"
-					placeholder="Select a purpose"
+					placeholder={STRINGS['TRAVEL_RULE.SELECT_PURPOSE']}
 					value={purpose}
 					onChange={(value) => setPurpose(value)}
 				>
 					{TRAVEL_RULE_PURPOSES.map((item) => (
-						<Option key={item} value={item}>
-							{item}
+						<Option key={item.value} value={item.value}>
+							{STRINGS[item.labelId]}
 						</Option>
 					))}
 				</Select>
@@ -148,11 +187,15 @@ const TravelRuleModal = ({
 
 			{isOther && (
 				<div className="travel-rule-modal__field">
-					<div className="travel-rule-modal__label">Please specify</div>
+					<div className="travel-rule-modal__label">
+						<EditWrapper stringId="TRAVEL_RULE.SPECIFY">
+							{STRINGS['TRAVEL_RULE.SPECIFY']}
+						</EditWrapper>
+					</div>
 					<Input
 						value={customPurpose}
 						onChange={(e) => setCustomPurpose(e.target.value)}
-						placeholder="Enter the purpose"
+						placeholder={STRINGS['TRAVEL_RULE.SPECIFY_PLACEHOLDER']}
 						maxLength={256}
 					/>
 				</div>
@@ -164,7 +207,9 @@ const TravelRuleModal = ({
 					onClick={onCancel}
 					disabled={loading}
 				>
-					Cancel
+					<EditWrapper stringId="TRAVEL_RULE.CANCEL">
+						{STRINGS['TRAVEL_RULE.CANCEL']}
+					</EditWrapper>
 				</Button>
 				<Button
 					type="primary"
@@ -181,7 +226,9 @@ const TravelRuleModal = ({
 						})
 					}
 				>
-					Submit
+					<EditWrapper stringId="TRAVEL_RULE.SUBMIT">
+						{STRINGS['TRAVEL_RULE.SUBMIT']}
+					</EditWrapper>
 				</Button>
 			</div>
 		</div>
