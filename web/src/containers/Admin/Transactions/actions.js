@@ -79,3 +79,27 @@ export const dismissDeposit = (transaction_id, dismissed) => {
 		options
 	);
 };
+
+export const requestBurn = (data) => {
+	const options = {
+		method: 'PUT',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/burn`, options);
+};
+
+export const requestMint = (data) => {
+	const options = {
+		method: 'PUT',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/mint`, options);
+};
+
+export const requestReallocate = (data) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/deposit/reallocate`, options);
+};

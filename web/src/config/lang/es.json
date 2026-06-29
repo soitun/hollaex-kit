@@ -3252,5 +3252,36 @@
 		"LOGIN_DESCRIPTION": "Estás a punto de iniciar sesión en la cuenta compartida de {0}.",
 		"LOGIN_WARNING": "Recuerda, estás accediendo a la cuenta de otra persona. Actúa con responsabilidad."
 	},
-	"QUICK_TRADE_QUOTE_EXPIRED": "Quote has expired"
+	"QUICK_TRADE_QUOTE_EXPIRED": "Quote has expired",
+	"TRAVEL_RULE": {
+		"TITLE": "Información de la regla de viaje",
+		"INTRO": "Esta transacción requiere información adicional para cumplir con la normativa. Proporcione los datos a continuación.",
+		"SERVICE_PROVIDER_TYPE": "Tipo de proveedor de servicios",
+		"SELECT_COUNTERPARTY_TYPE": "Seleccione el tipo de contraparte",
+		"COUNTERPARTY_EXCHANGE": "Exchange / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "Billetera de autocustodia",
+		"VASP_NAME": "Nombre del exchange / VASP",
+		"VASP_NAME_PLACEHOLDER": "p. ej. Coinbase, Binance",
+		"ACCOUNT_HOLDER_NAME": "Nombre del titular de la cuenta",
+		"COUNTERPARTY_NAME": "Nombre de la contraparte",
+		"NAME_PLACEHOLDER": "Nombre completo de la persona o entidad",
+		"RECEIVER_IS_MYSELF": "El receptor soy yo",
+		"SENDER_IS_MYSELF": "El remitente soy yo",
+		"PURPOSE_LABEL": "Propósito de la transacción",
+		"SELECT_PURPOSE": "Seleccione un propósito",
+		"SPECIFY": "Especifique",
+		"SPECIFY_PLACEHOLDER": "Ingrese el propósito",
+		"PROVIDE_SOURCE": "Indicar origen",
+		"DEPOSIT_RELEASED": "Su depósito ha sido liberado.",
+		"DEPOSIT_INFO_SAVED": "Su información ha sido guardada. El depósito permanece en revisión.",
+		"CANCEL": "Cancelar",
+		"SUBMIT": "Enviar",
+		"PURPOSE_PERSONAL_TRANSFER": "Transferencia personal",
+		"PURPOSE_INVESTMENT": "Inversión",
+		"PURPOSE_PURCHASE": "Compra de bienes/servicios",
+		"PURPOSE_SALARY": "Salario/ingresos",
+		"PURPOSE_GIFT": "Regalo",
+		"PURPOSE_TRADING": "Trading",
+		"PURPOSE_OTHER": "Otro"
+	}
 }

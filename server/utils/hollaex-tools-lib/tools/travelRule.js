@@ -23,12 +23,6 @@ const TRAVEL_RULE_PURPOSES = [
 // then identifies the counterparty (name, and the VASP/provider name for exchanges).
 const TRAVEL_RULE_COUNTERPARTY_TYPES = ['exchange_vasp', 'self_custody'];
 
-// KYT plugin review markers (see ../hollaex-plugins amlbot/scorechain). A deposit
-// description containing any of these was held/flagged by a KYT plugin and must
-// NOT be auto-released through the travel-rule user flow. The generic `-reviewed]`
-// suffix also covers future KYT plugins that follow the same convention.
-const KYT_HOLD_MARKERS = ['[amlbot-reviewed]', '[scorechain-reviewed]'];
-
 const getTravelRuleConfig = () => getKitConfig()?.travel_rule || {};
 
 const isTravelRuleActive = () => getTravelRuleConfig().active === true;
@@ -88,50 +82,6 @@ const isAboveThreshold = async (currency, amount) => {
 		return { above: false, amountNative: null };
 	}
 	return { above: amountNative >= threshold, amountNative };
-};
-
-/** True if a deposit description carries a KYT plugin hold marker. */
-const hasKytHoldMarker = (description = '') => {
-	const desc = (description || '').toString();
-	if (!desc) {
-		return false;
-	}
-	if (KYT_HOLD_MARKERS.some((marker) => desc.indexOf(marker) > -1)) {
-		return true;
-	}
-	// generic fallback for future KYT plugins following the "[<name>-reviewed]" convention
-	return /\[[a-z0-9_-]+-reviewed\]/i.test(desc);
-};
-
-/**
- * Determines whether a held deposit may be auto-released through the travel-rule
- * user flow. A held deposit is released ONLY when travel rule is the SOLE reason
- * it is on hold — the `onhold` flag is a single boolean shared by every hold
- * mechanism, so releasing blindly would override an unrelated hold.
- *
- * Returns null when the deposit may be released, or a human-readable reason string
- * (stored as the record `note`) explaining why it must stay on hold:
- *   - a KYT plugin flagged it (marker in the deposit description)
- *   - auto-deposit is disabled, so it awaits manual admin approval
- *   - a source address is (now) blacklisted
- */
-const getDepositHoldReason = async ({ description, network, addresses } = {}) => {
-	if (hasKytHoldMarker(description)) {
-		return 'KYT review hold — flagged by a KYT plugin';
-	}
-	if (getKitConfig()?.auto_deposit?.active === false) {
-		return 'Auto-deposit disabled — awaiting manual admin approval';
-	}
-	// lazy require avoids a load-order cycle with the blockchain tools
-	const { areAddressesBlacklisted } = require('./blockchain');
-	const blacklisted = await areAddressesBlacklisted(
-		Array.isArray(addresses) ? addresses : (addresses ? [addresses] : []),
-		network
-	);
-	if (blacklisted.length > 0) {
-		return `Blacklisted source address: ${blacklisted.join(', ')}`;
-	}
-	return null;
 };
 
 const recordWithdrawalCompliance = async ({
@@ -260,13 +210,10 @@ const resolveDeposit = async (record, { address, is_own_address, purpose, counte
 module.exports = {
 	TRAVEL_RULE_PURPOSES,
 	TRAVEL_RULE_COUNTERPARTY_TYPES,
-	KYT_HOLD_MARKERS,
 	getTravelRuleConfig,
 	isTravelRuleActive,
 	convertToNative,
 	isAboveThreshold,
-	hasKytHoldMarker,
-	getDepositHoldReason,
 	recordWithdrawalCompliance,
 	createDepositHold,
 	findByTxid,

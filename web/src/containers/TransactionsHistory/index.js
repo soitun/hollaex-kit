@@ -1192,8 +1192,7 @@ class TransactionsHistory extends Component {
 							onSubmit={this.onSubmitDepositTravelRule}
 							onCancel={this.onCloseTravelRule}
 							loading={this.state.travelRuleSubmitting}
-							subjectLabel="The sender is myself"
-							showSourceAddress={true}
+							subjectLabelId="TRAVEL_RULE.SENDER_IS_MYSELF"
 						/>
 					)}
 				</Dialog>

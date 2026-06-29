@@ -1372,6 +1372,9 @@ const updatePendingMint = (
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
+		addHoldReason: null,
+		clearHoldReason: null,
+		clearHoldSource: null,
 		additionalHeaders: null
 	}
 ) => {
@@ -1460,6 +1463,9 @@ const updatePendingBurn = (
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
+		addHoldReason: null,
+		clearHoldReason: null,
+		clearHoldSource: null,
 		additionalHeaders: null
 	}
 ) => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 import { Link } from 'react-router';
 import { Icon as LegacyIcon } from '@ant-design/compatible';
 import {
@@ -35,6 +36,76 @@ export const renderStatus = (_, { status, dismissed, rejected, onhold }) => {
 	}
 
 	return 'Pending';
+};
+
+// Friendly text for the known structured hold-reason types the network tags on
+// the transaction `note`. Falls back to the note's own label, then its raw type.
+const HOLD_REASON_LABELS = {
+	travel_rule: 'travel rule information is required',
+	blacklist: 'the address is blacklisted',
+	kyt: 'it was flagged by transaction monitoring (KYT)',
+	auto_deposit: 'automatic crediting is disabled',
+};
+
+// The transaction `note` is a JSONB array of structured hold reasons shaped like
+// { type, label, active }. Return human-readable text for the reasons still
+// holding the transaction (mirrors the network's `e.active` / `e.label || e.type`).
+export const getHoldReasons = (note) => {
+	if (!Array.isArray(note)) {
+		return [];
+	}
+	return note
+		.filter((entry) => entry && entry.active)
+		.map((entry) => entry.label || HOLD_REASON_LABELS[entry.type] || entry.type)
+		.filter(Boolean);
+};
+
+// Plain-language explanation of what the current status means for this
+// transaction, shown in the expanded row so admins don't have to interpret the
+// raw status flags.
+export const getStatusNote = ({
+	status,
+	dismissed,
+	rejected,
+	onhold,
+	processing,
+	waiting,
+	type,
+	note,
+} = {}) => {
+	const kind = type === 'withdrawal' ? 'withdrawal' : 'deposit';
+	if (status) {
+		return kind === 'withdrawal'
+			? 'This withdrawal has been completed and the funds have been sent out.'
+			: 'This deposit has been completed and the funds have been credited to the user.';
+	}
+	if (rejected) {
+		return `This ${kind} was rejected. It was not processed and no funds were moved.`;
+	}
+	if (dismissed) {
+		return `This ${kind} was dismissed and will not be processed.`;
+	}
+	if (onhold) {
+		const reasons = getHoldReasons(note);
+		const base =
+			kind === 'withdrawal'
+				? 'This withdrawal is on hold pending review. Release it to send it on-chain, or reject it to cancel it.'
+				: 'This deposit is on hold pending review. Release it to credit the funds, or block it to redirect them to another user.';
+		if (reasons.length === 1) {
+			return `${base} It is held because ${reasons[0]}.`;
+		}
+		if (reasons.length > 1) {
+			return `${base} It is held because: ${reasons.join('; ')}.`;
+		}
+		return base;
+	}
+	if (processing) {
+		return `This ${kind} is currently being processed.`;
+	}
+	if (waiting) {
+		return `This ${kind} is waiting in the queue to be processed.`;
+	}
+	return `This ${kind} is pending and has not been processed yet.`;
 };
 
 const ButtonNotAvailable = () => <CloseSquareOutlined />;
@@ -240,7 +311,19 @@ export const COLUMNS = (currency, onOpenModal) => {
 		},
 		{ title: 'Amount', dataIndex: 'amount', key: 'amount' },
 		// { title: 'Fee', dataIndex: 'fee', key: 'fee' },
-		// { title: 'Timestamp', dataIndex: 'created_at', key: 'created_at' },
+		{
+			title: 'Time',
+			dataIndex: 'created_at',
+			key: 'created_at',
+			render: (created_at) =>
+				created_at ? (
+					<Tooltip title={formatDate(created_at)}>
+						{moment(created_at).fromNow()}
+					</Tooltip>
+				) : (
+					'-'
+				),
+		},
 	];
 	// Admins get a combined Status column with inline validate/dismiss/retry
 	// actions; support sees the status label only.
@@ -289,6 +372,9 @@ export const renderRowContent = ({
 	status,
 	transaction_id,
 	source,
+	category,
+	type,
+	note,
 	coins,
 }) => {
 	const renderFlag = (value) =>
@@ -322,8 +408,31 @@ export const renderRowContent = ({
 				{renderFlag(processing)} | Waiting: {renderFlag(waiting)} | On Hold:{' '}
 				{renderFlag(onhold)}
 			</div>
+			<div
+				className="mt-2 p-2"
+				style={{
+					backgroundColor: '#ffffff',
+					color: '#d0021b',
+					fontWeight: 'bold',
+					borderRadius: '2px',
+					display: 'inline-block',
+				}}
+			>
+				Note:{' '}
+				{getStatusNote({
+					status,
+					dismissed,
+					rejected,
+					onhold,
+					processing,
+					waiting,
+					type,
+					note,
+				})}
+			</div>
 			<div>Timestamp: {formatDate(created_at)}</div>
 			{updated_at && <div>Last update: {formatDate(updated_at)}</div>}
+			{category && <div>Category: {category}</div>}
 			{description && <div>Description: {description}</div>}
 		</div>
 	);

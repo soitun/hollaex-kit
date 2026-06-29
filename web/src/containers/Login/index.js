@@ -247,6 +247,28 @@ class Login extends Component {
 				// A POST /login was made, always refresh captcha token for the next request
 				this.resetCaptcha();
 
+				// Suspicious login / new device detected at the OTP step: the OTP
+				// itself is fine, but the server requires email verification of the
+				// new device. Close the dialog and send the user to the
+				// /email-confirm page instead of leaving them stuck on the OTP form
+				// (which makes it look like the code was wrong).
+				if (
+					typeof _error === 'string' &&
+					_error
+						.toLowerCase()
+						.includes('suspicious login detected, please check your email')
+				) {
+					this.setState({
+						otpDialogIsOpen: false,
+						values: {},
+						loginMode: 'password',
+					});
+					this.props.reset('OtpForm');
+					this.props.stopSubmit('OtpForm', {});
+					this.props.router.replace('/email-confirm');
+					return;
+				}
+
 				// Wrong OTP: keep the OTP dialog open and show the error there.
 				// (Do not close the dialog for code 52.)
 				if (Number(code) === 52) {

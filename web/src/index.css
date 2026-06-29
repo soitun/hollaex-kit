@@ -3521,6 +3521,104 @@ table th {
   overflow: hidden;
   width: 100%; }
 
+.travel-rule-modal {
+  width: 30rem;
+  max-width: 100%;
+  padding: 0.5rem 0.25rem;
+  color: var(--labels_important-active-labels-text-graphics); }
+  .travel-rule-modal .travel-rule-modal__header {
+    padding-bottom: 1.25rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--calculated_secondary-border); }
+  .travel-rule-modal .dialog-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem; }
+  .travel-rule-modal .travel-rule-modal__intro {
+    margin-top: 0.5rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: var(--labels_secondary-inactive-label-text-graphics); }
+  .travel-rule-modal .travel-rule-modal__field {
+    margin-top: 1.5rem; }
+    .travel-rule-modal .travel-rule-modal__field--checkbox {
+      margin-top: 1.25rem; }
+  .travel-rule-modal .travel-rule-modal__label {
+    margin-bottom: 0.4rem;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--labels_secondary-inactive-label-text-graphics); }
+  .travel-rule-modal .ant-input {
+    height: 2.6rem;
+    padding: 0 0.75rem;
+    border-radius: 0.35rem !important;
+    border: 1px solid var(--calculated_important-border) !important;
+    background-color: var(--base_wallet-sidebar-and-popup) !important;
+    color: var(--labels_important-active-labels-text-graphics) !important;
+    box-shadow: none !important; }
+    .travel-rule-modal .ant-input::placeholder {
+      color: var(--labels_secondary-inactive-label-text-graphics);
+      opacity: 0.5; }
+    .travel-rule-modal .ant-input:hover, .travel-rule-modal .ant-input:focus {
+      border-color: var(--specials_buttons-links-and-highlights) !important; }
+  .travel-rule-modal .ant-select .ant-select-selector {
+    height: 2.6rem !important;
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem !important;
+    border-radius: 0.35rem !important;
+    border: 1px solid var(--calculated_important-border) !important;
+    background-color: var(--base_wallet-sidebar-and-popup) !important;
+    color: var(--labels_important-active-labels-text-graphics) !important;
+    box-shadow: none !important; }
+  .travel-rule-modal .ant-select .ant-select-selection-item {
+    color: var(--labels_important-active-labels-text-graphics); }
+  .travel-rule-modal .ant-select .ant-select-selection-placeholder {
+    color: var(--labels_secondary-inactive-label-text-graphics);
+    opacity: 0.5; }
+  .travel-rule-modal .ant-select .ant-select-arrow {
+    color: var(--labels_important-active-labels-text-graphics); }
+  .travel-rule-modal .ant-select:hover .ant-select-selector,
+  .travel-rule-modal .ant-select.ant-select-focused .ant-select-selector {
+    border-color: var(--specials_buttons-links-and-highlights) !important; }
+  .travel-rule-modal .ant-checkbox-wrapper {
+    color: var(--labels_important-active-labels-text-graphics); }
+    .travel-rule-modal .ant-checkbox-wrapper .ant-checkbox-inner {
+      background-color: var(--base_wallet-sidebar-and-popup);
+      border-color: var(--calculated_important-border); }
+    .travel-rule-modal .ant-checkbox-wrapper .ant-checkbox-checked .ant-checkbox-inner {
+      background-color: var(--specials_buttons-links-and-highlights);
+      border-color: var(--specials_buttons-links-and-highlights); }
+  .travel-rule-modal .travel-rule-modal__actions {
+    margin-top: 2rem;
+    gap: 1rem; }
+    .travel-rule-modal .travel-rule-modal__actions .ant-btn {
+      flex: 1;
+      height: 2.8rem;
+      border-radius: 0.35rem;
+      font-weight: 600;
+      box-shadow: none; }
+    .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__cancel {
+      background-color: transparent;
+      border: 1px solid var(--calculated_important-border);
+      color: var(--labels_important-active-labels-text-graphics); }
+      .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__cancel:hover, .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__cancel:focus {
+        border-color: var(--specials_buttons-links-and-highlights);
+        color: var(--specials_buttons-links-and-highlights); }
+    .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit {
+      background-color: var(--specials_buttons-links-and-highlights);
+      border-color: var(--specials_buttons-links-and-highlights);
+      color: #fff; }
+      .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit:hover, .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit:focus {
+        background-color: var(--specials_buttons-links-and-highlights);
+        border-color: var(--specials_buttons-links-and-highlights);
+        opacity: 0.9; }
+      .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit[disabled], .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit[disabled]:hover {
+        background-color: var(--calculated_important-border);
+        border-color: var(--calculated_important-border);
+        color: var(--labels_secondary-inactive-label-text-graphics);
+        opacity: 0.6; }
+
 .extra_information-wrapper {
   margin-top: 1rem;
   padding: 0.5rem;
