@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 import {
 	InfoCircleTwoTone,
 	PlusSquareOutlined,
@@ -884,7 +885,17 @@ export const generateWithdrawalsHeaders = (
 			key: 'created_at',
 			exportToCsv: ({ created_at = '' }) => created_at,
 			renderCell: ({ created_at = '' }, key, index) => {
-				return <td key={index}>{getFormatTimestamp(created_at)}</td>;
+				return (
+					<td key={index}>
+						{created_at ? (
+							<Tooltip title={getFormatTimestamp(created_at)}>
+								{moment(created_at).fromNow()}
+							</Tooltip>
+						) : (
+							'-'
+						)}
+					</td>
+				);
 			},
 		},
 		{

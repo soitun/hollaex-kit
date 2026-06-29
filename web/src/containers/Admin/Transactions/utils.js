@@ -1,6 +1,11 @@
 import React from 'react';
+import moment from 'moment';
 import { Icon as LegacyIcon } from '@ant-design/compatible';
-import { BankOutlined, CloseSquareOutlined } from '@ant-design/icons';
+import {
+	BankOutlined,
+	CloseSquareOutlined,
+	ClockCircleOutlined,
+} from '@ant-design/icons';
 import { Button, Tooltip } from 'antd';
 import { Link } from 'react-router';
 
@@ -43,6 +48,116 @@ export const getStatusLabel = ({
 };
 
 export const renderStatus = (_, record) => getStatusLabel(record);
+
+// Friendly text for the known structured hold-reason types the network tags on
+// the transaction `note`. Falls back to the note's own label, then its raw type.
+const HOLD_REASON_LABELS = {
+	travel_rule: 'travel rule information is required',
+	blacklist: 'the address is blacklisted',
+	kyt: 'it was flagged by transaction monitoring (KYT)',
+	auto_deposit: 'automatic crediting is disabled',
+};
+
+// The transaction `note` is a JSONB array of structured hold reasons shaped like
+// { type, label, active }. Return human-readable text for the reasons still
+// holding the transaction (mirrors the network's `e.active` / `e.label || e.type`).
+export const getHoldReasons = (note) => {
+	if (!Array.isArray(note)) {
+		return [];
+	}
+	return note
+		.filter((entry) => entry && entry.active)
+		.map((entry) => entry.label || HOLD_REASON_LABELS[entry.type] || entry.type)
+		.filter(Boolean);
+};
+
+// Plain-language explanation of what the current status means for this
+// transaction, shown in the expanded row so admins don't have to interpret the
+// raw status flags.
+export const getStatusNote = ({
+	status,
+	dismissed,
+	rejected,
+	onhold,
+	processing,
+	waiting,
+	type,
+	note,
+} = {}) => {
+	const kind = type === 'withdrawal' ? 'withdrawal' : 'deposit';
+	if (status) {
+		return kind === 'withdrawal'
+			? 'This withdrawal has been completed and the funds have been sent out.'
+			: 'This deposit has been completed and the funds have been credited to the user.';
+	}
+	if (rejected) {
+		return `This ${kind} was rejected. It was not processed and no funds were moved.`;
+	}
+	if (dismissed) {
+		return `This ${kind} was dismissed and will not be processed.`;
+	}
+	if (onhold) {
+		const reasons = getHoldReasons(note);
+		const base =
+			kind === 'withdrawal'
+				? 'This withdrawal is on hold pending review. Release it to send it on-chain, or reject it to cancel it.'
+				: 'This deposit is on hold pending review. Release it to credit the funds, or block it to redirect them to another user.';
+		if (reasons.length === 1) {
+			return `${base} It is held because ${reasons[0]}.`;
+		}
+		if (reasons.length > 1) {
+			return `${base} It is held because: ${reasons.join('; ')}.`;
+		}
+		return base;
+	}
+	if (processing) {
+		return `This ${kind} is currently being processed.`;
+	}
+	if (waiting) {
+		return `This ${kind} is waiting in the queue to be processed.`;
+	}
+	return `This ${kind} is pending and has not been processed yet.`;
+};
+
+// Status cell with inline release / block (deposit) or release / reject
+// (withdrawal) actions for on-hold transactions; other states show the label.
+export const renderContent = (record, onOpenModal) => {
+	if (record.onhold && onOpenModal) {
+		const isDeposit = record.type === 'deposit';
+		return (
+			<div className="d-flex validate-wrapper align-items-center">
+				<ClockCircleOutlined style={{ margin: '5px' }} />
+				<span className="mr-3">On Hold</span>
+				<Tooltip placement="bottom" title="RELEASE">
+					<div
+						className="anchor"
+						onClick={(e) => {
+							onOpenModal(record, 'release');
+							e.preventDefault();
+							e.stopPropagation();
+						}}
+					>
+						release
+					</div>
+				</Tooltip>
+				<div className="mx-3">/</div>
+				<Tooltip placement="bottom" title={isDeposit ? 'BLOCK' : 'REJECT'}>
+					<div
+						className="anchor"
+						onClick={(e) => {
+							onOpenModal(record, isDeposit ? 'block' : 'reject');
+							e.preventDefault();
+							e.stopPropagation();
+						}}
+					>
+						{isDeposit ? 'block' : 'reject'}
+					</div>
+				</Tooltip>
+			</div>
+		);
+	}
+	return getStatusLabel(record);
+};
 
 const ButtonNotAvailable = () => <CloseSquareOutlined />;
 export const renderValidation = ({ status, completeDeposit, updatingItem }) =>
@@ -91,7 +206,7 @@ export const renderUser = (id) => (
 	</Tooltip>
 );
 
-export const COLUMNS = (currency, type) => {
+export const COLUMNS = (currency, type, onOpenModal) => {
 	const transactionTitle =
 		currency === 'fiat' ? 'Payment Id' : 'Transaction Id';
 	const columns = [
@@ -111,9 +226,25 @@ export const COLUMNS = (currency, type) => {
 		{ title: 'Currency', dataIndex: 'currency', key: 'currency' },
 
 		{ title: 'Amount', dataIndex: 'amount', key: 'amount' },
-		{ title: 'Status', key: 'status', render: renderStatus },
+		{
+			title: 'Status',
+			key: 'status',
+			render: (_, record) => renderContent(record, onOpenModal),
+		},
+		{
+			title: 'Time',
+			dataIndex: 'created_at',
+			key: 'created_at',
+			render: (created_at) =>
+				created_at ? (
+					<Tooltip title={formatDate(created_at)}>
+						{moment(created_at).fromNow()}
+					</Tooltip>
+				) : (
+					'-'
+				),
+		},
 		// { title: 'Fee', dataIndex: 'fee', key: 'fee' },
-		// { title: 'Timestamp', dataIndex: 'created_at', key: 'created_at' },
 	];
 	return columns;
 };
@@ -148,6 +279,8 @@ export const renderRowContent = ({
 	onhold,
 	processing,
 	waiting,
+	category,
+	note,
 	viewTravelRule,
 }) => {
 	const renderSource = (value) => {
@@ -194,8 +327,31 @@ export const renderRowContent = ({
 				Dismissed: {renderFlag(dismissed)} | On Hold: {renderFlag(onhold)} |
 				Processing: {renderFlag(processing)} | Waiting: {renderFlag(waiting)}
 			</div>
+			<div
+				className="mt-2 p-2"
+				style={{
+					backgroundColor: '#ffffff',
+					color: '#d0021b',
+					fontWeight: 'bold',
+					borderRadius: '2px',
+					display: 'inline-block',
+				}}
+			>
+				Note:{' '}
+				{getStatusNote({
+					status,
+					dismissed,
+					rejected,
+					onhold,
+					processing,
+					waiting,
+					type,
+					note,
+				})}
+			</div>
 			<div>Timestamp: {formatDate(created_at)}</div>
 			{updated_at && <div>Last update: {formatDate(updated_at)}</div>}
+			{category && <div>Category: {category}</div>}
 			{description && <div>Description: {description}</div>}
 			{viewTravelRule && (
 				<div className="mt-2">

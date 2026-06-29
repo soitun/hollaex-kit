@@ -75,3 +75,61 @@
 	color: grey;
 	font-size: 0.75em;
 }
+
+.validate-wrapper .anchor {
+	text-decoration: underline !important;
+	cursor: pointer;
+}
+
+.Validate-Dismiss-popup {
+	padding: 1rem;
+	color: #ffffff;
+}
+
+.Validate-Dismiss-popup .ant-btn {
+	color: #ffffff;
+}
+.Validate-Dismiss-popup .title {
+	font-size: 24px;
+	font-weight: bold;
+}
+.Validate-Dismiss-popup .confirm-container {
+	border: 1px solid #ffffff;
+	padding: 1.5rem;
+}
+.Validate-Dismiss-popup .legend {
+	background-color: #0000ff;
+	left: 1rem;
+	top: 12px;
+	padding: 5px;
+	position: relative;
+}
+.Validate-Dismiss-popup .field-label {
+	color: #ffffff;
+}
+.Validate-Dismiss-popup .edit-link-wrapper {
+	position: relative;
+}
+.Validate-Dismiss-popup .edit-link {
+	position: absolute;
+	bottom: 28px;
+	right: 16px;
+	text-decoration: underline;
+	cursor: pointer;
+}
+.Validate-Dismiss-popup .ant-input {
+	width: 80%;
+}
+.Validate-Dismiss-popup .confirm-container .fees-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 2%;
+}
+
+/* The popup forces white text; keep the warning alert readable on its light
+   background by restoring dark text inside it. */
+.Validate-Dismiss-popup .ant-alert-warning,
+.Validate-Dismiss-popup .ant-alert-warning .ant-alert-message,
+.Validate-Dismiss-popup .ant-alert-warning .ant-alert-description {
+	color: rgba(0, 0, 0, 0.85);
+}
