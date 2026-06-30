@@ -44,12 +44,6 @@ export const generateFormFields = (strings, theme, links = {}) => ({
 		label: strings['SIGN_UP.AFFILIATION_CODE'],
 		placeholder: strings['SIGN_UP.AFFILIATION_CODE_PLACEHOLDER'],
 	},
-	is_company: {
-		type: 'checkbox',
-		fullWidth: true,
-		stringId: 'SIGN_UP.COMPANY_ACCOUNT',
-		label: strings['SIGN_UP.COMPANY_ACCOUNT'],
-	},
 	terms: {
 		type: 'checkbox',
 		fullWidth: true,
