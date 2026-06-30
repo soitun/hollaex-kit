@@ -1747,32 +1747,6 @@ paths:
         - can_read
   /user/withdrawal:
     x-swagger-router-controller: withdrawal
-    delete:
-      operationId: cancelWithdrawal
-      description: Cancel a user's withdrawal which is pending
-      tags:
-        - User
-      parameters:
-        - name: id
-          in: query
-          required: true
-          type: number
-          format: int32
-      responses:
-        200:
-          description: Success
-          schema:
-            $ref: "#/definitions/TransactionsResponse"
-        default:
-          description: Error
-          schema:
-            $ref: "#/definitions/MessageResponse"
-      security:
-        - Token: []
-      x-security-types:
-        - bearer
-      x-security-scopes:
-        - user
     post:
       operationId: performDirectWithdrawal
       description: Make a withdrawal without email confirmation

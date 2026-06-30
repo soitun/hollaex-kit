@@ -109,18 +109,7 @@ describe('tests for /user/withdrawal', function () {
             response.should.have.status(200);
             response.should.be.json;
             response.body.should.have.property("transaction_id");
-    
-        const cancelWithdrawal = await request()
-			.delete(`/v2/user/withdrawal?id=${response.body.transaction_id}`)
-            .set('x-real-ip', '1.1.1.1')
-			.set('Authorization', `Bearer ${bearerToken}`)
 
-            if(cancelWithdrawal.body.message){
-                cancelWithdrawal.should.have.status(500);
-            }else cancelWithdrawal.should.have.status(200);
-            
-            cancelWithdrawal.should.be.json;
-    
     });
 
     it('Integration Test -should respond 401 for lack of authority for withdraw', async () => {

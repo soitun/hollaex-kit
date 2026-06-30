@@ -537,14 +537,12 @@ class Transactions extends Component {
 											: () => {},
 									updatingItem: loadingItem && index === indexItem,
 									dismissingItem: dismissingItem && index === indexItem,
-									// Only offer the travel-rule detail link for transactions that
-									// actually have a travel-rule record (has_travel_rule is a
-									// server-derived flag), not every transaction while the
-									// feature is active.
-									viewTravelRule:
-										this.props.travelRuleActive && deposit.has_travel_rule
-											? () => this.openTravelRule(deposit.transaction_id)
-											: undefined,
+									// Show the travel-rule detail link on every transaction while the
+									// feature is on; the record is fetched lazily on click (the modal
+									// reports "no record" when none exists). No per-row server lookup.
+									viewTravelRule: this.props.travelRuleActive
+										? () => this.openTravelRule(deposit.transaction_id)
+										: undefined,
 								};
 							})}
 							expandedRowRender={(vals) => renderRowContent({ ...vals, coins })}
@@ -602,7 +600,7 @@ class Transactions extends Component {
 
 const mapStateToProps = (state) => ({
 	coins: state.app.coins,
-	travelRuleActive: state.app.constants?.kit?.travel_rule?.active === true,
+	travelRuleActive: state.app.constants?.travel_rule?.active === true,
 });
 
 export default connect(mapStateToProps)(Transactions);

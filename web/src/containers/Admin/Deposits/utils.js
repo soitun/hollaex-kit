@@ -44,7 +44,9 @@ const HOLD_REASON_LABELS = {
 	travel_rule: 'travel rule information is required',
 	blacklist: 'the address is blacklisted',
 	kyt: 'it was flagged by transaction monitoring (KYT)',
-	auto_deposit: 'automatic crediting is disabled',
+	scorechain: 'it was flagged by on-chain screening',
+	auto_deposit_disabled: 'automatic crediting is disabled',
+	screening_unavailable: 'screening is temporarily unavailable',
 };
 
 // The transaction `note` is a JSONB array of structured hold reasons shaped like
@@ -376,6 +378,7 @@ export const renderRowContent = ({
 	type,
 	note,
 	coins,
+	viewTravelRule,
 }) => {
 	const renderFlag = (value) =>
 		value === undefined ? '-' : value ? 'Yes' : 'No';
@@ -410,13 +413,17 @@ export const renderRowContent = ({
 			</div>
 			<div
 				className="mt-2 p-2"
-				style={{
-					backgroundColor: '#ffffff',
-					color: '#d0021b',
-					fontWeight: 'bold',
-					borderRadius: '2px',
-					display: 'inline-block',
-				}}
+				style={
+					onhold
+						? {
+								backgroundColor: '#ffffff',
+								color: '#d0021b',
+								fontWeight: 'bold',
+								borderRadius: '2px',
+								display: 'inline-block',
+						  }
+						: undefined
+				}
 			>
 				Note:{' '}
 				{getStatusNote({
@@ -434,6 +441,19 @@ export const renderRowContent = ({
 			{updated_at && <div>Last update: {formatDate(updated_at)}</div>}
 			{category && <div>Category: {category}</div>}
 			{description && <div>Description: {description}</div>}
+			{viewTravelRule && (
+				<div className="mt-2">
+					<span
+						className="pointer underline-text blue-link"
+						onClick={(e) => {
+							e.stopPropagation();
+							viewTravelRule();
+						}}
+					>
+						View travel rule details
+					</span>
+				</div>
+			)}
 		</div>
 	);
 };
