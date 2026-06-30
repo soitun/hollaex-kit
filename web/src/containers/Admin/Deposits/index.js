@@ -12,8 +12,10 @@ import {
 	requestBurn,
 	requestMint,
 	requestReallocate,
+	requestTravelRule,
 } from './actions';
 import { renderRowContent, COLUMNS, SELECT_KEYS } from './utils';
+import { TRAVEL_RULE_TYPE_LABELS } from '../Transactions/utils';
 import { Filters } from './Filters';
 import ValidateDismiss from './ValidateDismiss';
 
@@ -60,6 +62,11 @@ class Deposits extends Component {
 		isOpen: false,
 		statusType: '',
 		validateData: {},
+		travelRuleOpen: false,
+		travelRuleLoading: false,
+		travelRuleData: [],
+		travelRuleError: '',
+		travelRuleTxId: null,
 	};
 
 	UNSAFE_componentWillMount() {
@@ -319,6 +326,78 @@ class Deposits extends Component {
 		this.setState({ isOpen: false, statusType: '' });
 	};
 
+	// Open the travel-rule detail modal for a deposit and fetch its record(s).
+	openTravelRule = (transaction_id) => {
+		this.setState({
+			travelRuleOpen: true,
+			travelRuleLoading: true,
+			travelRuleData: [],
+			travelRuleError: '',
+			travelRuleTxId: transaction_id,
+		});
+		requestTravelRule(transaction_id)
+			.then((data) => {
+				this.setState({
+					travelRuleLoading: false,
+					travelRuleData: Array.isArray(data) ? data : [],
+				});
+			})
+			.catch((error) => {
+				const message = error.data ? error.data.message : error.message;
+				this.setState({ travelRuleLoading: false, travelRuleError: message });
+			});
+	};
+
+	closeTravelRule = () => {
+		this.setState({
+			travelRuleOpen: false,
+			travelRuleLoading: false,
+			travelRuleData: [],
+			travelRuleError: '',
+			travelRuleTxId: null,
+		});
+	};
+
+	renderTravelRuleRecord = (record) => {
+		const rows = [
+			['Type', record.type],
+			['Status', record.status],
+			[
+				'Service provider type',
+				TRAVEL_RULE_TYPE_LABELS[record.counterparty_type] ||
+					record.counterparty_type,
+			],
+			['VASP / provider name', record.vasp_name],
+			['Counterparty name', record.counterparty_name],
+			[
+				'Is own address',
+				record.is_own_address == null
+					? null
+					: record.is_own_address
+					? 'Yes'
+					: 'No',
+			],
+			['Purpose', record.purpose],
+			['Address', record.address],
+			['Network', record.network],
+			['Currency', record.currency],
+			['Amount', record.amount],
+			['Amount (native)', record.amount_native],
+			['Note', record.note],
+		];
+		return (
+			<div key={record.id} className="travel-rule-detail mb-3">
+				{rows.map(([label, value]) =>
+					value === null || value === undefined || value === '' ? null : (
+						<div key={label}>
+							<span className="bold">{label}:</span> {String(value)}
+						</div>
+					)
+				)}
+			</div>
+		);
+	};
+
 	handleConfirm = (formValues) => {
 		const { statusType, queryType } = this.state;
 
@@ -531,6 +610,12 @@ class Deposits extends Component {
 							dataSource={deposits.map((deposit, index) => {
 								return {
 									...deposit,
+									// Show the travel-rule detail link on every transaction while the
+									// feature is on; the record is fetched lazily on click (the modal
+									// reports "no record" when none exists). No per-row server lookup.
+									viewTravelRule: this.props.travelRuleActive
+										? () => this.openTravelRule(deposit.transaction_id)
+										: undefined,
 									// completeDeposit:
 									// 	index !== indexItem
 									// 		? this.completeDeposit(deposit.transaction_id, index)
@@ -574,12 +659,33 @@ class Deposits extends Component {
 						/>
 					) : null}
 				</Modal>
+				<Modal
+					title="Travel rule details"
+					visible={this.state.travelRuleOpen}
+					onCancel={this.closeTravelRule}
+					footer={null}
+				>
+					{this.state.travelRuleLoading ? (
+						<div className="text-center">
+							<Spin />
+						</div>
+					) : this.state.travelRuleError ? (
+						<Alert message={this.state.travelRuleError} type="error" showIcon />
+					) : this.state.travelRuleData.length === 0 ? (
+						<div>No travel rule record was collected for this transaction.</div>
+					) : (
+						this.state.travelRuleData.map((record) =>
+							this.renderTravelRuleRecord(record)
+						)
+					)}
+				</Modal>
 			</div>
 		);
 	}
 }
 const mapStateToProps = (state) => ({
 	coins: state.app.coins,
+	travelRuleActive: state.app.constants?.travel_rule?.active === true,
 });
 
 export default connect(mapStateToProps)(Deposits);
