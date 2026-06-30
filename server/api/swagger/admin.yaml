@@ -2646,6 +2646,10 @@ paths:
       responses:
         200:
           description: Success
+          schema:
+            type: array
+            items:
+              type: object
         default:
           description: Error
           schema:
