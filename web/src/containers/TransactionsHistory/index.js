@@ -18,7 +18,6 @@ import {
 	getUserOrders as getUserTrades,
 	getUserDeposits,
 	getUserWithdrawals,
-	withdrawalCancel,
 	downloadUserTrades,
 	activeTabFromWallet,
 	submitDepositTravelRule,
@@ -32,12 +31,11 @@ import {
 	Loader,
 	Dialog,
 	Button,
-	CurrencyBallWithPrice,
 	EditWrapper,
 	NotLoggedIn,
 	Coin,
 } from 'components';
-import { FLEX_CENTER_CLASSES, BASE_CURRENCY } from 'config/constants';
+import { BASE_CURRENCY } from 'config/constants';
 import {
 	generateOrderHistoryHeaders,
 	generateTradeHeaders,
@@ -65,7 +63,6 @@ import { Image } from 'hollaex-web-lib';
 import { quicktradePairSelector } from 'containers/QuickTrade/components/utils';
 import { setTransactionPair } from 'actions/appActions';
 
-const GROUP_CLASSES = [...FLEX_CENTER_CLASSES, 'flex-column'];
 const transactionTabs = ['trades', 'orders', 'deposits', 'withdrawals'];
 
 class TransactionsHistory extends Component {
@@ -73,9 +70,6 @@ class TransactionsHistory extends Component {
 		headers: [],
 		filters: {},
 		activeTab: 0,
-		dialogIsOpen: false,
-		amount: 0,
-		transactionId: 0,
 		jumpToPage: 0,
 		currency: BASE_CURRENCY,
 		params: {},
@@ -203,13 +197,6 @@ class TransactionsHistory extends Component {
 				nextProps.prices
 			);
 		}
-		if (
-			this.props.cancelData.dismissed !== nextProps.cancelData.dismissed &&
-			nextProps.cancelData.dismissed === true
-		) {
-			this.onCloseDialog();
-			this.requestData(nextProps.symbol);
-		}
 		if (!_isEqual(nextProps.orders?.data, orders?.data)) {
 			this.generateHeaders(
 				nextProps.symbol,
@@ -226,16 +213,6 @@ class TransactionsHistory extends Component {
 			this.generateFilters();
 		}
 	}
-
-	onCloseDialog = () => {
-		this.setState({
-			dialogIsOpen: false,
-		});
-	};
-
-	openDialog = () => {
-		this.setState({ dialogIsOpen: true });
-	};
 
 	requestData = () => {
 		const { params, activeTab, jumpToPage } = this.state;
@@ -513,17 +490,12 @@ class TransactionsHistory extends Component {
 				deposits: generateDepositsHeaders(
 					symbol,
 					coins,
-					this.withdrawalPopup,
+					null,
 					ICONS,
 					this.depositTravelRulePopup,
 					travelRuleActive
 				),
-				withdrawals: generateWithdrawalsHeaders(
-					symbol,
-					coins,
-					this.withdrawalPopup,
-					ICONS
-				),
+				withdrawals: generateWithdrawalsHeaders(symbol, coins, null, ICONS),
 			},
 		});
 	}
@@ -752,21 +724,6 @@ class TransactionsHistory extends Component {
 		);
 		activeTabFromWallet('');
 	};
-	withdrawalPopup = (id, amount, currency) => {
-		if (id) {
-			this.setState({ amount: amount, transactionId: id, currency: currency });
-			this.openDialog();
-		}
-	};
-
-	withdrawalCancel = () => {
-		const { transactionId } = this.state;
-		this.props.withdrawalCancel(transactionId);
-	};
-	onClose = () => {
-		this.onCloseDialog();
-	};
-
 	// Open the travel-rule source form for an on-hold deposit.
 	depositTravelRulePopup = (transaction_id) => {
 		if (transaction_id) {
@@ -1037,15 +994,7 @@ class TransactionsHistory extends Component {
 
 	render() {
 		const { coins, icons: ICONS, isFromWallet = false } = this.props;
-		let {
-			activeTab,
-			dialogIsOpen,
-			amount,
-			currency,
-			showCancelOrderDialog,
-			selectedOrder,
-		} = this.state;
-		const { onCloseDialog } = this;
+		let { activeTab, showCancelOrderDialog, selectedOrder } = this.state;
 
 		if (Object.keys(coins).length === 0) {
 			return <Loader />;
@@ -1132,55 +1081,6 @@ class TransactionsHistory extends Component {
 					/>
 				)}
 				<Dialog
-					isOpen={dialogIsOpen}
-					label="token-modal"
-					onCloseDialog={onCloseDialog}
-					shouldCloseOnOverlayClick={true}
-					showCloseText={false}
-					className="cancel-withdraw-pop-up"
-				>
-					<div>
-						<IconTitle
-							iconId="CANCEL_WITHDRAW"
-							iconPath={ICONS['CANCEL_WITHDRAW']}
-							stringId="CANCEL_BASE_WITHDRAWAL"
-							text={STRINGS.formatString(
-								STRINGS['CANCEL_BASE_WITHDRAWAL'],
-								coins && coins[currency] && coins[currency].fullname
-									? `${coins[currency].fullname} ${STRINGS['SUMMARY.WITHDRAWAL']}`
-									: ''
-							)}
-							textType="title"
-							underline={true}
-							className="w-100 cancel-widrawal-pop-up"
-						/>
-						<div>
-							<div className="text-center mt-3 mb-3">
-								<div>{STRINGS['CANCEL_WITHDRAWAL_POPUP_CONFIRM']}</div>
-								<div className={classnames(...GROUP_CLASSES)}>
-									<CurrencyBallWithPrice
-										symbol={
-											coins && coins[currency] && coins[currency].symbol
-												? coins[currency].symbol
-												: ''
-										}
-										amount={amount}
-										price={1}
-									/>
-								</div>
-							</div>
-							<div className="w-100 buttons-wrapper d-flex">
-								<Button label={STRINGS['BACK_TEXT']} onClick={this.onClose} />
-								<div className="separator" />
-								<Button
-									label={STRINGS['USER_APPS.REMOVE.CONFIRM']}
-									onClick={this.withdrawalCancel}
-								/>
-							</div>
-						</div>
-					</div>
-				</Dialog>
-				<Dialog
 					isOpen={this.state.travelRuleDialogOpen}
 					label="travel-rule-deposit-modal"
 					onCloseDialog={this.onCloseTravelRule}
@@ -1255,7 +1155,6 @@ const mapStateToProps = (store) => ({
 	withdrawals: withdrawalHistorySelector(store),
 	symbol: store.orderbook.symbol,
 	activeLanguage: store.app.language,
-	cancelData: store.wallet.withdrawalCancelData,
 	discount: store.user.discount || 0,
 	getActiveTabFromWallet: store.wallet.activeTabFromWallet,
 	travelRuleActive: store.app.constants?.travel_rule?.active === true,
@@ -1270,8 +1169,6 @@ const mapDispatchToProps = (dispatch) => ({
 		dispatch(getUserDeposits({ limit, page, ...params })),
 	getUserWithdrawals: (limit, page = 1, params) =>
 		dispatch(getUserWithdrawals({ limit, page, ...params })),
-	withdrawalCancel: (transactionId) =>
-		dispatch(withdrawalCancel({ transactionId })),
 	downloadUserTrades: (params) => dispatch(downloadUserTrades('trade', params)),
 	downloadUserDeposit: (params) =>
 		dispatch(downloadUserTrades('deposit', params)),

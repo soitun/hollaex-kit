@@ -562,35 +562,6 @@ const getUserWithdrawals = (req, res) => {
 		});
 };
 
-const cancelWithdrawal = (req, res) => {
-	loggerWithdrawals.verbose(
-		req.uuid,
-		'controllers/withdrawal/cancelWithdrawal auth',
-		req.auth
-	);
-
-	const userId = req.auth.sub.id;
-	const id = req.swagger.params.id.value;
-
-	toolsLib.wallet.cancelUserWithdrawalByKitId(userId, id, {
-		additionalHeaders: {
-			'x-forwarded-for': req.headers['x-forwarded-for']
-		}
-	})
-		.then((withdrawal) => {
-			return res.json(withdrawal);
-		})
-		.catch((err) => {
-			loggerWithdrawals.error(
-				req.uuid,
-				'controllers/withdrawal/cancelWithdrawal',
-				err.message
-			);
-			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
-			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
-		});
-};
-
 const downloadWithdrawalsCsv = (req, res) => {
 	loggerWithdrawals.verbose(
 		req.uuid,
@@ -666,7 +637,6 @@ module.exports = {
 	performWithdrawal,
 	getAdminWithdrawals,
 	getUserWithdrawals,
-	cancelWithdrawal,
 	performDirectWithdrawal,
 	getWithdrawalMax,
 	downloadWithdrawalsCsv,

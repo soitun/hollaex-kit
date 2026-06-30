@@ -17,11 +17,6 @@ const INITIAL_VERIFICATION_OBJECT = {
 	error: '',
 };
 
-const INITIAL_DELETE_WHITDRAWALS_MSG = {
-	dismissed: false,
-	error: '',
-};
-
 const INITIAL_BTC_WHITDRAWALS_FEE = {
 	loading: false,
 	ready: false,
@@ -43,7 +38,6 @@ const INITIAL_STATE = {
 	logins: INITIAL_API_OBJECT,
 	depositVerification: INITIAL_VERIFICATION_OBJECT,
 	btcFee: INITIAL_BTC_WHITDRAWALS_FEE,
-	withdrawalCancelData: INITIAL_DELETE_WHITDRAWALS_MSG,
 	activeTabFromWallet: '',
 	activeBalanceHistory: false,
 	scannedAddress: '',
@@ -166,34 +160,6 @@ export default function reducer(state = INITIAL_STATE, { type, payload }) {
 				},
 			};
 
-		//Delete Withdrawal
-		case ACTION_KEYS.WITHDRAWAL_CANCEL_PENDING:
-			return {
-				...state,
-				withdrawalCancelData: {
-					...INITIAL_DELETE_WHITDRAWALS_MSG,
-					error: '',
-					dismissed: false,
-				},
-			};
-		case ACTION_KEYS.WITHDRAWAL_CANCEL_FULFILLED:
-			return {
-				...state,
-				withdrawalCancelData: {
-					...INITIAL_DELETE_WHITDRAWALS_MSG,
-					error: '',
-					dismissed: payload.dismissed,
-				},
-			};
-		case ACTION_KEYS.WITHDRAWAL_CANCEL_REJECTED:
-			return {
-				...state,
-				withdrawalCancelData: {
-					...INITIAL_DELETE_WHITDRAWALS_MSG,
-					error: payload.message,
-					dismissed: false,
-				},
-			};
 		// USER_TRADES
 		case ACTION_KEYS.USER_DEPOSITS_PENDING: {
 			const { page = 1 } = payload;

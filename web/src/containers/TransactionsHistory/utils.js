@@ -936,16 +936,11 @@ export const generateWithdrawalsHeaders = (
 			renderCell: (
 				{
 					transaction_id = '',
-					currency,
 					status,
 					dismissed,
-					processing,
 					rejected,
-					waiting,
 					onhold,
 					travel_rule_hold,
-					id,
-					amount,
 					type,
 					network,
 				},
@@ -983,29 +978,6 @@ export const generateWithdrawalsHeaders = (
 					);
 				}
 				if (
-					status === false &&
-					dismissed === false &&
-					rejected === false &&
-					processing === false &&
-					waiting === false &&
-					type === 'withdrawal'
-				) {
-					// Pending Status
-					return (
-						<td key={index}>
-							<div
-								className="withdrawal-cancel"
-								onClick={(e) => {
-									e.stopPropagation();
-									withdrawalPopup(id, amount, currency);
-								}}
-								key={id}
-							>
-								{STRINGS['CANCEL']}
-							</div>
-						</td>
-					);
-				} else if (
 					status === false &&
 					(dismissed === true || rejected === true) &&
 					type === 'withdrawal'
