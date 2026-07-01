@@ -336,6 +336,7 @@
 		"TEXT_2": "Klik masuk di bawah untuk melanjutkan."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Daftar sebagai akun perusahaan",
 		"SIGNUP_TO": "Daftar di {0}",
 		"NO_EMAIL": "Email tidak masuk??",
 		"REQUEST_EMAIL": "Cobalah kirim ulang di sini",
@@ -374,6 +375,15 @@
 		"CONFIRM_DESCRIPTION": "Harap konfirmasi pendaftaran akun Anda dengan mengklik tombol di bawah"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Akun Perusahaan",
+			"BANNER": "Ini adalah akun perusahaan",
+			"NAME": "Nama perusahaan",
+			"REGISTRATION_NUMBER": "Nomor registrasi",
+			"COUNTRY_OF_INCORPORATION": "Negara pendirian",
+			"BUSINESS_ADDRESS": "Alamat bisnis",
+			"PENDING": "Verifikasi perusahaan tertunda"
+		},
 		"INFO_TXT": "Anda dapat melihat prosedur verifikasi dan pembaruan akun Anda.",
 		"INFO_TXT_1": "Silakan masukkan informasi pada kolom di bawah. Akun Anda akan diperbarui setelah informasi yang Anda serahkan diidentifikasikan.",
 		"INFO_TXT_2": "* {0} dokumen tertentu diperlukan untuk memverifikasi identitas Anda.",
@@ -839,6 +849,8 @@
 	"COMPLETE": "Complete",
 	"PENDING": "Pending",
 	"REJECTED": "Rejected",
+	"VERIFIED": "Terverifikasi",
+	"TYPE_AMOUNT": "Masukkan jumlah",
 	"ORDERBOOK": "Order book",
 	"CANCEL": "Cancel",
 	"CANCEL_ALL": "Cancel All",
@@ -1782,6 +1794,8 @@
 	"REGULAR": "Reguler",
 	"STOPS": "Berhenti",
 	"VIEW_ALL": "Lihat semua",
+	"SHOW_LESS": "Lihat lebih sedikit",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} akun",
 	"TRIGGER_PRICE": "Harga pemicu",
 	"SPEND_AMOUNT": "Jumlah Pembelanjaan",
 	"ESTIMATE_RECEIVE_AMOUNT": "Estimasi Jumlah Penerimaan",
@@ -2958,5 +2972,36 @@
 		"TOO_MANY_REQUEST_ERROR": "Terlalu banyak permintaan",
 		"TOO_MANY_REQUEST_ERROR_DESC": "Wah! Pelan-pelan saja, kamu melakukan terlalu banyak hal sekaligus",
 		"NETWORK_ERROR_MESSAGE": "Kesalahan Jaringan"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "Informasi aturan perjalanan",
+		"INTRO": "Transaksi ini memerlukan informasi tambahan untuk kepatuhan. Harap berikan detail di bawah ini.",
+		"SERVICE_PROVIDER_TYPE": "Jenis penyedia layanan",
+		"SELECT_COUNTERPARTY_TYPE": "Pilih jenis pihak lawan",
+		"COUNTERPARTY_EXCHANGE": "Bursa / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "Dompet swakelola",
+		"VASP_NAME": "Nama bursa / VASP",
+		"VASP_NAME_PLACEHOLDER": "mis. Coinbase, Binance",
+		"ACCOUNT_HOLDER_NAME": "Nama pemilik akun",
+		"COUNTERPARTY_NAME": "Nama pihak lawan",
+		"NAME_PLACEHOLDER": "Nama lengkap orang atau entitas",
+		"RECEIVER_IS_MYSELF": "Penerima adalah saya sendiri",
+		"SENDER_IS_MYSELF": "Pengirim adalah saya sendiri",
+		"PURPOSE_LABEL": "Tujuan transaksi",
+		"SELECT_PURPOSE": "Pilih tujuan",
+		"SPECIFY": "Harap tentukan",
+		"SPECIFY_PLACEHOLDER": "Masukkan tujuan",
+		"PROVIDE_SOURCE": "Berikan sumber",
+		"DEPOSIT_RELEASED": "Deposit Anda telah dirilis.",
+		"DEPOSIT_INFO_SAVED": "Informasi Anda telah disimpan. Deposit masih dalam peninjauan.",
+		"CANCEL": "Batal",
+		"SUBMIT": "Kirim",
+		"PURPOSE_PERSONAL_TRANSFER": "Transfer pribadi",
+		"PURPOSE_INVESTMENT": "Investasi",
+		"PURPOSE_PURCHASE": "Pembelian barang/jasa",
+		"PURPOSE_SALARY": "Gaji/penghasilan",
+		"PURPOSE_GIFT": "Hadiah",
+		"PURPOSE_TRADING": "Perdagangan",
+		"PURPOSE_OTHER": "Lainnya"
 	}
 }

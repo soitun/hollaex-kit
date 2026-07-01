@@ -4,36 +4,25 @@ import {
 	CaretUpOutlined,
 	InfoCircleOutlined,
 	QuestionCircleOutlined,
+	SearchOutlined,
 } from '@ant-design/icons';
 import { Button, Tooltip, Select, Input, Radio } from 'antd';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
 
 import { STATIC_ICONS } from 'config/icons';
-import Coins from '../Coins';
 import { constractPaymentOption } from 'utils/utils';
+import { getOfframpTypes } from 'utils/wallet';
+import { DEFAULT_PAYMENT_PRESETS, getPaymentPreset } from 'config/constants';
 
 import './index.css';
 import '../Trades/index.css';
 
 const { Option } = Select;
 
-const radioStyle = {
-	display: 'flex',
-	alignItems: 'center',
-	height: '80px',
-	lineHeight: '1.2',
-	padding: '24px 0',
-	margin: 0,
-	paddingLeft: '1px',
-	whiteSpace: 'normal',
-	letterSpacing: '-0.15px',
-	color: '#ffffff',
-	opacity: 0.8,
-};
-
 const PaymentAccountPopup = ({
 	handleClosePlugin,
+	appCoins = {},
 	type,
 	tabUpdate,
 	updatePlugin,
@@ -85,6 +74,7 @@ const PaymentAccountPopup = ({
 	const [existErrorMsg, setExistErrorMsg] = useState('');
 	const [paymentOptions, setPaymentOptions] = useState([]);
 	const [paymentCount, setPaymentCount] = useState([]);
+	const [search, setSearch] = useState('');
 	const [PaymentMethodData, setPaymentMethodData] = useState([
 		constractPaymentOption(paymentMethodItems),
 	]);
@@ -113,7 +103,7 @@ const PaymentAccountPopup = ({
 			setPaymentSelect(selectedPaymentType);
 		}
 		let tempArr = Object.keys(user_payments).filter((item, i) => {
-			if (!offramp[singleCoin.symbol]?.includes(item)) {
+			if (!getOfframpTypes(offramp[singleCoin.symbol]).includes(item)) {
 				return item;
 			} else {
 				return null;
@@ -198,6 +188,16 @@ const PaymentAccountPopup = ({
 		setIsPayChanged(true);
 	};
 
+	const getCoinLogo = (symbol) => {
+		const coin = appCoins?.[symbol];
+		if (coin && coin.logo) {
+			return coin.logo;
+		} else if (STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()]) {
+			return STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()];
+		}
+		return STATIC_ICONS.MISSING_ICON;
+	};
+
 	const renderSelect = (type) => {
 		return (
 			<div className="mt-4 d-flex align-items-center">
@@ -214,10 +214,10 @@ const PaymentAccountPopup = ({
 						{fiatCoins.map((option, index) => (
 							<Select.Option value={option.symbol} key={index}>
 								<div className="d-flex align-items-center mt-1 summary-coin">
-									<Coins
-										type={option?.symbol?.toLowerCase()}
-										small={true}
-										color={option?.color || ''}
+									<img
+										src={getCoinLogo(option?.symbol)}
+										alt=""
+										className="fiat-coin-option-icon"
 									/>
 									<div className="ml-2">{option?.symbol}</div>
 								</div>
@@ -261,6 +261,11 @@ const PaymentAccountPopup = ({
 		}
 	};
 
+	const handleAddCustom = () => {
+		setPaymentSelect('customPay');
+		tabUpdate('sysname', 'add');
+	};
+
 	const handleProceed = () => {
 		if (
 			user_payments &&
@@ -291,6 +296,15 @@ const PaymentAccountPopup = ({
 				);
 			} else if (paymentSelect === 'customPay') {
 				tabUpdate('sysname', 'add');
+			} else if (getPaymentPreset(paymentSelect)) {
+				handleClosePlugin(false);
+				formUpdate(
+					'customForm',
+					paymentSelect,
+					true,
+					currentIndex === 0 ? currentIndex + 1 : currentIndex,
+					'add'
+				);
 			} else if (
 				currentActiveTab &&
 				currentActiveTab === 'onRamp' &&
@@ -335,11 +349,8 @@ const PaymentAccountPopup = ({
 			offramp &&
 			offramp[singleCoin.symbol]
 		) {
-			setCurrentOfframpIndex(
-				offramp[singleCoin.symbol].length
-					? offramp[singleCoin.symbol].length + 1
-					: 1
-			);
+			const offrampCount = getOfframpTypes(offramp[singleCoin.symbol]).length;
+			setCurrentOfframpIndex(offrampCount ? offrampCount + 1 : 1);
 		}
 	};
 
@@ -386,6 +397,54 @@ const PaymentAccountPopup = ({
 		currentActiveTab && currentActiveTab === 'offRamp'
 			? paymentSelect
 			: paymentSelectData;
+
+	const paypalOption = {
+		value: 'paypal',
+		label: 'PayPal',
+		icon: STATIC_ICONS.PAYPAL_FIAT_ICON,
+		region: 'Global',
+	};
+	const getPaymentMethodIcon = (name) => {
+		if (name === 'bank') {
+			return STATIC_ICONS.BANK_FIAT_PILLARS;
+		} else if (name === 'paypal') {
+			return STATIC_ICONS.PAYPAL_FIAT_ICON;
+		}
+		const preset = getPaymentPreset(name);
+		if (preset) {
+			return preset.icon;
+		}
+		return STATIC_ICONS.MPESA_ICON;
+	};
+
+	const presetAccountOptions = DEFAULT_PAYMENT_PRESETS.map((preset) => ({
+		value: preset.name,
+		label: preset.name,
+		icon: preset.icon,
+		region: preset.region,
+	}));
+	// Show bank options first, then PayPal, then the rest. The custom option is
+	// presented separately below the list (not part of this list).
+	const bankPresetOptions = presetAccountOptions.filter((opt) =>
+		opt.value.startsWith('Bank')
+	);
+	const otherPresetOptions = presetAccountOptions.filter(
+		(opt) => !opt.value.startsWith('Bank')
+	);
+	const accountOptionsList = [
+		...bankPresetOptions,
+		paypalOption,
+		...otherPresetOptions,
+	].filter((opt) => checkOptionExist(opt.value));
+	const filteredAccountOptions = accountOptionsList.filter((opt) => {
+		const query = search.trim().toLowerCase();
+		if (!query) return true;
+		return (
+			opt.label.toLowerCase().includes(query) ||
+			(opt.region || '').toLowerCase().includes(query)
+		);
+	});
+
 	switch (type) {
 		case 'payment':
 			return (
@@ -456,77 +515,112 @@ const PaymentAccountPopup = ({
 							information can also be used in the off ramp section.
 						</div>
 					)}
-					{paymentOptions.length > 0 && (
-						<div className="mb-3">
-							<div>
-								Select from premade payment accounts ({paymentOptions.length}):
+					{currentActiveTab === 'onRamp' ? (
+						<div className="payment-preset-search mt-3">
+							<div className="mb-2">
+								Select from saved payment accounts ({paymentOptions.length}):
 							</div>
-							<Select
-								className="paymentSelect"
-								defaultValue={paymentOptions[0]}
+							{paymentOptions.length ? (
+								<Radio.Group
+									name="onramp-saved"
+									className="payment-preset-list"
+									value={paymentSelect}
+									onChange={(e) => handleChange(e.target.value, 'standard')}
+								>
+									{paymentOptions.map((item, index) => (
+										<Radio
+											className="payment-preset-item"
+											value={item.name}
+											key={item.name}
+										>
+											<span className="payment-preset-item-content">
+												<img
+													src={getPaymentMethodIcon(item.name)}
+													alt={item.name}
+													className="payment-preset-item-icon"
+												/>
+												<span className="payment-preset-item-text">
+													<span className="payment-preset-item-label">
+														{item.name}
+													</span>
+												</span>
+											</span>
+										</Radio>
+									))}
+								</Radio.Group>
+							) : (
+								<div className="payment-preset-empty">
+									No saved payment accounts available to add.
+								</div>
+							)}
+							<div className="mt-3">
+								<Link
+									to="/admin/fiat?tab=1"
+									className="anchor underline"
+									onClick={() => handleClosePlugin(false)}
+								>
+									+ Add a new payment account
+								</Link>
+							</div>
+						</div>
+					) : (
+						<div className="payment-preset-search mt-3">
+							<Input
+								className="payment-preset-search-input"
+								placeholder="Search payment methods..."
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								prefix={<SearchOutlined />}
+								allowClear
+							/>
+							<Radio.Group
+								name="standard"
+								className="payment-preset-list"
 								value={paymentSelect}
-								suffixIcon={
-									isOpen ? (
-										<CaretDownOutlined className="downarrow" />
-									) : (
-										<CaretUpOutlined className="downarrow" />
-									)
-								}
-								onClick={handleOpenPayment}
-								onChange={setPaymentSelect}
+								onChange={(e) => {
+									handleChange(e.target.value, 'standard');
+								}}
 							>
-								{paymentOptions.map((item, index) => {
-									return (
-										<Option value={item.name} key={index}>
-											User payment account {index + 1}: {item.name}
-										</Option>
-									);
-								})}
-							</Select>
+								{filteredAccountOptions.length ? (
+									filteredAccountOptions.map((opt) => (
+										<Radio
+											className="payment-preset-item"
+											value={opt.value}
+											key={opt.value}
+										>
+											<span className="payment-preset-item-content">
+												<img
+													src={opt.icon}
+													alt={opt.label}
+													className="payment-preset-item-icon"
+												/>
+												<span className="payment-preset-item-text">
+													<span className="payment-preset-item-label">
+														{opt.label}
+													</span>
+													{opt.region ? (
+														<span className="payment-preset-item-region">
+															{opt.region}
+														</span>
+													) : null}
+												</span>
+											</span>
+										</Radio>
+									))
+								) : (
+									<div className="payment-preset-empty">
+										No matching payment methods
+									</div>
+								)}
+							</Radio.Group>
+							<div className="payment-preset-custom">
+								Don't see your payment method?{' '}
+								<span className="txtanchor" onClick={handleAddCustom}>
+									Add a custom method
+								</span>
+							</div>
 						</div>
 					)}
-					<Radio.Group
-						name="standard"
-						value={paymentSelect}
-						onChange={(e) => {
-							handleChange(e.target.value, 'standard');
-						}}
-					>
-						{checkOptionExist('bank') && (
-							<Radio style={radioStyle} value={'bank'}>
-								<span className="radio-content">
-									<span>Bank (bank payment details)</span>
-									<img
-										src={STATIC_ICONS.BANK_FIAT_PILLARS}
-										alt="add-pay-icon"
-										className="add-pay-icon"
-									/>
-								</span>
-							</Radio>
-						)}
-						{checkOptionExist('paypal') && (
-							<Radio style={radioStyle} value={'paypal'}>
-								<span className="radio-content">
-									<span>PayPal</span>
-									<img
-										src={STATIC_ICONS.PAYPAL_FIAT_ICON}
-										alt="add-pay-icon"
-										className="add-pay-icon"
-									/>
-								</span>
-							</Radio>
-						)}
-						<Radio style={radioStyle} value={'customPay'}>
-							<span className="radio-content">
-								<span>Custom (add other payment method)</span>
-								<img
-									src={STATIC_ICONS.DOUBLEFIAT_ICON}
-									alt="add-pay-icon"
-									className="add-pay-icon"
-								/>
-							</span>
-						</Radio>
-					</Radio.Group>
 					<div className="d-flex mt-3 align-items-center">
 						<div>
 							Note: this will be displayed to your users within the verification
@@ -565,6 +659,10 @@ const PaymentAccountPopup = ({
 							type="primary"
 							className="green-btn"
 							onClick={() => handleProceed()}
+							disabled={
+								currentActiveTab === 'onRamp' &&
+								(!paymentOptions.length || !paymentSelect)
+							}
 						>
 							Proceed
 						</Button>
@@ -717,7 +815,8 @@ const PaymentAccountPopup = ({
 			);
 		case 'offramp':
 			const userPaymentOptions = PaymentMethodData.filter(
-				(item) => !offramp[singleCoin.symbol]?.includes(item.name)
+				(item) =>
+					!getOfframpTypes(offramp[singleCoin.symbol]).includes(item.name)
 			);
 
 			return (
@@ -746,7 +845,7 @@ const PaymentAccountPopup = ({
 						<div>
 							{!offramp?.[singleCoin.symbol] ||
 							(PaymentMethodData.length !==
-								offramp?.[singleCoin.symbol]?.length &&
+								getOfframpTypes(offramp?.[singleCoin.symbol]).length &&
 								selectedPaymentType) ? (
 								<div>
 									<div>
@@ -772,7 +871,14 @@ const PaymentAccountPopup = ({
 											{userPaymentOptions.map((item, i) => {
 												return (
 													<Option value={item.name} key={i}>
-														User payment account {i + 1}: {item.name}
+														<span className="d-flex align-items-center">
+															<img
+																src={getPaymentMethodIcon(item.name)}
+																alt=""
+																className="payment-option-icon mr-2"
+															/>
+															{item.name}
+														</span>
 													</Option>
 												);
 											})}
@@ -851,7 +957,7 @@ const PaymentAccountPopup = ({
 								!user_payments ||
 								!Object.keys(user_payments).length ||
 								(Object.keys(user_payments)?.length ===
-									offramp?.[singleCoin.symbol]?.length &&
+									getOfframpTypes(offramp?.[singleCoin.symbol]).length &&
 									selectedPaymentType)
 							}
 						>
@@ -1114,6 +1220,7 @@ const PaymentAccountPopup = ({
 
 const mapStateToProps = (state) => ({
 	paymentMethodItems: state.app?.constants?.user_payments,
+	appCoins: state.app.coins,
 });
 
 export default connect(mapStateToProps)(PaymentAccountPopup);

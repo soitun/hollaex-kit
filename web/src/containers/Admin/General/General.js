@@ -41,6 +41,7 @@ import {
 	getEmailStrings,
 	getEmailType,
 } from './action';
+import { getAllCoins } from '../AdminFinancials/action';
 import { getGeneralFields, publishJSON } from './utils';
 import { publish } from 'actions/operatorActions';
 import merge from 'lodash.merge';
@@ -112,6 +113,7 @@ class GeneralContent extends Component {
 			isDisable: false,
 			defaultEmailData: {},
 			nativeCurrencies: [],
+			networkCoins: {},
 			testKeyDetails: {
 				test_key: null,
 				isActive: false,
@@ -121,6 +123,7 @@ class GeneralContent extends Component {
 			confirmText: null,
 			googleOAuth: {},
 			isActiveOAuth: false,
+			travelRuleThreshold: '',
 			cloudflareTurnstile: {
 				enabled: false,
 				site_key: '',
@@ -145,8 +148,92 @@ class GeneralContent extends Component {
 			nativeCurrencies: customCurrencies,
 			googleOAuth: constants?.google_oauth || {},
 			isActiveOAuth: !!constants?.google_oauth?.client_id,
+			travelRuleThreshold: constants?.kit?.travel_rule?.threshold ?? '',
 		});
+		this.requestNetworkCoins();
 	}
+
+	// Fetch the full network coin list (includes fiat currencies that are not part
+	// of the exchange wallet) so operators can pick any fiat for price/valuation
+	// display and so we can render its real logo/fullname in the list below.
+	requestNetworkCoins = () => {
+		getAllCoins()
+			.then((res) => {
+				const list = res?.data?.data || res?.data || [];
+				const networkCoins = {};
+				(Array.isArray(list) ? list : []).forEach((coin) => {
+					if (coin?.symbol) {
+						networkCoins[coin.symbol] = coin;
+					}
+				});
+				this.setState({ networkCoins });
+			})
+			.catch(() => {});
+	};
+
+	// Resolve display metadata for a currency symbol, whether it is an exchange
+	// asset (state.app.coins) or a display-only network currency (networkCoins).
+	getCurrencyMeta = (symbol) => {
+		return this.props.coins?.[symbol] || this.state.networkCoins?.[symbol];
+	};
+
+	// Render the coin logo for a valuation currency, falling back to the text
+	// circle (Coins) when no logo image is available.
+	renderCurrencyLogo = (symbol) => {
+		const logo = this.getCurrencyMeta(symbol)?.logo;
+		if (logo) {
+			return (
+				<img
+					src={logo}
+					alt={symbol}
+					className="native-currency-logo"
+					style={{
+						width: 36,
+						height: 36,
+						borderRadius: '50%',
+						objectFit: 'contain',
+					}}
+				/>
+			);
+		}
+		return <Coins type={symbol} />;
+	};
+
+	// Build the display-only metadata map for selected valuation currencies that are
+	// NOT listed exchange assets, so the end-user UI can show their logo/name/decimals
+	// without them ever becoming wallet/market assets. Listed exchange coins already
+	// have metadata in the public constants, so they are skipped here.
+	//
+	// `valuation_assets` is full-replaced (not merged) on the server, so this must
+	// return the COMPLETE set for the selected currencies. When `networkCoins` has
+	// not loaded yet (async fetch slow/failed), fall back to the already-stored
+	// metadata for that symbol so a save never silently wipes existing valuation
+	// assets — see resolution of the wipe-on-save data-loss issue.
+	buildValuationAssets = () => {
+		const { coins } = this.props;
+		const existing = this.props.constants?.kit?.valuation_assets || {};
+		const valuationAssets = {};
+		(this.state.nativeCurrencies || []).forEach((symbol) => {
+			if (coins?.[symbol]) return;
+			const meta = this.state.networkCoins?.[symbol];
+			if (meta) {
+				valuationAssets[symbol] = {
+					symbol,
+					fullname: meta.fullname || symbol.toUpperCase(),
+					display_name: meta.display_name || symbol.toUpperCase(),
+					logo: meta.logo || '',
+					increment_unit: meta.increment_unit ?? 0.0001,
+					min: meta.min ?? 0.0001,
+					type: meta.type || 'fiat',
+				};
+			} else if (existing[symbol]) {
+				// no network metadata available right now — keep what was saved
+				// before instead of dropping the currency's display data
+				valuationAssets[symbol] = existing[symbol];
+			}
+		});
+		return valuationAssets;
+	};
 
 	componentDidUpdate(prevProps, prevState) {
 		if (
@@ -295,7 +382,9 @@ class GeneralContent extends Component {
 			new_user_is_activated: isSignUpActive,
 			email_verification_required,
 			google_oauth,
+			travel_rule,
 		} = kit;
+		const travelRuleThreshold = travel_rule?.threshold ?? '';
 		initialNameValues = { ...initialNameValues, api_name };
 		initialLanguageValues = {
 			...initialLanguageValues,
@@ -331,6 +420,7 @@ class GeneralContent extends Component {
 			isSignUpActive,
 			initialEmailVerificationValues,
 			initialGoogleOAuthValues,
+			travelRuleThreshold,
 			showDisableSignUpsConfirmation: false,
 			cloudflareTurnstile: {
 				enabled: turnstileEnabled,
@@ -1111,6 +1201,7 @@ class GeneralContent extends Component {
 		this.handleSubmitGeneral({
 			kit: {
 				selectable_native_currencies: this.state?.nativeCurrencies,
+				valuation_assets: this.buildValuationAssets(),
 			},
 		});
 		if (
@@ -1418,11 +1509,12 @@ class GeneralContent extends Component {
 													className="d-flex"
 													style={{ fontSize: '1rem', marginBottom: 5 }}
 												>
-													<Coins type={coin} />
+													{this.renderCurrencyLogo(coin)}
 													<span
 														style={{ position: 'relative', left: 5, top: 8 }}
 													>
-														{coins?.[coin]?.fullname}
+														{this.getCurrencyMeta(coin)?.fullname ||
+															coin?.toUpperCase()}
 													</span>
 													<span
 														onClick={() => {
@@ -1449,6 +1541,13 @@ class GeneralContent extends Component {
 											<Select
 												placeholder="Add alternative currency"
 												style={{ marginTop: 20 }}
+												showSearch
+												optionFilterProp="children"
+												filterOption={(input, option) =>
+													(option?.children ?? '')
+														.toLowerCase()
+														.includes(input.toLowerCase())
+												}
 												onChange={(e) => {
 													if (this.state.nativeCurrencies.includes(e)) return;
 													this.setState({
@@ -1463,9 +1562,29 @@ class GeneralContent extends Component {
 													triggerNode?.parentNode
 												}
 											>
-												{Object.keys(coins).map((key) => (
-													<Option value={key}>{coins[key].fullname}</Option>
-												))}
+												{[
+													...Object.keys(coins),
+													// Append fiat currencies from the network that are not
+													// listed exchange assets, so they can be used purely for
+													// price/valuation display.
+													...Object.values(this.state.networkCoins || {})
+														.filter(
+															(c) =>
+																c?.type === 'fiat' &&
+																c?.symbol &&
+																!coins?.[c.symbol]
+														)
+														.map((c) => c.symbol),
+												].map((key) => {
+													const meta =
+														coins?.[key] || this.state.networkCoins?.[key];
+													return (
+														<Option value={key} key={key}>
+															{(meta?.fullname || key?.toUpperCase()) +
+																` (${key?.toUpperCase()})`}
+														</Option>
+													);
+												})}
 											</Select>
 										</div>
 
@@ -2097,6 +2216,93 @@ class GeneralContent extends Component {
 										}}
 									/>
 								</div>
+							</div>
+						</div>
+						<div className="divider"></div>
+						<div className="general-wrapper mb-5">
+							<div
+								className="sub-title d-flex align-items-center"
+								id="travel-rule"
+							>
+								<Image
+									icon={STATIC_ICONS['TRAVEL_RULE_ICON']}
+									wrapperClassName="travel-rule-icon mr-2"
+									iconId="TRAVEL_RULE_ICON"
+								/>
+								Travel Rule
+							</div>
+							<div className="description">
+								<div>
+									Require originator/beneficiary information for transactions at
+									or above a threshold value (in{' '}
+									{(
+										_get(constants, 'kit.native_currency', BASE_CURRENCY) || ''
+									).toUpperCase()}
+									). When enabled, qualifying withdrawals prompt the user for
+									the purpose and whether the receiver is themselves, and
+									qualifying deposits are placed on hold until the user provides
+									the source of funds.
+								</div>
+								<div style={{ marginTop: 10 }}>
+									<Switch
+										checked={_get(constants, 'kit.travel_rule.active', false)}
+										onChange={(checked) => {
+											this.handleSubmitGeneral({
+												kit: {
+													travel_rule: {
+														active: checked,
+														threshold:
+															Number(this.state.travelRuleThreshold) || 0,
+													},
+												},
+											});
+										}}
+									/>
+								</div>
+								<div
+									className={
+										_get(constants, 'kit.travel_rule.active', false)
+											? 'mt-3'
+											: 'mt-3 disabled-content'
+									}
+								>
+									Threshold amount (
+									{(
+										_get(constants, 'kit.native_currency', BASE_CURRENCY) || ''
+									).toUpperCase()}
+									)
+								</div>
+								<Input
+									type="number"
+									min={0}
+									placeholder="Input threshold amount"
+									className="mt-2"
+									style={{ maxWidth: 300 }}
+									value={this.state.travelRuleThreshold}
+									disabled={!_get(constants, 'kit.travel_rule.active', false)}
+									onChange={(e) => {
+										this.setState({ travelRuleThreshold: e.target.value });
+									}}
+								/>
+								{_get(constants, 'kit.travel_rule.active', false) && (
+									<Button
+										className="no-border green-btn mt-3 minimal-btn"
+										type="primary"
+										onClick={() => {
+											this.handleSubmitGeneral({
+												kit: {
+													travel_rule: {
+														active: true,
+														threshold:
+															Number(this.state.travelRuleThreshold) || 0,
+													},
+												},
+											});
+										}}
+									>
+										Save & Apply
+									</Button>
+								)}
 							</div>
 						</div>
 						<div className="divider"></div>

@@ -25,9 +25,6 @@ export const ACTION_KEYS = {
 	DEPOSIT_VERIFICATION_PENDING: 'DEPOSIT_VERIFICATION_PENDING',
 	DEPOSIT_VERIFICATION_FULFILLED: 'DEPOSIT_VERIFICATION_FULFILLED',
 	DEPOSIT_VERIFICATION_REJECTED: 'DEPOSIT_VERIFICATION_REJECTED',
-	WITHDRAWAL_CANCEL_PENDING: 'WITHDRAWAL_CANCEL_PENDING',
-	WITHDRAWAL_CANCEL_FULFILLED: 'WITHDRAWAL_CANCEL_FULFILLED',
-	WITHDRAWAL_CANCEL_REJECTED: 'WITHDRAWAL_CANCEL_REJECTED',
 	SETACTIVEBALANCEHISTORY: 'SETACTIVEBALANCEHISTORY',
 };
 
@@ -40,7 +37,6 @@ const ENDPOINTS = {
 	WITHDRAW_BANK: '/user/withdraw/bank',
 	WITHDRAW: (currency) => `/user/request-withdrawal`,
 	WITHDRAW_FEE: (currency) => `/user/withdrawal?currency=${currency}`,
-	CANCEL_WITHDRAWAL: '/user/withdrawal',
 	CONFIRM_WITHDRAWAL: '/user/confirm-withdrawal',
 	CHECK_TRANSACTION: '/user/check-transaction',
 	FIAT_DEPOSIT: '/fiat/deposit',
@@ -61,6 +57,11 @@ export const performWithdraw = (currency, values) => {
 	return axios.post(ENDPOINTS.WITHDRAW(currency), values);
 };
 
+// Submit travel-rule source info for an on-hold deposit.
+export const submitDepositTravelRule = (values) => {
+	return axios.post('/user/deposit/travel-rule', values);
+};
+
 export const requestWithdrawFee = (currency = 'btc') => {
 	return (dispatch) => {
 		dispatch({ type: ACTION_KEYS.USER_WITHDRAWALS_BTC_FEE_PENDING });
@@ -76,29 +77,6 @@ export const requestWithdrawFee = (currency = 'btc') => {
 				const payload = err.response.data || { message: err.message };
 				dispatch({
 					type: ACTION_KEYS.USER_WITHDRAWALS_BTC_FEE_REJECTED,
-					payload,
-				});
-			});
-	};
-};
-
-export const withdrawalCancel = (transactionId) => {
-	return (dispatch) => {
-		dispatch({ type: ACTION_KEYS.WITHDRAWAL_CANCEL_PENDING });
-		axios
-			.delete(ENDPOINTS.CANCEL_WITHDRAWAL, {
-				params: { id: parseInt(transactionId.transactionId, 10) },
-			})
-			.then((body) => {
-				dispatch({
-					type: ACTION_KEYS.WITHDRAWAL_CANCEL_FULFILLED,
-					payload: body.data,
-				});
-			})
-			.catch((err) => {
-				const payload = err.response.data || { message: err.message };
-				dispatch({
-					type: ACTION_KEYS.WITHDRAWAL_CANCEL_REJECTED,
 					payload,
 				});
 			});

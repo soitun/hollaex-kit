@@ -330,6 +330,7 @@
 		"TEXT_2": "계속하려면 아래 로그인 버튼을 클릭하시기바랍니다."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "법인 계정으로 등록",
 		"SIGNUP_TO": "{0}에 가입하기",
 		"NO_EMAIL": "이메일을 받지 못하셨나요?",
 		"REQUEST_EMAIL": "이메일 재요청하기",
@@ -368,6 +369,15 @@
 		"CONFIRM_DESCRIPTION": "아래 버튼을 클릭하여 계정 가입을 확인하십시오"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "법인 계정",
+			"BANNER": "법인 계정입니다",
+			"NAME": "회사명",
+			"REGISTRATION_NUMBER": "등록 번호",
+			"COUNTRY_OF_INCORPORATION": "설립 국가",
+			"BUSINESS_ADDRESS": "사업장 주소",
+			"PENDING": "법인 인증 대기 중"
+		},
 		"INFO_TXT": "개인정보 및 계정 업그레이드 진행상황을 확인하실 수 있습니다.",
 		"INFO_TXT_1": "아래 각 부문에 필요한 정보를 작성해주시기바랍니다. 모든 부문의 제출의 완료된 이후에 해당 정보를 검토하여 계정업그레이드 승인이 이루어집니다.",
 		"INFO_TXT_2": "*인증을 위해 {0}가 필수적입니다.",
@@ -907,6 +917,8 @@
 	"COMPLETE": "Complete",
 	"PENDING": "Pending",
 	"REJECTED": "Rejected",
+	"VERIFIED": "인증됨",
+	"TYPE_AMOUNT": "금액 입력",
 	"ORDERBOOK": "Order Book",
 	"CANCEL": "Cancel",
 	"CANCEL_ALL": "Cancel All",
@@ -1409,6 +1421,8 @@
 	"POST_ONLY_TOOLTIP": "포스트 온리 주문은 오더북에 주문이 추가되지만, 즉시 실행되지는 않습니다.",
 	"ESTIMATED_PRICE": "추정 가격",
 	"VIEW_ALL": "모두 보기",
+	"SHOW_LESS": "간략히 보기",
+	"PAYMENT_ACCOUNTS_COUNT": "계정 {0}개",
 	"ORDER_ENTRY_ADVANCED": "더 보기",
 	"TRIGGER_PRICE": "감시 가격",
 	"START_DATE": "시작일",
@@ -2982,5 +2996,36 @@
 		"TOO_MANY_REQUEST_ERROR": "요청이 너무 많습니다",
 		"TOO_MANY_REQUEST_ERROR_DESC": "와! 천천히 하세요, 한 번에 너무 많은 일을 하고 있어요",
 		"NETWORK_ERROR_MESSAGE": "네트워크 오류"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "트래블 룰 정보",
+		"INTRO": "이 거래에는 규정 준수를 위한 추가 정보가 필요합니다. 아래 세부 정보를 입력해 주세요.",
+		"SERVICE_PROVIDER_TYPE": "서비스 제공자 유형",
+		"SELECT_COUNTERPARTY_TYPE": "상대방 유형 선택",
+		"COUNTERPARTY_EXCHANGE": "거래소 / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "자가 보관 지갑",
+		"VASP_NAME": "거래소 / VASP 이름",
+		"VASP_NAME_PLACEHOLDER": "예: Coinbase, Binance",
+		"ACCOUNT_HOLDER_NAME": "계좌 소유자 이름",
+		"COUNTERPARTY_NAME": "상대방 이름",
+		"NAME_PLACEHOLDER": "개인 또는 기관의 전체 이름",
+		"RECEIVER_IS_MYSELF": "수취인은 본인입니다",
+		"SENDER_IS_MYSELF": "송금인은 본인입니다",
+		"PURPOSE_LABEL": "거래 목적",
+		"SELECT_PURPOSE": "목적 선택",
+		"SPECIFY": "직접 입력",
+		"SPECIFY_PLACEHOLDER": "목적을 입력하세요",
+		"PROVIDE_SOURCE": "출처 제공",
+		"DEPOSIT_RELEASED": "입금이 완료되었습니다.",
+		"DEPOSIT_INFO_SAVED": "정보가 저장되었습니다. 입금은 검토 중입니다.",
+		"CANCEL": "취소",
+		"SUBMIT": "제출",
+		"PURPOSE_PERSONAL_TRANSFER": "개인 송금",
+		"PURPOSE_INVESTMENT": "투자",
+		"PURPOSE_PURCHASE": "상품/서비스 구매",
+		"PURPOSE_SALARY": "급여/소득",
+		"PURPOSE_GIFT": "선물",
+		"PURPOSE_TRADING": "거래",
+		"PURPOSE_OTHER": "기타"
 	}
 }

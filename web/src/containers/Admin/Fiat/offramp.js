@@ -7,9 +7,11 @@ import {
 	InfoCircleOutlined,
 	CaretDownOutlined,
 	CaretUpOutlined,
+	PlusOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router';
 
+import { getOfframpTypes, toOfframpObject } from 'utils/wallet';
 import Coins from '../Coins';
 import PaymentAccountPopup from './PaymentPopup';
 import RampPaymentAccounts from './RampPaymentAccounts';
@@ -24,6 +26,7 @@ const Offramp = ({
 	activeTab,
 	handleTabChange,
 	allCoins,
+	appCoins = {},
 	exchange,
 	isUpgrade,
 	offramp,
@@ -58,6 +61,7 @@ const Offramp = ({
 	const [isProceed, setIsProceed] = useState(false);
 	const [offrampCurrentType, setOfframpCurrentType] = useState('');
 	const [isDisable, setIsDisable] = useState(false);
+	const [activeRampSymbol, setActiveRampSymbol] = useState('');
 	const visibleRef = useRef(null);
 
 	useEffect(() => {
@@ -138,20 +142,31 @@ const Offramp = ({
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					) &&
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					)[0]
 			);
 		}
 	}, [offramp, user_payments, selectedCoin, isVisible]);
 
+	const getCoinLogo = (symbol) => {
+		const coin = appCoins?.[symbol];
+		if (coin && coin.logo) {
+			return coin.logo;
+		} else if (STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()]) {
+			return STATIC_ICONS.COIN_ICONS[(symbol || '').toLowerCase()];
+		}
+		return STATIC_ICONS.MISSING_ICON;
+	};
+
 	const handleSelectCoin = (e) => {
 		if (e) {
 			setSelectedAsset(e);
+			setActiveRampSymbol(e);
 			setSelectedPaymentType(
 				user_payments &&
 					selectedCoin &&
@@ -159,12 +174,12 @@ const Offramp = ({
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					) &&
 					Object.keys(user_payments).filter(
 						(item) =>
 							offramp[selectedCoin.symbol] &&
-							!offramp[selectedCoin.symbol].includes(item)
+							!getOfframpTypes(offramp[selectedCoin.symbol]).includes(item)
 					)[0]
 			);
 		}
@@ -180,6 +195,9 @@ const Offramp = ({
 	) => {
 		setIsOpen({});
 		setSelectedAsset(coinSymb);
+		if (coinSymb) {
+			setActiveRampSymbol(coinSymb);
+		}
 		visibleRef.current = setTimeout(() => {
 			setIsVisible(true);
 		}, 100);
@@ -226,25 +244,19 @@ const Offramp = ({
 	};
 
 	const handleOffRampProceed = (type, paymentType, selectedSymbol) => {
-		let kitData = {
+		const existing = toOfframpObject(offramp[selectedSymbol]);
+		const kitData = {
 			kit: {
 				offramp: {
-					[selectedSymbol]: [paymentType],
+					...offramp,
+					[selectedSymbol]: {
+						...existing,
+						// keep any limits already configured for this method
+						[paymentType]: existing[paymentType] || {},
+					},
 				},
 			},
 		};
-		if (Object.keys(offramp).length && selectedSymbol) {
-			kitData = {
-				kit: {
-					offramp: {
-						...offramp,
-						[selectedSymbol]: offramp[selectedSymbol]
-							? [...offramp[selectedSymbol], paymentType]
-							: [paymentType],
-					},
-				},
-			};
-		}
 		setKitOfframpData(kitData);
 		setType(type);
 	};
@@ -355,7 +367,9 @@ const Offramp = ({
 		const validPaymentMethods = new Set(Object.keys(user_payments));
 
 		return Object.entries(offramp)?.reduce((acc, [key, values]) => {
-			const filtered = values?.filter((v) => validPaymentMethods?.has(v));
+			const filtered = getOfframpTypes(values)?.filter((v) =>
+				validPaymentMethods?.has(v)
+			);
 			if (filtered?.length) acc[key] = filtered;
 			return acc;
 		}, {});
@@ -396,6 +410,194 @@ const Offramp = ({
 			coinData.push(item);
 		}
 	});
+	const displayCoins = coinData.filter(
+		(item) => validOffRampData[item?.symbol]?.length
+	);
+	const activeItem =
+		displayCoins.find((item) => item?.symbol === activeRampSymbol) ||
+		displayCoins[0];
+	const activeIndex = coinData.findIndex(
+		(item) => item?.symbol === activeItem?.symbol
+	);
+
+	const renderCoinConfig = (item, index) => {
+		if (!item || !validOffRampData[item?.symbol]?.length) {
+			return null;
+		}
+		return (
+			<>
+				<div className="paymentbox2">
+					<div className="mr-4 ml-4 onramp-config-logo">
+						<img
+							src={getCoinLogo(item?.symbol)}
+							alt=""
+							className="onramp-config-logo-img"
+						/>
+					</div>
+					<div className="d-flex flex-column ml-5 mr-5">
+						<span>
+							<b>Name</b>: {item?.fullname}
+						</span>
+						<span>
+							<b>Symbol</b>: {item?.symbol}
+						</span>
+						<span>
+							<b>Type</b>: {item?.type}
+						</span>
+						<span>
+							<b>Status</b>: {item?.verified ? 'Active' : 'In active'}
+						</span>
+						<Link
+							to={`/admin/financials?tab=0&preview=true&symbol=${item?.symbol}&isFiat=${activeTab}`}
+							className="underline assetclick"
+						>
+							Manage asset
+						</Link>
+					</div>
+					<Button
+						type="primary"
+						className="green-btn ml-5"
+						onClick={() =>
+							handleRamp(
+								'offramp',
+								false,
+								item?.symbol,
+								getOfframpTypes(offramp[item?.symbol]),
+								selectedCoin,
+								false
+							)
+						}
+						disabled={
+							(Object.keys(validOffRampData)?.includes(item?.symbol) &&
+								Object.keys(user_payments)?.length ===
+									validOffRampData[item?.symbol]?.length) ||
+							isDisable
+						}
+					>
+						Add off-ramp
+					</Button>
+				</div>
+				<div className="onramp-payment-acc-wrapper">
+					{user_payments &&
+					Object.keys(user_payments).length &&
+					Object.keys(user_payments).length > 1 &&
+					validOffRampData[item?.symbol]?.length &&
+					validOffRampData[item?.symbol]?.length > 1 ? (
+						<div className="mt-4">
+							<div>
+								Payment accounts (
+								{validOffRampData[item?.symbol]
+									? validOffRampData[item?.symbol]?.length
+									: 0}{' '}
+								method saved)
+							</div>
+							<div className="mb-3">
+								<Select
+									className="paymentSelect"
+									dropdownClassName="blue-admin-select-dropdown"
+									defaultValue={
+										selectedPayType[item?.symbol]
+											? selectedPayType[item?.symbol][0]
+											: validOffRampData &&
+											  validOffRampData[item?.symbol] &&
+											  validOffRampData[item?.symbol][0]
+									}
+									value={selectedPayType[item?.symbol]}
+									suffixIcon={
+										!isOpen[item?.symbol] ? (
+											<CaretDownOutlined
+												className="downarrow"
+												onClick={() => handleOpen(item?.symbol, false)}
+											/>
+										) : (
+											<CaretUpOutlined
+												className="downarrow"
+												onClick={() => handleOpen(item?.symbol, true)}
+											/>
+										)
+									}
+									onClick={() => handleOpenPayment(item?.symbol)}
+									open={isOpen[item?.symbol]}
+									onChange={(val) => setPaymentMethod(val, item?.symbol, index)}
+									getPopupContainer={(triggerNode) => triggerNode.parentNode}
+								>
+									{validOffRampData[item?.symbol]?.map(
+										(userPaymentItem, paymentIdx) => {
+											if (!user_payments[userPaymentItem]) {
+												return null;
+											}
+
+											return (
+												<Option value={userPaymentItem} key={paymentIdx}>
+													User payment account {paymentIdx + 1}:{' '}
+													{userPaymentItem}
+												</Option>
+											);
+										}
+									)}
+								</Select>
+							</div>
+						</div>
+					) : null}
+					{isPaymentForm || item.symbol === coinSymbol ? (
+						<RampPaymentAccounts
+							formType={formType}
+							isDisplayFormData={true}
+							currentActiveTab={activeTab}
+							coinSymbol={coinSymbol ? coinSymbol : item?.symbol}
+							customName={customName}
+							user_payments={user_payments}
+							isUpgrade={isUpgrade}
+							offramp={validOffRampData[item?.symbol]}
+							pluginName={pluginName}
+							currentsymbol={item?.symbol}
+							isPaymentForm={formType === 'plugin' && customName}
+							setCoindata={setCoindata}
+							selectedPaymentType={
+								selectedPayType[item?.symbol]
+									? selectedPayType[item?.symbol]
+									: validOffRampData &&
+									  validOffRampData[item?.symbol] &&
+									  validOffRampData[item?.symbol][0]
+							}
+							selectedPayType={selectedPayType}
+							currentCoinItem={currentCoinItem}
+							currentOfframpIndex={currentOfframpIndex}
+							originalofframp={offramp}
+							getUpdatedKitData={getUpdatedKitData}
+							setSelectedPayType={setSelectedPayType}
+							paymentIndex={
+								selectedPayType && selectedPayType[item?.symbol]
+									? validOffRampData &&
+									  validOffRampData[item?.symbol] &&
+									  validOffRampData[item?.symbol]?.includes(
+											selectedPayType[item?.symbol]
+									  )
+										? validOffRampData[item?.symbol]?.indexOf(
+												selectedPayType[item?.symbol]
+										  ) + 1
+										: 1
+									: 1
+							}
+							currentOnrampType={currentType}
+							OnsetCurrentType={setCurrentType}
+							isProceed={isProceed}
+							setIsProceed={setIsProceed}
+							isLoading={isLoading}
+							setIsLoading={setIsLoading}
+							setOfframpCurrentType={setOfframpCurrentType}
+							offrampCurrentType={offrampCurrentType}
+							setCoinSymbol={setCoinSymbol}
+							isDisable={isDisable}
+							setIsDisable={setIsDisable}
+							setConfig={setConfig}
+						/>
+					) : null}
+				</div>
+				<div className="border-divider"></div>
+			</>
+		);
+	};
 
 	return (
 		<div className="ramp-wrapper">
@@ -495,213 +697,70 @@ const Offramp = ({
 								</div>
 							) : null}
 							{!Object.keys(offramp).length ? renderSelect('deposit') : null}
-							{coinData.map((item, index) => {
-								return (
-									<div key={index}>
-										{validOffRampData[item?.symbol]?.length ? (
-											<>
-												<div className="paymentbox2">
-													<div className="mr-4 ml-4">
-														<Coins
-															type={item?.symbol.toLowerCase()}
-															color={item?.meta ? item?.meta.color : ''}
-															fullname={item?.fullname}
-															nohover
-															large
-															small
-														/>
-													</div>
-													<div className="d-flex flex-column ml-5 mr-5">
-														<span>
-															<b>Name</b>: {item?.fullname}
-														</span>
-														<span>
-															<b>Symbol</b>: {item?.symbol}
-														</span>
-														<span>
-															<b>Type</b>: {item?.type}
-														</span>
-														<span>
-															<b>Status</b>:{' '}
-															{item?.verified ? 'Active' : 'In active'}
-														</span>
-														<Link
-															to={`/admin/financials?tab=0&preview=true&symbol=${item?.symbol}&isFiat=${activeTab}`}
-															className="underline assetclick"
-														>
-															Manage asset
-														</Link>
-													</div>
-													<Button
-														type="primary"
-														className="green-btn ml-5"
-														onClick={() =>
-															handleRamp(
-																'offramp',
-																false,
-																item?.symbol,
-																offramp[item?.symbol],
-																selectedCoin,
-																false
-															)
-														}
-														disabled={
-															(Object.keys(validOffRampData)?.includes(
-																item?.symbol
-															) &&
-																Object.keys(user_payments)?.length ===
-																	validOffRampData[item?.symbol]?.length) ||
-															isDisable
-														}
-													>
-														Add off-ramp
-													</Button>
+							{displayCoins.length ? (
+								<div className="onramp-coin-selector mt-4 mb-2">
+									{displayCoins.map((item) => {
+										const isActive = activeItem?.symbol === item?.symbol;
+										return (
+											<div
+												key={item?.symbol}
+												className={
+													isActive
+														? 'onramp-coin-chip onramp-coin-chip-selected'
+														: 'onramp-coin-chip'
+												}
+												onClick={() => setActiveRampSymbol(item?.symbol)}
+												title={item?.fullname}
+											>
+												<img
+													src={getCoinLogo(item?.symbol)}
+													alt=""
+													className="onramp-coin-logo-img"
+												/>
+												<div className="onramp-coin-chip-symbol">
+													{item?.symbol?.toUpperCase()}
 												</div>
-												<div className="onramp-payment-acc-wrapper">
-													{user_payments &&
-													Object.keys(user_payments).length &&
-													Object.keys(user_payments).length > 1 &&
-													validOffRampData[item?.symbol]?.length &&
-													validOffRampData[item?.symbol]?.length > 1 ? (
-														<div className="mt-4">
-															<div>
-																Payment accounts (
-																{validOffRampData[item?.symbol]
-																	? validOffRampData[item?.symbol]?.length
-																	: 0}{' '}
-																method saved)
-															</div>
-															<div className="mb-3">
-																<Select
-																	className="paymentSelect"
-																	dropdownClassName="blue-admin-select-dropdown"
-																	defaultValue={
-																		selectedPayType[item?.symbol]
-																			? selectedPayType[item?.symbol][0]
-																			: validOffRampData &&
-																			  validOffRampData[item?.symbol] &&
-																			  validOffRampData[item?.symbol][0]
-																	}
-																	value={selectedPayType[item?.symbol]}
-																	suffixIcon={
-																		!isOpen[item?.symbol] ? (
-																			<CaretDownOutlined
-																				className="downarrow"
-																				onClick={() =>
-																					handleOpen(item?.symbol, false)
-																				}
-																			/>
-																		) : (
-																			<CaretUpOutlined
-																				className="downarrow"
-																				onClick={() =>
-																					handleOpen(item?.symbol, true)
-																				}
-																			/>
-																		)
-																	}
-																	onClick={() =>
-																		handleOpenPayment(item?.symbol)
-																	}
-																	open={isOpen[item?.symbol]}
-																	onChange={(val) =>
-																		setPaymentMethod(val, item?.symbol, index)
-																	}
-																	getPopupContainer={(triggerNode) =>
-																		triggerNode.parentNode
-																	}
-																>
-																	{validOffRampData[item?.symbol]?.map(
-																		(userPaymentItem, paymentIdx) => {
-																			if (!user_payments[userPaymentItem]) {
-																				return null;
-																			}
-
-																			return (
-																				<Option
-																					value={userPaymentItem}
-																					key={paymentIdx}
-																				>
-																					User payment account {paymentIdx + 1}:{' '}
-																					{userPaymentItem}
-																				</Option>
-																			);
-																		}
-																	)}
-																</Select>
-															</div>
-														</div>
-													) : null}
-													{isPaymentForm || item.symbol === coinSymbol ? (
-														<RampPaymentAccounts
-															formType={formType}
-															isDisplayFormData={true}
-															currentActiveTab={activeTab}
-															coinSymbol={
-																coinSymbol ? coinSymbol : item?.symbol
-															}
-															customName={customName}
-															user_payments={user_payments}
-															isUpgrade={isUpgrade}
-															offramp={validOffRampData[item?.symbol]}
-															pluginName={pluginName}
-															currentsymbol={item?.symbol}
-															isPaymentForm={
-																formType === 'plugin' && customName
-															}
-															setCoindata={setCoindata}
-															selectedPaymentType={
-																selectedPayType[item?.symbol]
-																	? selectedPayType[item?.symbol]
-																	: validOffRampData &&
-																	  validOffRampData[item?.symbol] &&
-																	  validOffRampData[item?.symbol][0]
-															}
-															selectedPayType={selectedPayType}
-															currentCoinItem={currentCoinItem}
-															currentOfframpIndex={currentOfframpIndex}
-															originalofframp={offramp}
-															getUpdatedKitData={getUpdatedKitData}
-															setSelectedPayType={setSelectedPayType}
-															paymentIndex={
-																selectedPayType && selectedPayType[item?.symbol]
-																	? validOffRampData &&
-																	  validOffRampData[item?.symbol] &&
-																	  validOffRampData[item?.symbol]?.includes(
-																			selectedPayType[item?.symbol]
-																	  )
-																		? validOffRampData[item?.symbol]?.indexOf(
-																				selectedPayType[item?.symbol]
-																		  ) + 1
-																		: 1
-																	: 1
-															}
-															currentOnrampType={currentType}
-															OnsetCurrentType={setCurrentType}
-															isProceed={isProceed}
-															setIsProceed={setIsProceed}
-															isLoading={isLoading}
-															setIsLoading={setIsLoading}
-															setOfframpCurrentType={setOfframpCurrentType}
-															offrampCurrentType={offrampCurrentType}
-															setCoinSymbol={setCoinSymbol}
-															isDisable={isDisable}
-															setIsDisable={setIsDisable}
-															setConfig={setConfig}
-														/>
-													) : null}
-												</div>
-												<div className="border-divider"></div>
-											</>
-										) : null}
+											</div>
+										);
+									})}
+									<div
+										className={
+											!user_payments ||
+											!Object.keys(user_payments).length ||
+											!fiatCoins?.length ||
+											isDisable
+												? 'onramp-coin-chip onramp-coin-chip-add disableall'
+												: 'onramp-coin-chip onramp-coin-chip-add'
+										}
+										onClick={() => {
+											if (
+												user_payments &&
+												Object.keys(user_payments).length &&
+												fiatCoins?.length &&
+												!isDisable
+											) {
+												handleRamp('offramp', true, null, null, null, true);
+											}
+										}}
+										title="Add a fiat off-ramp"
+									>
+										<PlusOutlined className="onramp-coin-chip-plus" />
+										<div className="onramp-coin-chip-symbol">Add</div>
 									</div>
-								);
-							})}
+								</div>
+							) : null}
+							{renderCoinConfig(activeItem, activeIndex)}
 						</div>
 					</Fragment>
 				</div>
 			</Spin>
-			<Modal visible={isVisible} footer={null} width={500} onCancel={onCancel}>
+			<Modal
+				visible={isVisible}
+				footer={null}
+				width={500}
+				onCancel={onCancel}
+				className="fiat-popup-modal"
+			>
 				<PaymentAccountPopup
 					handleClosePlugin={onCancel}
 					handleTabChange={handleoffRampTab}
@@ -742,6 +801,7 @@ const Offramp = ({
 
 const mapStateToProps = (state) => ({
 	allCoins: state.asset.allCoins,
+	appCoins: state.app.coins,
 	exchange: state.asset && state.asset.exchange,
 });
 

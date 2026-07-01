@@ -286,6 +286,7 @@
 		"TEXT_2": "آگے بڑھنے کے لیے نیچے لاگ ان پر کلک کریں۔"
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "کمپنی اکاؤنٹ کے طور پر رجسٹر کریں",
 		"SIGNUP_TO": " سائن اپ کریں۔ {0}",
 		"NO_EMAIL": "ای میل موصول نہیں ہوا؟",
 		"REQUEST_EMAIL": "یہاں ایک اور کی درخواست کریں۔",
@@ -324,6 +325,15 @@
 		"CONFIRM_DESCRIPTION": "براہ کرم اسٹیشن زیر کرنے والے بٹن پر کلک کرکے اپنے اکاؤنٹ کی رجسٹریشن کی تصدیق کریں"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "کمپنی اکاؤنٹ",
+			"BANNER": "یہ ایک کمپنی اکاؤنٹ ہے",
+			"NAME": "کمپنی کا نام",
+			"REGISTRATION_NUMBER": "رجسٹریشن نمبر",
+			"COUNTRY_OF_INCORPORATION": "ملک اندراج",
+			"BUSINESS_ADDRESS": "کاروباری پتہ",
+			"PENDING": "کمپنی کی تصدیق زیر التواء ہے"
+		},
 		"INFO_TXT": "یہاں آپ تصدیق اور اکاؤنٹ اپ گریڈ کی طرف اپنی پیشرفت کی نگرانی کر سکتے ہیں۔",
 		"INFO_TXT_1": "براہ کرم ذیل میں ہر سیکشن کے لیے درکار متعلقہ معلومات جمع کرائیں۔ صرف اس صورت میں جب تمام سیکشنز کی گذارشات مکمل ہو جائیں گی آپ کی معلومات کا جائزہ لیا جائے گا اور اکاؤنٹ اپ گریڈ کے لیے منظور کیا جائے گا۔",
 		"COMPLETED": "مکمل",
@@ -1073,6 +1083,8 @@
 	"COMPLETE": "مکمل",
 	"PENDING": "زیر التواء",
 	"REJECTED": "مسترد",
+	"VERIFIED": "تصدیق شدہ",
+	"TYPE_AMOUNT": "رقم درج کریں",
 	"ORDERBOOK": "آرڈر بک",
 	"CANCEL": "منسوخ کریں۔",
 	"CANCEL_ALL": "تمام منسوخ کریں۔",
@@ -1618,6 +1630,8 @@
 	"REGULAR": "باقاعدہ",
 	"STOPS": "اسٹیشنز",
 	"VIEW_ALL": "سب دیکھیں",
+	"SHOW_LESS": "کم دیکھیں",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} اکاؤنٹس",
 	"TRIGGER_PRICE": "ٹرگر قیمت",
 	"SPEND_AMOUNT": "رقم خرچ کریں۔",
 	"ESTIMATE_RECEIVE_AMOUNT": "متوقع وصولی کی رقم",
@@ -2826,5 +2840,36 @@
 		"TOO_MANY_REQUEST_ERROR": "بہت زیادہ درخواستیں",
 		"TOO_MANY_REQUEST_ERROR_DESC": "واہ! آہستہ کرو، آپ ایک ساتھ بہت زیادہ کر رہے ہیں۔",
 		"NETWORK_ERROR_MESSAGE": "نیٹ ورک کی خرابی۔"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "ٹریول رول کی معلومات",
+		"INTRO": "اس ٹرانزیکشن کے لیے تعمیل کے مقصد سے اضافی معلومات درکار ہیں۔ براہ کرم نیچے تفصیلات فراہم کریں۔",
+		"SERVICE_PROVIDER_TYPE": "سروس فراہم کنندہ کی قسم",
+		"SELECT_COUNTERPARTY_TYPE": "فریق مخالف کی قسم منتخب کریں",
+		"COUNTERPARTY_EXCHANGE": "ایکسچینج / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "خود تحویل والیٹ",
+		"VASP_NAME": "ایکسچینج / VASP کا نام",
+		"VASP_NAME_PLACEHOLDER": "مثلاً Coinbase، Binance",
+		"ACCOUNT_HOLDER_NAME": "اکاؤنٹ ہولڈر کا نام",
+		"COUNTERPARTY_NAME": "فریق مخالف کا نام",
+		"NAME_PLACEHOLDER": "فرد یا ادارے کا مکمل نام",
+		"RECEIVER_IS_MYSELF": "وصول کنندہ میں خود ہوں",
+		"SENDER_IS_MYSELF": "بھیجنے والا میں خود ہوں",
+		"PURPOSE_LABEL": "ٹرانزیکشن کا مقصد",
+		"SELECT_PURPOSE": "ایک مقصد منتخب کریں",
+		"SPECIFY": "براہ کرم وضاحت کریں",
+		"SPECIFY_PLACEHOLDER": "مقصد درج کریں",
+		"PROVIDE_SOURCE": "ذریعہ فراہم کریں",
+		"DEPOSIT_RELEASED": "آپ کی ڈپازٹ جاری کر دی گئی ہے۔",
+		"DEPOSIT_INFO_SAVED": "آپ کی معلومات محفوظ کر لی گئی ہیں۔ ڈپازٹ ابھی زیرِ جائزہ ہے۔",
+		"CANCEL": "منسوخ کریں",
+		"SUBMIT": "جمع کرائیں",
+		"PURPOSE_PERSONAL_TRANSFER": "ذاتی منتقلی",
+		"PURPOSE_INVESTMENT": "سرمایہ کاری",
+		"PURPOSE_PURCHASE": "اشیاء/خدمات کی خریداری",
+		"PURPOSE_SALARY": "تنخواہ/آمدنی",
+		"PURPOSE_GIFT": "تحفہ",
+		"PURPOSE_TRADING": "ٹریڈنگ",
+		"PURPOSE_OTHER": "دیگر"
 	}
 }

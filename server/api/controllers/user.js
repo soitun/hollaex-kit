@@ -131,7 +131,8 @@ const signUpUser = (req, res) => {
 		captcha,
 		referral,
 		phone_number: phoneNumberRaw,
-		verification_method
+		verification_method,
+		is_company
 	} = req.swagger.params.signup.value;
 
 	let { email, version } = req.swagger.params.signup.value;
@@ -185,7 +186,7 @@ const signUpUser = (req, res) => {
 			toolsLib.user.signUpUser(
 				signupEmail,
 				password,
-				{ referral, phone_number, verification_method },
+				{ referral, phone_number, verification_method, is_company: is_company === true },
 				version
 			)
 		)
@@ -1356,7 +1357,7 @@ const getUser = (req, res) => {
 			'x-forwarded-for': req.headers['x-forwarded-for']
 		}
 	})
-		.then((user) => {
+		.then(async (user) => {
 			if (!user) {
 				throw new Error(USER_NOT_FOUND);
 			}
@@ -1366,6 +1367,9 @@ const getUser = (req, res) => {
 				user.configs = userRole?.configs;
 				user.permissions = userRole?.permissions;
 				user.restrictions = userRole?.restrictions;
+			}
+			if (user.is_company) {
+				user.company = await toolsLib.user.getUserCompany(id);
 			}
 			return res.json(toolsLib.user.omitUserFields(user));
 		})

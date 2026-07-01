@@ -274,11 +274,77 @@ const getUsersAdmin = (req, res) => {
 			'x-forwarded-for': req.headers['x-forwarded-for']
 		}
 	})
-		.then((data) => {
+		.then(async (data) => {
+			// When viewing a single user, attach company info for company accounts
+			if ((id.value || user_id.value) && data?.data?.length === 1 && data.data[0].is_company) {
+				data.data[0].company = await toolsLib.user.getUserCompany(data.data[0].id);
+			}
 			return res.json(data);
 		})
 		.catch((err) => {
 			loggerAdmin.error(req.uuid, 'controllers/admin/getUsers', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const getCompaniesAdmin = (req, res) => {
+	loggerAdmin.verbose(req.uuid, 'controllers/admin/getCompaniesAdmin/auth', req.auth);
+
+	const {
+		search,
+		country_of_incorporation,
+		status,
+		limit,
+		page,
+		order_by,
+		order,
+		start_date,
+		end_date
+	} = req.swagger.params;
+
+	if (order_by.value && typeof order_by.value !== 'string') {
+		loggerAdmin.error(
+			req.uuid,
+			'controllers/admin/getCompaniesAdmin invalid order_by',
+			order_by.value
+		);
+		return res.status(400).json({ message: 'Invalid order by' });
+	}
+
+	// Derive max visible verification level from the requester's role restrictions (if configured)
+	let maxVisibleVerificationLevel = null;
+	try {
+		const roles = toolsLib.getRoles();
+		const requesterRoleName = req?.auth?.sub?.role;
+		const requesterRole = roles?.find((r) => r.role_name === requesterRoleName);
+		const restrictions = requesterRole?.restrictions || {};
+		const usersRestriction = restrictions?.users || {};
+		const configuredMaxLevel = usersRestriction?.max_view_verification_level ?? restrictions?.max_view_verification_level;
+		if (typeof configuredMaxLevel === 'number') {
+			maxVisibleVerificationLevel = configuredMaxLevel;
+		}
+	} catch (e) {
+		// ignore restriction errors and proceed without max filter
+	}
+
+	toolsLib.user.getAllCompaniesAdmin({
+		search: search.value,
+		country_of_incorporation: country_of_incorporation.value,
+		status: status.value,
+		limit: limit.value,
+		page: page.value,
+		order_by: order_by.value,
+		order: order.value,
+		start_date: start_date.value,
+		end_date: end_date.value,
+		max_verification_level: maxVisibleVerificationLevel
+	})
+		.then((data) => {
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(req.uuid, 'controllers/admin/getCompaniesAdmin', err.message);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
 			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
 		});
@@ -1081,7 +1147,9 @@ const putMint = (req, res) => {
 		processing,
 		waiting,
 		email,
-		description
+		description,
+		clear_hold_reason,
+		clear_hold_source
 	} = req.swagger.params.data.value;
 
 	loggerAdmin.info(
@@ -1116,6 +1184,10 @@ const putMint = (req, res) => {
 		updatedAddress: updated_address,
 		email,
 		updatedDescription: description,
+		// operator clearing a non-travel_rule hold reason (blacklist/scorechain/kyt/
+		// future). The network releases the deposit only if no other reason remains.
+		clearHoldReason: clear_hold_reason,
+		clearHoldSource: clear_hold_source,
 		additionalHeaders: {
 			'x-forwarded-for': req.headers['x-forwarded-for']
 		}
@@ -1132,6 +1204,51 @@ const putMint = (req, res) => {
 			loggerAdmin.error(
 				req.uuid,
 				'controllers/admin/putMint err',
+				err
+			);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const reallocateDeposit = (req, res) => {
+	loggerAdmin.verbose(
+		req.uuid,
+		'controllers/admin/reallocateDeposit auth',
+		req.auth
+	);
+
+	const { transaction_id, address, receiver_id, description } = req.swagger.params.data.value;
+
+	loggerAdmin.info(
+		req.uuid,
+		'controllers/admin/reallocateDeposit',
+		'transaction_id',
+		transaction_id,
+		'address',
+		address,
+		'receiver_id',
+		receiver_id
+	);
+
+	toolsLib.wallet.reallocateDepositByKitId(transaction_id, address, receiver_id, {
+		description,
+		additionalHeaders: {
+			'x-forwarded-for': req.headers['x-forwarded-for']
+		}
+	})
+		.then((data) => {
+			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], req?.swagger?.params?.data?.value);
+			loggerAdmin.info(
+				req.uuid,
+				'controllers/admin/reallocateDeposit successful'
+			);
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(
+				req.uuid,
+				'controllers/admin/reallocateDeposit err',
 				err
 			);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
@@ -2164,6 +2281,50 @@ const getNetworkPairs = (req, res) => {
 			loggerAdmin.error(
 				req.uuid,
 				'controllers/admin/getNetworkPairs err',
+				err.message
+			);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
+const putUserCompany = (req, res) => {
+	loggerAdmin.verbose(
+		req.uuid,
+		'controllers/admin/putUserCompany auth',
+		req.auth
+	);
+
+	const user_id = req.swagger.params.user_id.value;
+	const updateData = pick(
+		req.swagger.params.data.value,
+		[
+			'name',
+			'registration_number',
+			'country_of_incorporation',
+			'business_address',
+			'status',
+			'is_company'
+		]
+	);
+
+	loggerAdmin.info(
+		req.uuid,
+		'controllers/admin/putUserCompany user_id:',
+		user_id,
+		'updateData:',
+		updateData
+	);
+
+	const auditInfo = { userEmail: req?.auth?.sub?.email, sessionId: req?.session_id, apiPath: req?.swagger?.apiPath, method: req?.swagger?.operationPath?.[2] };
+	toolsLib.user.updateUserCompany(user_id, updateData, auditInfo)
+		.then((data) => {
+			return res.json(data);
+		})
+		.catch((err) => {
+			loggerAdmin.error(
+				req.uuid,
+				'controllers/admin/putUserCompany err',
 				err.message
 			);
 			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
@@ -3478,7 +3639,7 @@ const updateExchangeUserRole = (req, res) => {
 
 	const { id, description, permissions, configs, otp_code, color, restrictions } = req.swagger.params.data.value;
 
-	loggerAdmin.verbose(req.uuid, 'controllers/admin/updateExchangeUserRole data', id, description, permissions, configs, otp_code, color, restrictions);
+	loggerAdmin.verbose(req.uuid, 'controllers/admin/updateExchangeUserRole data', id, description, permissions, configs, color, restrictions);
 
 	toolsLib.user.updateExchangeUserRole(id, {
 		description,
@@ -3937,6 +4098,7 @@ module.exports = {
 	getAdminKit,
 	putAdminKit,
 	getUsersAdmin,
+	getCompaniesAdmin,
 	putUserRole,
 	putUserNote,
 	getAdminUserBalance,
@@ -3960,6 +4122,7 @@ module.exports = {
 	verifyPhoneUser,
 	settleFees,
 	putMint,
+	reallocateDeposit,
 	putBurn,
 	putUserDiscount,
 	deleteKitUserMeta,
@@ -3979,6 +4142,7 @@ module.exports = {
 	getNetworkPairs,
 	updateExchange,
 	putUserInfo,
+	putUserCompany,
 	getEmail,
 	putEmail,
 	emailConfigTest,

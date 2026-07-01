@@ -85,7 +85,7 @@
 			"title": "Discount Rate Change"
 		},
 		"BANK_VERIFIED": {
-			"html": "<div><p> Dear ${name} </p><p>A pending payment account has been verified. Your valid account can now be used for exchange operations.</p><div><strong>Verified Accounts:</strong>${list_detail_bank_account}</div><p><a href=\"${link_verification}\">To view your current accounts, please visit the exchange verification Tab</a></p><p> Regards<br> ${api_name} team </p></div>",
+			"html": "<div><p> Dear ${name} </p><p>A pending payment account has been verified. Your valid account can now be used for exchange operations.</p><p><a href=\"${link_verification}\">To view your current accounts, please visit the exchange verification Tab</a></p><p> Regards<br> ${api_name} team </p></div>",
 			"title": "Payment account Verified"
 		},
 		"USER_ID_VERIFICATION_REJECT": {

@@ -292,6 +292,7 @@
 		"TEXT_2": "Нажмите «Войти» ниже, чтобы продолжить."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Зарегистрироваться как корпоративный аккаунт",
 		"SIGNUP_TO": "Зарегистрируйтесь в {0}",
 		"NO_EMAIL": "Не получили письмо?",
 		"REQUEST_EMAIL": "Запросите еще один здесь",
@@ -330,6 +331,15 @@
 		"CONFIRM_DESCRIPTION": "Пожалуйста, подтвердите регистрацию вашей учетной записи, нажав на кнопку ниже"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Корпоративный аккаунт",
+			"BANNER": "Это корпоративный аккаунт",
+			"NAME": "Название компании",
+			"REGISTRATION_NUMBER": "Регистрационный номер",
+			"COUNTRY_OF_INCORPORATION": "Страна регистрации",
+			"BUSINESS_ADDRESS": "Адрес компании",
+			"PENDING": "Проверка компании ожидается"
+		},
 		"INFO_TXT": "Здесь вы можете следить за своим прогрессом в проверке и обновлении учетной записи.",
 		"INFO_TXT_1": "Пожалуйста, отправьте соответствующую информацию, необходимую для каждого раздела ниже. Только после того, как все разделы будут заполнены, ваша информация будет рассмотрена и одобрена для повышения уровня учетной записи.",
 		"COMPLETED": "Завершенный",
@@ -1054,6 +1064,8 @@
 	"COMPLETE": "Полный",
 	"PENDING": "В ожидании",
 	"REJECTED": "Отклоненный",
+	"VERIFIED": "Проверено",
+	"TYPE_AMOUNT": "Введите сумму",
 	"ORDERBOOK": "Книга заказов",
 	"CANCEL": "Отмена",
 	"CANCEL_ALL": "Отменить все",
@@ -1625,6 +1637,8 @@
 	"REGULAR": "Обычный",
 	"STOPS": "Остановки",
 	"VIEW_ALL": "посмотреть все",
+	"SHOW_LESS": "Свернуть",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} счетов",
 	"TRIGGER_PRICE": "Триггерная цена",
 	"SPEND_AMOUNT": "Сумма расходов",
 	"ESTIMATE_RECEIVE_AMOUNT": "Расчетная сумма получения",
@@ -2802,5 +2816,36 @@
 		"TOO_MANY_REQUEST_ERROR": "Слишком много запросов",
 		"TOO_MANY_REQUEST_ERROR_DESC": "Ого! Помедленнее, ты делаешь слишком много одновременно.",
 		"NETWORK_ERROR_MESSAGE": "Ошибка сети"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "Информация о travel rule",
+		"INTRO": "Эта транзакция требует дополнительной информации для соблюдения требований. Пожалуйста, укажите данные ниже.",
+		"SERVICE_PROVIDER_TYPE": "Тип поставщика услуг",
+		"SELECT_COUNTERPARTY_TYPE": "Выберите тип контрагента",
+		"COUNTERPARTY_EXCHANGE": "Биржа / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "Некастодиальный кошелёк",
+		"VASP_NAME": "Название биржи / VASP",
+		"VASP_NAME_PLACEHOLDER": "напр. Coinbase, Binance",
+		"ACCOUNT_HOLDER_NAME": "Имя владельца счёта",
+		"COUNTERPARTY_NAME": "Имя контрагента",
+		"NAME_PLACEHOLDER": "Полное имя физического или юридического лица",
+		"RECEIVER_IS_MYSELF": "Получатель — это я",
+		"SENDER_IS_MYSELF": "Отправитель — это я",
+		"PURPOSE_LABEL": "Цель транзакции",
+		"SELECT_PURPOSE": "Выберите цель",
+		"SPECIFY": "Уточните",
+		"SPECIFY_PLACEHOLDER": "Введите цель",
+		"PROVIDE_SOURCE": "Указать источник",
+		"DEPOSIT_RELEASED": "Ваш депозит разблокирован.",
+		"DEPOSIT_INFO_SAVED": "Ваши данные сохранены. Депозит остаётся на рассмотрении.",
+		"CANCEL": "Отмена",
+		"SUBMIT": "Отправить",
+		"PURPOSE_PERSONAL_TRANSFER": "Личный перевод",
+		"PURPOSE_INVESTMENT": "Инвестиции",
+		"PURPOSE_PURCHASE": "Покупка товаров/услуг",
+		"PURPOSE_SALARY": "Зарплата/доход",
+		"PURPOSE_GIFT": "Подарок",
+		"PURPOSE_TRADING": "Торговля",
+		"PURPOSE_OTHER": "Другое"
 	}
 }

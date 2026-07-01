@@ -10,6 +10,7 @@ import {
 	APPROXIMATELY_EQAUL_CURRENCY_PRICE_FORMAT,
 	DEFAULT_COIN_DATA,
 } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { WS_QUOTE_CURRENCY } from 'actions/assetActions';
 
 const AmountPreview = ({
@@ -24,8 +25,10 @@ const AmountPreview = ({
 }) => {
 	const displayCurrency =
 		localStorage.getItem('base_currnecy') || WS_QUOTE_CURRENCY;
-	const { min: baseMin, display_name: base_display = '' } =
-		coins[displayCurrency] || DEFAULT_COIN_DATA;
+	const { min: baseMin, display_name: base_display = '' } = resolveDisplayCoin(
+		coins,
+		displayCurrency
+	);
 	const { min: tokenMin, display_name: token_display = '', icon_id } =
 		coins[token] || DEFAULT_COIN_DATA;
 

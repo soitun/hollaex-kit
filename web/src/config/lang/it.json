@@ -292,6 +292,7 @@
 		"TEXT_2": "Fai clic su Accedi di seguito per procedere."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Registrati come account aziendale",
 		"SIGNUP_TO": "Iscriviti a {0}",
 		"NO_EMAIL": "Non hai ricevuto l'e-mail?",
 		"REQUEST_EMAIL": "Richiedine un altro qui",
@@ -330,6 +331,15 @@
 		"CONFIRM_DESCRIPTION": "Conferma la registrazione del tuo account cliccando sul pulsante sottostante"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Account aziendale",
+			"BANNER": "Questo è un account aziendale",
+			"NAME": "Nome dell'azienda",
+			"REGISTRATION_NUMBER": "Numero di registrazione",
+			"COUNTRY_OF_INCORPORATION": "Paese di costituzione",
+			"BUSINESS_ADDRESS": "Indirizzo aziendale",
+			"PENDING": "Verifica aziendale in attesa"
+		},
 		"INFO_TXT": "Qui puoi monitorare i tuoi progressi verso la verifica e gli aggiornamenti dell'account.",
 		"INFO_TXT_1": "Invia le informazioni pertinenti necessarie per ciascuna sezione di seguito. Solo quando tutte le sezioni avranno completato l'invio, le tue informazioni verranno esaminate e approvate per l'upgrade dell'account.",
 		"COMPLETED": "Completato",
@@ -1054,6 +1064,8 @@
 	"COMPLETE": "Completare",
 	"PENDING": "In attesa di",
 	"REJECTED": "Respinto",
+	"VERIFIED": "Verificato",
+	"TYPE_AMOUNT": "Inserisci l'importo",
 	"ORDERBOOK": "Portafoglio ordini",
 	"CANCEL": "Annulla",
 	"CANCEL_ALL": "Cancella tutto",
@@ -1625,6 +1637,8 @@
 	"REGULAR": "Regolare",
 	"STOPS": "Fermate",
 	"VIEW_ALL": "mostra tutto",
+	"SHOW_LESS": "Mostra meno",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} account",
 	"TRIGGER_PRICE": "Prezzo di scatto",
 	"SPEND_AMOUNT": "Importo spesa",
 	"ESTIMATE_RECEIVE_AMOUNT": "Importo di ricezione stimato",
@@ -2802,5 +2816,36 @@
 		"TOO_MANY_REQUEST_ERROR": "Troppe richieste",
 		"TOO_MANY_REQUEST_ERROR_DESC": "Wow! Rallenta, stai facendo troppe cose contemporaneamente",
 		"NETWORK_ERROR_MESSAGE": "Errore di rete"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "Informazioni sulla travel rule",
+		"INTRO": "Questa transazione richiede informazioni aggiuntive ai fini della conformità. Fornisci i dettagli di seguito.",
+		"SERVICE_PROVIDER_TYPE": "Tipo di fornitore di servizi",
+		"SELECT_COUNTERPARTY_TYPE": "Seleziona il tipo di controparte",
+		"COUNTERPARTY_EXCHANGE": "Exchange / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "Wallet auto-custodito",
+		"VASP_NAME": "Nome dell'exchange / VASP",
+		"VASP_NAME_PLACEHOLDER": "es. Coinbase, Binance",
+		"ACCOUNT_HOLDER_NAME": "Nome dell'intestatario del conto",
+		"COUNTERPARTY_NAME": "Nome della controparte",
+		"NAME_PLACEHOLDER": "Nome completo della persona o dell'entità",
+		"RECEIVER_IS_MYSELF": "Il destinatario sono io",
+		"SENDER_IS_MYSELF": "Il mittente sono io",
+		"PURPOSE_LABEL": "Scopo della transazione",
+		"SELECT_PURPOSE": "Seleziona uno scopo",
+		"SPECIFY": "Specifica",
+		"SPECIFY_PLACEHOLDER": "Inserisci lo scopo",
+		"PROVIDE_SOURCE": "Indica l'origine",
+		"DEPOSIT_RELEASED": "Il tuo deposito è stato rilasciato.",
+		"DEPOSIT_INFO_SAVED": "Le tue informazioni sono state salvate. Il deposito resta in revisione.",
+		"CANCEL": "Annulla",
+		"SUBMIT": "Invia",
+		"PURPOSE_PERSONAL_TRANSFER": "Trasferimento personale",
+		"PURPOSE_INVESTMENT": "Investimento",
+		"PURPOSE_PURCHASE": "Acquisto di beni/servizi",
+		"PURPOSE_SALARY": "Stipendio/reddito",
+		"PURPOSE_GIFT": "Regalo",
+		"PURPOSE_TRADING": "Trading",
+		"PURPOSE_OTHER": "Altro"
 	}
 }

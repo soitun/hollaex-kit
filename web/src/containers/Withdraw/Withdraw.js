@@ -45,6 +45,7 @@ import { getAddressBookDetails } from 'containers/Wallet/actions';
 import { getDecimals, handlePopupContainer } from 'utils/utils';
 import { roundNumber, toFixed } from 'utils/currency';
 import { DEFAULT_COIN_DATA } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { setScannedAddress } from 'actions/walletActions';
 import { getNetworkNameByKey } from 'utils/wallet';
 import { checkAccountStatus, getMainAccountToken, setToken } from 'utils/token';
@@ -741,7 +742,8 @@ const RenderWithdraw = ({
 					(getWithdrawCurrency || currency) && feeCoin?.toUpperCase()
 			  }`;
 
-	const incrementUnit = coins[baseCurrency]?.increment_unit || 0.0001;
+	const incrementUnit =
+		resolveDisplayCoin(coins, baseCurrency).increment_unit || 0.0001;
 	const decimalPoint = new BigNumber(incrementUnit).dp();
 	const estimatedFormat = `≈ ${new BigNumber(estimatedWithdrawValue)
 		.decimalPlaces(decimalPoint)
@@ -866,6 +868,9 @@ const RenderWithdraw = ({
 		}
 	};
 
+	// Identity (KYC) must be approved (id_data.status === 3) before any withdrawal
+	const is_verified = user?.id_data?.status === 3;
+
 	return (
 		<div>
 			{user?.is_subaccount ? (
@@ -901,6 +906,32 @@ const RenderWithdraw = ({
 							</Button>
 						</>
 					)}
+				</div>
+			) : !is_verified ? (
+				<div className="withdrawal-block">
+					<Image
+						iconId="WITHDRAWAL_BLOCK"
+						icon={Icons['WITHDRAWAL_BLOCK']}
+						wrapperClassName="withdrawal-block-icon mb-4"
+					/>
+					<EditWrapper stringId="WITHDRAWAL_IDENTITY_VERIFICATION.TITLE">
+						<span className="fs-16 bold">
+							{STRINGS['WITHDRAWAL_IDENTITY_VERIFICATION.TITLE']}
+						</span>
+					</EditWrapper>
+					<EditWrapper stringId="WITHDRAWAL_IDENTITY_VERIFICATION.DESCRIPTION">
+						{STRINGS['WITHDRAWAL_IDENTITY_VERIFICATION.DESCRIPTION']}
+					</EditWrapper>
+					<Button
+						className="withdrawal-block-btn mt-3"
+						onClick={() =>
+							router.push('/verification?identity&initial_tab=kyc')
+						}
+					>
+						<EditWrapper stringId="WITHDRAWAL_IDENTITY_VERIFICATION.BUTTON">
+							{STRINGS['WITHDRAWAL_IDENTITY_VERIFICATION.BUTTON']}
+						</EditWrapper>
+					</Button>
 				</div>
 			) : (
 				<div

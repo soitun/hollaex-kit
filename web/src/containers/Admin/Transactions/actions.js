@@ -52,6 +52,12 @@ export const requestDepositsDownload = (query) => {
 		});
 };
 
+// Fetch travel-rule compliance records for a single transaction (admin detail view).
+export const requestTravelRule = (transaction_id) => {
+	const queryValues = querystring.stringify({ transaction_id });
+	return requestAuthenticated(`/admin/travel-rule?${queryValues}`);
+};
+
 export const completeDeposits = (values) => {
 	const options = {
 		method: 'PUT',
@@ -72,4 +78,28 @@ export const dismissDeposit = (transaction_id, dismissed) => {
 		`/admin/deposit/dismiss?transaction_id=${transaction_id}`,
 		options
 	);
+};
+
+export const requestBurn = (data) => {
+	const options = {
+		method: 'PUT',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/burn`, options);
+};
+
+export const requestMint = (data) => {
+	const options = {
+		method: 'PUT',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/mint`, options);
+};
+
+export const requestReallocate = (data) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/deposit/reallocate`, options);
 };

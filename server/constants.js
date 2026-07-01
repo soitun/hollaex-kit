@@ -248,6 +248,7 @@ exports.KIT_CONFIG_KEYS = [
 	'referral_history_config',
 	'chain_trade_config',
 	'selectable_native_currencies',
+	'valuation_assets',
 	'auto_trade_config',
 	'suspicious_login',
 	'apps',
@@ -257,7 +258,8 @@ exports.KIT_CONFIG_KEYS = [
 	'auto_withdrawal',
 	'force_two_factor_authentication_withdrawal',
 	'cloudflare_ipcountry',
-	'blockchain'
+	'blockchain',
+	'travel_rule'
 ];
 
 exports.KIT_SECRETS_KEYS = [

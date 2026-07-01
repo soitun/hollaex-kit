@@ -15,6 +15,7 @@ import {
 	APPROXIMATELY_EQAUL_CURRENCY_PRICE_FORMAT,
 	DEFAULT_COIN_DATA,
 } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import Variable from 'containers/Stake/components/Variable';
 
 const TABLE_PAGE_SIZE = 10;
@@ -77,8 +78,10 @@ const PublicInfo = ({
 			},
 		},
 	];
-	const { min: baseMin, display_name: baseDisplay = '' } =
-		coins[displayCurrency] || DEFAULT_COIN_DATA;
+	const { min: baseMin, display_name: baseDisplay = '' } = resolveDisplayCoin(
+		coins,
+		displayCurrency
+	);
 	const { min: tokenMin, display_name: tokenDisplay = '' } =
 		coins[token] || DEFAULT_COIN_DATA;
 

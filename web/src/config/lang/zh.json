@@ -330,6 +330,7 @@
 		"TEXT_2": "点击下面的登录以继续"
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "注册为企业账户",
 		"SIGNUP_TO": "注册到{0}",
 		"NO_EMAIL": "没有收到邮件？",
 		"REQUEST_EMAIL": "再次请求",
@@ -368,6 +369,15 @@
 		"CONFIRM_DESCRIPTION": "请通过点击下面的按钮确认您的账户注册"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "企业账户",
+			"BANNER": "这是一个企业账户",
+			"NAME": "公司名称",
+			"REGISTRATION_NUMBER": "注册号",
+			"COUNTRY_OF_INCORPORATION": "注册国家",
+			"BUSINESS_ADDRESS": "营业地址",
+			"PENDING": "企业验证待处理"
+		},
 		"INFO_TXT": "在此页面可查看验证及账户升级进度 ",
 		"INFO_TXT_1": "请提交以下各部分所需的相关信息，只有在所有部分提交完成后，你的信息才会被审查和批准账户升级。",
 		"INFO_TXT_2": "*身份认证部分需要{0}某些文件",
@@ -907,6 +917,8 @@
 	"COMPLETE": "Complete",
 	"PENDING": "Pending",
 	"REJECTED": "Rejected",
+	"VERIFIED": "已验证",
+	"TYPE_AMOUNT": "输入金额",
 	"ORDERBOOK": "Order Book",
 	"CANCEL": "Cancel",
 	"CANCEL_ALL": "Cancel All",
@@ -1446,6 +1458,8 @@
 	"CLEAR": "重置",
 	"ORDER_ENTRY_ADVANCED": "高级设置",
 	"VIEW_ALL": "查看更多",
+	"SHOW_LESS": "收起",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} 个账户",
 	"ESTIMATED_PRICE": "成交金额",
 	"TRIGGER_PRICE": "触发价格",
 	"POST_ONLY": "高级现价委托",
@@ -2991,5 +3005,36 @@
 		"TOO_MANY_REQUEST_ERROR": "请求过多",
 		"TOO_MANY_REQUEST_ERROR_DESC": "哇！慢点，你一次做太多事情了",
 		"NETWORK_ERROR_MESSAGE": "网络错误"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "旅行规则信息",
+		"INTRO": "此交易需要提供额外信息以符合合规要求。请在下方填写相关详情。",
+		"SERVICE_PROVIDER_TYPE": "服务提供商类型",
+		"SELECT_COUNTERPARTY_TYPE": "选择交易对手类型",
+		"COUNTERPARTY_EXCHANGE": "交易所 / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "自托管钱包",
+		"VASP_NAME": "交易所 / VASP 名称",
+		"VASP_NAME_PLACEHOLDER": "例如 Coinbase、Binance",
+		"ACCOUNT_HOLDER_NAME": "账户持有人姓名",
+		"COUNTERPARTY_NAME": "交易对手名称",
+		"NAME_PLACEHOLDER": "个人或机构的全称",
+		"RECEIVER_IS_MYSELF": "收款人是我本人",
+		"SENDER_IS_MYSELF": "付款人是我本人",
+		"PURPOSE_LABEL": "交易目的",
+		"SELECT_PURPOSE": "选择目的",
+		"SPECIFY": "请说明",
+		"SPECIFY_PLACEHOLDER": "请输入目的",
+		"PROVIDE_SOURCE": "提供来源",
+		"DEPOSIT_RELEASED": "您的充值已放行。",
+		"DEPOSIT_INFO_SAVED": "您的信息已保存。该充值仍在审核中。",
+		"CANCEL": "取消",
+		"SUBMIT": "提交",
+		"PURPOSE_PERSONAL_TRANSFER": "个人转账",
+		"PURPOSE_INVESTMENT": "投资",
+		"PURPOSE_PURCHASE": "购买商品/服务",
+		"PURPOSE_SALARY": "工资/收入",
+		"PURPOSE_GIFT": "礼物",
+		"PURPOSE_TRADING": "交易",
+		"PURPOSE_OTHER": "其他"
 	}
 }

@@ -7,6 +7,7 @@ import {
 	BASE_CURRENCY,
 	DEFAULT_COIN_DATA,
 } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import STRINGS from 'config/localizedStrings';
 import withConfig from 'components/ConfigProvider/withConfig';
 import { generateDynamicStringKey } from 'utils/id';
@@ -45,7 +46,7 @@ const ReviewModalContent = ({
 }) => {
 	const { min, display_name } =
 		coins[currency || BASE_CURRENCY] || DEFAULT_COIN_DATA;
-	const baseCoin = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+	const baseCoin = resolveDisplayCoin(coins, BASE_CURRENCY);
 
 	const selectedBank = banks.find(({ id }) => id === data.bank);
 

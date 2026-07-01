@@ -19,6 +19,12 @@ export const requestDeposits = (query = { type: 'deposit' }) => {
 	return requestAuthenticated(path);
 };
 
+// Fetch travel-rule compliance records for a single transaction (admin detail view).
+export const requestTravelRule = (transaction_id) => {
+	const queryValues = querystring.stringify({ transaction_id });
+	return requestAuthenticated(`/admin/travel-rule?${queryValues}`);
+};
+
 export const requestDepositDownload = (query = { type: 'deposit' }) => {
 	const { type, currency, ...rest } = query;
 	let formProps = { ...rest };
@@ -98,4 +104,12 @@ export const requestMint = (data) => {
 		body: JSON.stringify({ ...data }),
 	};
 	return requestAuthenticated(`/admin/mint`, options);
+};
+
+export const requestReallocate = (data) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify({ ...data }),
+	};
+	return requestAuthenticated(`/admin/deposit/reallocate`, options);
 };

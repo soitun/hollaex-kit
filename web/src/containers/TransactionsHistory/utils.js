@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 import {
 	InfoCircleTwoTone,
 	PlusSquareOutlined,
@@ -663,7 +664,7 @@ export const generateTradeHeaders = (
 			exportToCsv: ({ price = 0, size = 0, quick, symbol }) => {
 				if (pairs[symbol]) {
 					const { increment_price, pair_base } = pairs[symbol];
-					const { min, ...rest } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+					const { min, ...rest } = resolveDisplayCoin(coins, BASE_CURRENCY);
 					return STRINGS.formatString(
 						CURRENCY_PRICE_FORMAT,
 						formatToCurrency(
@@ -679,7 +680,7 @@ export const generateTradeHeaders = (
 			renderCell: ({ price = 0, size = 0, quick, symbol }, key, index) => {
 				if (pairs[symbol]) {
 					const { increment_price, pair_base } = pairs[symbol];
-					const { min, ...rest } = coins[BASE_CURRENCY] || DEFAULT_COIN_DATA;
+					const { min, ...rest } = resolveDisplayCoin(coins, BASE_CURRENCY);
 					return (
 						<td key={index}>
 							{STRINGS.formatString(
@@ -746,7 +747,9 @@ export const generateWithdrawalsHeaders = (
 	symbol,
 	coins = {},
 	withdrawalPopup,
-	ICONS
+	ICONS,
+	depositTravelRulePopup,
+	travelRuleActive = false
 ) => {
 	return [
 		// {
@@ -882,7 +885,17 @@ export const generateWithdrawalsHeaders = (
 			key: 'created_at',
 			exportToCsv: ({ created_at = '' }) => created_at,
 			renderCell: ({ created_at = '' }, key, index) => {
-				return <td key={index}>{getFormatTimestamp(created_at)}</td>;
+				return (
+					<td key={index}>
+						{created_at ? (
+							<Tooltip title={getFormatTimestamp(created_at)}>
+								{moment(created_at).fromNow()}
+							</Tooltip>
+						) : (
+							'-'
+						)}
+					</td>
+				);
 			},
 		},
 		{
@@ -923,14 +936,11 @@ export const generateWithdrawalsHeaders = (
 			renderCell: (
 				{
 					transaction_id = '',
-					currency,
 					status,
 					dismissed,
-					processing,
 					rejected,
-					waiting,
-					id,
-					amount,
+					onhold,
+					travel_rule_hold,
 					type,
 					network,
 				},
@@ -938,29 +948,36 @@ export const generateWithdrawalsHeaders = (
 				index
 			) => {
 				if (
+					type === 'deposit' &&
+					onhold === true &&
+					travel_rule_hold === true &&
 					status === false &&
 					dismissed === false &&
 					rejected === false &&
-					processing === false &&
-					waiting === false &&
-					type === 'withdrawal'
+					depositTravelRulePopup &&
+					travelRuleActive
 				) {
-					// Pending Status
+					// Travel-rule held deposit — let the user provide the source of funds.
+					// Gated on travel_rule_hold (a server-derived flag, true only when the
+					// deposit is actually held for travel rule): deposits held for other
+					// reasons (KYT, blacklist, fail-closed network errors) must not show
+					// this prompt.
 					return (
 						<td key={index}>
 							<div
 								className="withdrawal-cancel"
 								onClick={(e) => {
 									e.stopPropagation();
-									withdrawalPopup(id, amount, currency);
+									depositTravelRulePopup(transaction_id);
 								}}
-								key={id}
+								key={transaction_id}
 							>
-								{STRINGS['CANCEL']}
+								{STRINGS['TRAVEL_RULE.PROVIDE_SOURCE'] || 'Provide source'}
 							</div>
 						</td>
 					);
-				} else if (
+				}
+				if (
 					status === false &&
 					(dismissed === true || rejected === true) &&
 					type === 'withdrawal'

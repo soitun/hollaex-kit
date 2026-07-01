@@ -22,7 +22,7 @@ import { DEFAULT_COIN_DATA } from 'config/constants';
 import { getDecimals } from 'utils/utils';
 import PendingWithdrawal from './PendingWithdrawal';
 import { withdrawFiat } from 'actions/walletActions';
-import { withRouter } from 'react-router';
+import { withRouter, Link } from 'react-router';
 import STRINGS from 'config/localizedStrings';
 import { getFiatWithdrawalFee } from 'containers/Deposit/Fiat/utils';
 
@@ -297,6 +297,15 @@ class Index extends Component {
 			? fiat_fees?.[getWithdrawCurrency]?.withdrawal_fee
 			: fiat_fees?.[currency]?.withdrawal_fee;
 
+		// per off-ramp method (payment option) fee override for the selected account;
+		// `!= null` so an explicit 0 is honored. Falls back to the fiat-fee default.
+		const selectedMethodFee = banks?.find((bank) => bank.id === data?.bank)
+			?.offrampLimits?.fee;
+		const displayFee =
+			selectedMethodFee != null && selectedMethodFee !== ''
+				? Number(selectedMethodFee)
+				: customFee;
+
 		return (
 			<div className="withdraw-form-wrapper">
 				<div className="withdraw-form">
@@ -337,6 +346,16 @@ class Index extends Component {
 										)}
 									</EditWrapper>
 								)}
+								<div className="pt-3">
+									<Link
+										to="/verification?payment-accounts"
+										className="blue-link"
+									>
+										<EditWrapper stringId="ADD_PAYMENT_ACCOUNT">
+											{STRINGS['ADD_PAYMENT_ACCOUNT']}
+										</EditWrapper>
+									</Link>
+								</div>
 							</div>
 						</Fragment>
 					)}
@@ -347,12 +366,12 @@ class Index extends Component {
 									{STRINGS['WITHDRAW_NOTE']}
 								</EditWrapper>
 							</div>
-							{customFee ? (
+							{displayFee != null && displayFee !== '' ? (
 								<div>
 									<div>
 										Fee:{' '}
 										<span style={{ fontWeight: 'bold' }}>
-											{customFee} {currency?.toUpperCase()}
+											{displayFee} {currency?.toUpperCase()}
 										</span>
 									</div>
 								</div>
@@ -386,7 +405,10 @@ class Index extends Component {
 							banks={banks}
 							coins={coins}
 							currency={currency}
-							data={{ ...data, fee: customFee || fee }}
+							data={{
+								...data,
+								fee: displayFee != null && displayFee !== '' ? displayFee : fee,
+							}}
 							price={currentPrice}
 							onClickAccept={this.onAcceptDialog}
 							onClickCancel={this.onCloseDialog}

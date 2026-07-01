@@ -279,6 +279,7 @@
 		"TEXT_2": "دکمه ورود در پایین را فشار دهید"
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "ثبت‌نام به عنوان حساب شرکتی",
 		"SIGNUP_TO": "ثبت نام در {0}",
 		"NO_EMAIL": "هنوز ایمیلی دریافت نکرده ایید؟",
 		"REQUEST_EMAIL": "درخواست مجدد",
@@ -317,6 +318,15 @@
 		"CONFIRM_DESCRIPTION": "لطفاً ثبت نام حساب خود را با کلیک بر روی دکمه زیر تأیید کنید"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "حساب شرکتی",
+			"BANNER": "این یک حساب شرکتی است",
+			"NAME": "نام شرکت",
+			"REGISTRATION_NUMBER": "شماره ثبت",
+			"COUNTRY_OF_INCORPORATION": "کشور ثبت شرکت",
+			"BUSINESS_ADDRESS": "آدرس کسب‌وکار",
+			"PENDING": "تأیید شرکت در انتظار است"
+		},
 		"INFO_TXT": "اینجا شما می توانید وضعیت فعلی و روند ارتقای حساب کاربری خود را مشاهده نمایید",
 		"INFO_TXT_1": "لطفا اطلاعات خواسته شده در هر بخش را با دقت وارد نمایید .مستحضر باشید پس از تکمیل همه اطلاعات خواسته شده ، درخواست ارتقای حساب کاربری شما مورد ارزیابی قرار خواهد گرفت",
 		"INFO_TXT_2": "* روند احراز هویت شما نیازمند بررسی مدارک هویتی شما می باشد",
@@ -726,6 +736,8 @@
 	"COMPLETE": "تکمیل",
 	"PENDING": "درحال انتظار",
 	"REJECTED": "مردود",
+	"VERIFIED": "تأیید شده",
+	"TYPE_AMOUNT": "مبلغ را وارد کنید",
 	"ORDERBOOK": "بازار",
 	"CANCEL": "لغو",
 	"CANCEL_ALL": "لغو همه",
@@ -1479,6 +1491,8 @@
 	"REGULAR": "منظم",
 	"STOPS": "استاپ ها",
 	"VIEW_ALL": "مشاهده همه",
+	"SHOW_LESS": "نمایش کمتر",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} حساب",
 	"TRIGGER_PRICE": "قیمت ماشه",
 	"SPEND_AMOUNT": "مقدار صرف شده",
 	"ESTIMATE_RECEIVE_AMOUNT": "تخمین مقدار دریافتی",
@@ -1609,5 +1623,36 @@
 	"WITHDRAWALS_FORM_METHOD": "روش",
 	"WITHDRAWALS_FORM_ADDRESS_EXCHANGE": "ایمیل کاربر صرافی",
 	"WITHDRAWALS_FORM_EXCHANGE_PLACEHOLDER": "ایمیل کاربر را در این صرافی وارد کنید",
-	"WITHDRAWALS_FORM_MAIL_INFO": ".ایمیل کاربری ثبت شده در هلاکس را وارد کنید، و به طور رایگان اقدام به انتقال ارز نمایید"
+	"WITHDRAWALS_FORM_MAIL_INFO": ".ایمیل کاربری ثبت شده در هلاکس را وارد کنید، و به طور رایگان اقدام به انتقال ارز نمایید",
+	"TRAVEL_RULE": {
+		"TITLE": "اطلاعات قانون سفر",
+		"INTRO": "این تراکنش برای انطباق با مقررات به اطلاعات بیشتری نیاز دارد. لطفاً جزئیات زیر را وارد کنید.",
+		"SERVICE_PROVIDER_TYPE": "نوع ارائه‌دهنده خدمات",
+		"SELECT_COUNTERPARTY_TYPE": "نوع طرف مقابل را انتخاب کنید",
+		"COUNTERPARTY_EXCHANGE": "صرافی / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "کیف پول شخصی",
+		"VASP_NAME": "نام صرافی / VASP",
+		"VASP_NAME_PLACEHOLDER": "مثلاً Coinbase، Binance",
+		"ACCOUNT_HOLDER_NAME": "نام صاحب حساب",
+		"COUNTERPARTY_NAME": "نام طرف مقابل",
+		"NAME_PLACEHOLDER": "نام کامل شخص یا شرکت",
+		"RECEIVER_IS_MYSELF": "گیرنده خودم هستم",
+		"SENDER_IS_MYSELF": "فرستنده خودم هستم",
+		"PURPOSE_LABEL": "هدف تراکنش",
+		"SELECT_PURPOSE": "یک هدف را انتخاب کنید",
+		"SPECIFY": "لطفاً مشخص کنید",
+		"SPECIFY_PLACEHOLDER": "هدف را وارد کنید",
+		"PROVIDE_SOURCE": "ارائه منبع",
+		"DEPOSIT_RELEASED": "واریز شما آزاد شد.",
+		"DEPOSIT_INFO_SAVED": "اطلاعات شما ذخیره شد. واریز همچنان در حال بررسی است.",
+		"CANCEL": "لغو",
+		"SUBMIT": "ارسال",
+		"PURPOSE_PERSONAL_TRANSFER": "انتقال شخصی",
+		"PURPOSE_INVESTMENT": "سرمایه‌گذاری",
+		"PURPOSE_PURCHASE": "خرید کالا/خدمات",
+		"PURPOSE_SALARY": "حقوق/درآمد",
+		"PURPOSE_GIFT": "هدیه",
+		"PURPOSE_TRADING": "معامله",
+		"PURPOSE_OTHER": "سایر"
+	}
 }

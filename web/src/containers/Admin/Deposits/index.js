@@ -11,8 +11,11 @@ import {
 	requestDepositDownload,
 	requestBurn,
 	requestMint,
+	requestReallocate,
+	requestTravelRule,
 } from './actions';
 import { renderRowContent, COLUMNS, SELECT_KEYS } from './utils';
+import { TRAVEL_RULE_TYPE_LABELS } from '../Transactions/utils';
 import { Filters } from './Filters';
 import ValidateDismiss from './ValidateDismiss';
 
@@ -59,6 +62,11 @@ class Deposits extends Component {
 		isOpen: false,
 		statusType: '',
 		validateData: {},
+		travelRuleOpen: false,
+		travelRuleLoading: false,
+		travelRuleData: [],
+		travelRuleError: '',
+		travelRuleTxId: null,
 	};
 
 	UNSAFE_componentWillMount() {
@@ -318,8 +326,106 @@ class Deposits extends Component {
 		this.setState({ isOpen: false, statusType: '' });
 	};
 
+	// Open the travel-rule detail modal for a deposit and fetch its record(s).
+	openTravelRule = (transaction_id) => {
+		this.setState({
+			travelRuleOpen: true,
+			travelRuleLoading: true,
+			travelRuleData: [],
+			travelRuleError: '',
+			travelRuleTxId: transaction_id,
+		});
+		requestTravelRule(transaction_id)
+			.then((data) => {
+				this.setState({
+					travelRuleLoading: false,
+					travelRuleData: Array.isArray(data) ? data : [],
+				});
+			})
+			.catch((error) => {
+				const message = error.data ? error.data.message : error.message;
+				this.setState({ travelRuleLoading: false, travelRuleError: message });
+			});
+	};
+
+	closeTravelRule = () => {
+		this.setState({
+			travelRuleOpen: false,
+			travelRuleLoading: false,
+			travelRuleData: [],
+			travelRuleError: '',
+			travelRuleTxId: null,
+		});
+	};
+
+	renderTravelRuleRecord = (record) => {
+		const rows = [
+			['Type', record.type],
+			['Status', record.status],
+			[
+				'Service provider type',
+				TRAVEL_RULE_TYPE_LABELS[record.counterparty_type] ||
+					record.counterparty_type,
+			],
+			['VASP / provider name', record.vasp_name],
+			['Counterparty name', record.counterparty_name],
+			[
+				'Is own address',
+				record.is_own_address == null
+					? null
+					: record.is_own_address
+					? 'Yes'
+					: 'No',
+			],
+			['Purpose', record.purpose],
+			['Address', record.address],
+			['Network', record.network],
+			['Currency', record.currency],
+			['Amount', record.amount],
+			['Amount (native)', record.amount_native],
+			['Note', record.note],
+		];
+		return (
+			<div key={record.id} className="travel-rule-detail mb-3">
+				{rows.map(([label, value]) =>
+					value === null || value === undefined || value === '' ? null : (
+						<div key={label}>
+							<span className="bold">{label}:</span> {String(value)}
+						</div>
+					)
+				)}
+			</div>
+		);
+	};
+
 	handleConfirm = (formValues) => {
 		const { statusType, queryType } = this.state;
+
+		// Block an on-hold deposit: reject it for the original user and reallocate
+		// the funds to an admin-chosen recipient (category 'block', no email).
+		if (statusType === 'block') {
+			requestReallocate({
+				transaction_id: formValues.transaction_id,
+				// address disambiguates which deposit row to reallocate, since one
+				// transaction_id can map to multiple rows (one per credited address)
+				address: formValues.address,
+				receiver_id: Number(formValues.receiver_id),
+				...(formValues.description
+					? { description: formValues.description }
+					: {}),
+			})
+				.then(() => {
+					this.requestDeposits(this.state.queryParams, this.props.queryParams);
+					this.onCancelModal();
+				})
+				.catch((error) => {
+					const message = error.data ? error.data.message : error.message;
+					this.setState({ error: message });
+					this.onCancelModal();
+				});
+			return;
+		}
+
 		let body = {
 			transaction_id: formValues.transaction_id,
 			updated_transaction_id: formValues.updated_transaction_id,
@@ -347,6 +453,25 @@ class Deposits extends Component {
 				rejected: false,
 				status: false,
 				waiting: false,
+			};
+		} else if (statusType === 'release') {
+			// Take the transaction off hold. The network finalizes it by type: a
+			// released deposit is credited/completed, a released withdrawal goes back
+			// to pending for the withdrawal cron to send on-chain.
+			body = {
+				...body,
+				status: false,
+				dismissed: false,
+				rejected: false,
+				processing: false,
+				waiting: false,
+			};
+		} else if (statusType === 'reject') {
+			// On-hold withdrawal rejection -> dismissed.
+			body = {
+				...body,
+				dismissed: true,
+				status: false,
 			};
 		} else {
 			body = {
@@ -485,6 +610,12 @@ class Deposits extends Component {
 							dataSource={deposits.map((deposit, index) => {
 								return {
 									...deposit,
+									// Show the travel-rule detail link on every transaction while the
+									// feature is on; the record is fetched lazily on click (the modal
+									// reports "no record" when none exists). No per-row server lookup.
+									viewTravelRule: this.props.travelRuleActive
+										? () => this.openTravelRule(deposit.transaction_id)
+										: undefined,
 									// completeDeposit:
 									// 	index !== indexItem
 									// 		? this.completeDeposit(deposit.transaction_id, index)
@@ -528,12 +659,33 @@ class Deposits extends Component {
 						/>
 					) : null}
 				</Modal>
+				<Modal
+					title="Travel rule details"
+					visible={this.state.travelRuleOpen}
+					onCancel={this.closeTravelRule}
+					footer={null}
+				>
+					{this.state.travelRuleLoading ? (
+						<div className="text-center">
+							<Spin />
+						</div>
+					) : this.state.travelRuleError ? (
+						<Alert message={this.state.travelRuleError} type="error" showIcon />
+					) : this.state.travelRuleData.length === 0 ? (
+						<div>No travel rule record was collected for this transaction.</div>
+					) : (
+						this.state.travelRuleData.map((record) =>
+							this.renderTravelRuleRecord(record)
+						)
+					)}
+				</Modal>
 			</div>
 		);
 	}
 }
 const mapStateToProps = (state) => ({
 	coins: state.app.coins,
+	travelRuleActive: state.app.constants?.travel_rule?.active === true,
 });
 
 export default connect(mapStateToProps)(Deposits);

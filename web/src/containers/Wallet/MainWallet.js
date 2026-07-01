@@ -13,11 +13,8 @@ import {
 } from 'components';
 import { TransactionsHistory } from 'containers';
 import { changeSymbol } from 'actions/orderbookAction';
-import {
-	BASE_CURRENCY,
-	CURRENCY_PRICE_FORMAT,
-	DEFAULT_COIN_DATA,
-} from 'config/constants';
+import { BASE_CURRENCY, CURRENCY_PRICE_FORMAT } from 'config/constants';
+import { resolveDisplayCoin } from 'utils/valuationCoins';
 import { formatCurrencyByIncrementalUnit } from 'utils/currency';
 import STRINGS from 'config/localizedStrings';
 import withConfig from 'components/ConfigProvider/withConfig';
@@ -247,8 +244,10 @@ class Wallet extends Component {
 			baseCurrency,
 		} = this.state;
 		const { router } = this.props;
-		const { increment_unit, display_name } =
-			coins[baseCurrency] || DEFAULT_COIN_DATA;
+		const { increment_unit, display_name } = resolveDisplayCoin(
+			coins,
+			baseCurrency
+		);
 		const totalAssets = STRINGS.formatString(
 			CURRENCY_PRICE_FORMAT,
 			display_name,

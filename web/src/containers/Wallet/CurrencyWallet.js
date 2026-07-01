@@ -131,6 +131,7 @@ class Wallet extends Component {
 		const {
 			balance,
 			coins,
+			valuation_coins = {},
 			icons: ICONS,
 			quicktrade,
 			chartData,
@@ -147,7 +148,8 @@ class Wallet extends Component {
 		const availableBalanceValue = balance[`${currency}_available`] || 0;
 		const baseCurrency =
 			localStorage.getItem('base_currnecy') || WS_QUOTE_CURRENCY;
-		const baseCoin = coins[baseCurrency] || DEFAULT_COIN_DATA;
+		const baseCoin =
+			coins[baseCurrency] || valuation_coins[baseCurrency] || DEFAULT_COIN_DATA;
 		const filteredAssets = this.props.assets.filter(
 			(val) => val[1].symbol === currency
 		);
@@ -454,6 +456,7 @@ const mapStateToProps = (store) => {
 	} = store;
 	return {
 		coins: app.coins,
+		valuation_coins: app.valuation_coins,
 		price: orderbook.price,
 		balance: user.balance,
 		activeLanguage: app.language,

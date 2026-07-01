@@ -2,6 +2,7 @@
 
 const { SERVER_PATH } = require('../constants');
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
+const { loggerWithdrawals } = require(`${SERVER_PATH}/config/logger`);
 const { WITHDRAWALS_REQUEST_KEY } = require(`${SERVER_PATH}/constants`);
 const { sendVerificationCode } = require('./verification');
 const { verifyOtpBeforeAction } = require('./security');
@@ -23,14 +24,17 @@ const {
 	INVALID_NETWORK,
 	NETWORK_REQUIRED,
 	WITHDRAWAL_DISABLED,
+	WITHDRAWAL_IDENTITY_NOT_VERIFIED,
 	WITHDRAWAL_OTP_REQUIRED,
 	WITHDRAWAL_LIMIT_ERROR,
 	WITHDRAWAL_DAILY_LIMIT_REACHED,
-	WITHDRAWAL_MONTHLY_LIMIT_REACHED
+	WITHDRAWAL_MONTHLY_LIMIT_REACHED,
+	TRAVEL_RULE_INFO_REQUIRED
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
 const { enforceAddressNotBlacklisted } = require('./blockchain');
+const { isAboveThreshold, recordWithdrawalCompliance } = require('./travelRule');
 const { client } = require('./database/redis');
 const crypto = require('crypto');
 const uuid = require('uuid/v4');
@@ -111,7 +115,35 @@ const isValidAddress = (currency, address, network) => {
 	}
 };
 
-const getWithdrawalFee = (currency, network, amount, level) => {
+// Resolve the per off-ramp method (payment option) config for a fiat currency.
+// `offramp[currency]` is backward compatible: it may be a plain array of enabled
+// payment types (legacy, no limits) or an object keyed by type holding { min, max, fee }.
+const getOfframpMethodConfig = (currency, method) => {
+	if (!method) {
+		return null;
+	}
+	const offramp = getKitConfig()?.offramp?.[currency];
+	if (!offramp || Array.isArray(offramp)) {
+		return null;
+	}
+	return offramp[method] || null;
+};
+
+// Resolve the per on-ramp method (payment option) config for a fiat currency.
+// `onramp[currency]` is backward compatible: it may be a plain array of enabled
+// payment types (legacy, no limits) or an object keyed by type holding { min, max, fee }.
+const getOnrampMethodConfig = (currency, method) => {
+	if (!method) {
+		return null;
+	}
+	const onramp = getKitConfig()?.onramp?.[currency];
+	if (!onramp || Array.isArray(onramp)) {
+		return null;
+	}
+	return onramp[method] || null;
+};
+
+const getWithdrawalFee = (currency, network, amount, level, method = null) => {
 	if (!subscribedToCoin(currency)) {
 		return reject(new Error(INVALID_COIN(currency)));
 	}
@@ -138,6 +170,13 @@ const getWithdrawalFee = (currency, network, amount, level) => {
 		if (customFee) {
 			fee_coin = currency;
 			fee = customFee;
+		}
+
+		// per off-ramp method (payment option) fee override; `!= null` so an explicit 0 is honored
+		const methodFee = getOfframpMethodConfig(currency, method)?.fee;
+		if (methodFee != null && methodFee !== '') {
+			fee_coin = currency;
+			fee = methodFee;
 		}
 
 	}
@@ -181,12 +220,18 @@ const sendRequestWithdrawalEmail = (user_id, address, amount, currency, version,
 		})
 		.then(async (user) => {
 			if (!opts.skipValidate) {
-				const withdrawal = await validateWithdrawal(user, address, amount, currency, opts.network);
+				const withdrawal = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
+					is_own_address: opts.is_own_address,
+					purpose: opts.purpose,
+					counterparty_type: opts.counterparty_type,
+					counterparty_name: opts.counterparty_name,
+					vasp_name: opts.vasp_name
+				});
 				fee = withdrawal.fee;
 				fee_coin = withdrawal.fee_coin;
 				fee_markup =  withdrawal.fee_markup;
 			}
-			
+
 
 			return withdrawalRequestEmail(
 				user,
@@ -201,7 +246,14 @@ const sendRequestWithdrawalEmail = (user_id, address, amount, currency, version,
 					address,
 					currency,
 					network: opts.network,
-					verification_method: opts.verification_method
+					verification_method: opts.verification_method,
+					// travel-rule fields carried through to the confirm step (validated again
+					// and recorded after the withdrawal performs)
+					is_own_address: opts.is_own_address != null ? opts.is_own_address : null,
+					purpose: opts.purpose || null,
+					counterparty_type: opts.counterparty_type || null,
+					counterparty_name: opts.counterparty_name || null,
+					vasp_name: opts.vasp_name || null
 				},
 				opts.domain,
 				opts.ip,
@@ -380,8 +432,39 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 }) {
 	const user = await getUserByKitId(userId);
 	// validateWithdrawal already enforces the address blacklist, so no extra check here
-	const { fee_markup } = await validateWithdrawal(user, address, amount, currency, opts.network);
-	return await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
+	const { fee_markup, travel_rule_amount_native } = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
+		is_own_address: opts.is_own_address,
+		purpose: opts.purpose,
+		counterparty_type: opts.counterparty_type,
+		counterparty_name: opts.counterparty_name,
+		vasp_name: opts.vasp_name
+	});
+	const result = await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
+
+	// Record a travel-rule compliance row (one per transaction) when the
+	// withdrawal qualified. travel_rule_amount_native is only set when above threshold.
+	if (travel_rule_amount_native != null) {
+		try {
+			await recordWithdrawalCompliance({
+				user_id: user.id,
+				transaction_id: result?.transaction_id,
+				address,
+				network: opts.network,
+				currency,
+				amount,
+				amount_native: travel_rule_amount_native,
+				is_own_address: opts.is_own_address,
+				purpose: opts.purpose,
+				counterparty_type: opts.counterparty_type,
+				counterparty_name: opts.counterparty_name,
+				vasp_name: opts.vasp_name
+			});
+		} catch (err) {
+			loggerWithdrawals.error('tools/wallet/performDirectWithdrawal/travelRule', err.message);
+		}
+	}
+
+	return result;
 }
 
 const performWithdrawalNetwork = async (networkId, address, currency, amount, opts = {
@@ -392,7 +475,7 @@ const performWithdrawalNetwork = async (networkId, address, currency, amount, op
 	return getNodeLib().performWithdrawal(networkId, address, currency, amount, opts);
 };
 
-const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
+const calculateWithdrawalMax = async (user_id, currency, selectedNetwork, bankId = null) => {
 	if (!subscribedToCoin(currency)) {
 		throw new Error('Invalid coin ' + currency);
 	}
@@ -403,9 +486,18 @@ const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
 
 	if (amount === 0) return { amount };
 
+	// Resolve the selected fiat payment option (bank) to its off-ramp method so the
+	// per-method fee/max overrides apply to the max calculation. Optional & backward
+	// compatible: with no bankId (e.g. crypto) `method` stays null and defaults are used.
+	let method = null;
+	if (bankId && Array.isArray(user.bank_account)) {
+		method = user.bank_account.find((bank) => bank.id === bankId)?.type || null;
+	}
+	const methodConfig = getOfframpMethodConfig(currency, method);
+
 	const coinConfiguration = getKitCoin(currency);
 	const coinMarkup = getKitConfig()?.coin_customizations?.[currency];
-	const { fee, fee_coin } = getWithdrawalFee(currency, selectedNetwork, amount, user.verification_level);
+	const { fee, fee_coin } = getWithdrawalFee(currency, selectedNetwork, amount, user.verification_level, method);
 	const { increment_unit } = coinConfiguration;
 
 
@@ -477,11 +569,20 @@ const calculateWithdrawalMax = async (user_id, currency, selectedNetwork) => {
 		amount = 0;
 	}
 
+	// cap by the per off-ramp method max (`!= null` so an explicit 0 is ignored via the > 0 guard)
+	if (
+		methodConfig?.max != null &&
+		methodConfig.max !== '' &&
+		Number(methodConfig.max) > 0
+	) {
+		amount = BigNumber.minimum(amount, Number(methodConfig.max)).toNumber();
+	}
+
 	amount = new BigNumber(amount).decimalPlaces(decimalPoint, BigNumber.ROUND_DOWN).toNumber();
 	return { amount };
 };
 
-const validateWithdrawal = async (user, address, amount, currency, network = null) => {
+const validateWithdrawal = async (user, address, amount, currency, network = null, method = null, travelRuleOpts = {}) => {
 	const coinConfiguration = getKitCoin(currency);
 	const coinMarkup = getKitConfig()?.coin_customizations?.[currency];
 	if (!subscribedToCoin(currency)) {
@@ -536,7 +637,11 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 	} else if (user.is_subaccount) {
 		throw new Error(WITHDRAWAL_DISABLED);
 	} else if(user.withdrawal_blocked && moment().isBefore(moment(user.withdrawal_blocked))) {
-		throw new Error(WITHDRAWAL_DISABLED);	
+		throw new Error(WITHDRAWAL_DISABLED);
+	} else if (!user.id_data || user.id_data.status !== 3) {
+		// Identity (KYC) must be approved (id_data.status === 3) before any
+		// withdrawal — applies to fiat, crypto and email transfers alike.
+		throw new Error(WITHDRAWAL_IDENTITY_NOT_VERIFIED);
 	}
 
 	// Enforce 2FA for withdrawals when feature flag is enabled
@@ -545,7 +650,42 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		throw new Error(WITHDRAWAL_OTP_REQUIRED);
 	}
 
-	let { fee, fee_coin } = getWithdrawalFee(currency, network, amount, user.verification_level);
+	// Travel rule: when active and the native-currency value is >= threshold, the
+	// user must supply the purpose and whether the receiver is themselves. There is
+	// no address dedup — the info is required for every qualifying withdrawal.
+	const travelRuleCheck = await isAboveThreshold(currency, amount);
+	if (travelRuleCheck.above) {
+		const hasInfo = travelRuleOpts
+			&& travelRuleOpts.purpose
+			&& travelRuleOpts.is_own_address != null
+			&& travelRuleOpts.counterparty_type;
+		if (!hasInfo) {
+			throw new Error(TRAVEL_RULE_INFO_REQUIRED);
+		}
+	}
+
+	// per off-ramp method (payment option) min/max enforcement; `!= null` so 0 is honored
+	const methodConfig = getOfframpMethodConfig(currency, method);
+	if (methodConfig) {
+		const symbol = currency.toUpperCase();
+		if (
+			methodConfig.min != null &&
+			methodConfig.min !== '' &&
+			amount < Number(methodConfig.min)
+		) {
+			throw new Error(`Amount is below the minimum withdrawal of ${methodConfig.min} ${symbol} for this payment method`);
+		}
+		if (
+			methodConfig.max != null &&
+			methodConfig.max !== '' &&
+			Number(methodConfig.max) > 0 &&
+			amount > Number(methodConfig.max)
+		) {
+			throw new Error(`Amount is above the maximum withdrawal of ${methodConfig.max} ${symbol} for this payment method`);
+		}
+	}
+
+	let { fee, fee_coin } = getWithdrawalFee(currency, network, amount, user.verification_level, method);
 
 	const balance = await getNodeLib().getUserBalance(user.network_id);
 
@@ -585,7 +725,8 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 	return {
 		fee,
 		fee_coin,
-		...((coinMarkup?.fee_markups?.[network]?.withdrawal?.value && coinMarkup?.fee_markups?.[network]?.withdrawal?.symbol === fee_coin) && { fee_markup: coinMarkup.fee_markups[network].withdrawal?.value })
+		...((coinMarkup?.fee_markups?.[network]?.withdrawal?.value && coinMarkup?.fee_markups?.[network]?.withdrawal?.symbol === fee_coin) && { fee_markup: coinMarkup.fee_markups[network].withdrawal?.value }),
+		...(travelRuleCheck.above && { travel_rule_amount_native: travelRuleCheck.amountNative })
 	};
 };
 
@@ -1231,10 +1372,31 @@ const updatePendingMint = (
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
+		addHoldReason: null,
+		clearHoldReason: null,
+		clearHoldSource: null,
 		additionalHeaders: null
 	}
 ) => {
 	return getNodeLib().updatePendingMint(transactionId, opts);
+};
+
+const reallocateDepositByKitId = async (
+	transactionId,
+	address,
+	receiverKitId,
+	opts = {
+		description: null,
+		additionalHeaders: null
+	}
+) => {
+	const idDictionary = await mapKitIdToNetworkId([receiverKitId]);
+	if (!has(idDictionary, receiverKitId)) {
+		throw new Error(USER_NOT_FOUND);
+	} else if (!idDictionary[receiverKitId]) {
+		throw new Error('User not registered on network');
+	}
+	return getNodeLib().reallocateDeposit(transactionId, address, idDictionary[receiverKitId], opts);
 };
 
 const burnAssetByKitId = async (
@@ -1301,13 +1463,16 @@ const updatePendingBurn = (
 		updatedTransactionId: null,
 		email: null,
 		updatedDescription: null,
+		addHoldReason: null,
+		clearHoldReason: null,
+		clearHoldSource: null,
 		additionalHeaders: null
 	}
 ) => {
 	return getNodeLib().updatePendingBurn(transactionId, opts);
 };
 
-const getDepositFee = (currency, network, amount, level) => {
+const getDepositFee = (currency, network, amount, level, method = null) => {
 	if (!subscribedToCoin(currency)) {
 		return reject(new Error(INVALID_COIN(currency)));
 	}
@@ -1325,6 +1490,13 @@ const getDepositFee = (currency, network, amount, level) => {
 	if (customFee) {
 		fee_coin = currency;
 		fee = customFee;
+	}
+
+	// per on-ramp method (payment option) fee override; `!= null` so an explicit 0 is honored
+	const methodFee = getOnrampMethodConfig(currency, method)?.fee;
+	if (methodFee != null && methodFee !== '') {
+		fee_coin = currency;
+		fee = methodFee;
 	}
 
 	return {
@@ -1353,7 +1525,7 @@ const validateDepositEnabled = (currency, network = null) => {
 	}
 };
 
-async function validateDeposit(user, amount, currency, network = null) {
+async function validateDeposit(user, amount, currency, network = null, method = null) {
 	validateDepositEnabled(currency, network);
 
 	if (amount <= 0) {
@@ -1368,7 +1540,28 @@ async function validateDeposit(user, amount, currency, network = null) {
 		throw new Error(UPGRADE_VERIFICATION_LEVEL(1));
 	}
 
-	const { fee, fee_coin } = getDepositFee(currency, network, amount, user.verification_level);
+	// per on-ramp method (payment option) min/max enforcement; `!= null` so 0 is honored
+	const methodConfig = getOnrampMethodConfig(currency, method);
+	if (methodConfig) {
+		const symbol = currency.toUpperCase();
+		if (
+			methodConfig.min != null &&
+			methodConfig.min !== '' &&
+			amount < Number(methodConfig.min)
+		) {
+			throw new Error(`Amount is below the minimum deposit of ${methodConfig.min} ${symbol} for this payment method`);
+		}
+		if (
+			methodConfig.max != null &&
+			methodConfig.max !== '' &&
+			Number(methodConfig.max) > 0 &&
+			amount > Number(methodConfig.max)
+		) {
+			throw new Error(`Amount is above the maximum deposit of ${methodConfig.max} ${symbol} for this payment method`);
+		}
+	}
+
+	const { fee, fee_coin } = getDepositFee(currency, network, amount, user.verification_level, method);
 
 	return {
 		fee,
@@ -1518,6 +1711,7 @@ module.exports = {
 	burnAssetByNetworkId,
 	getKitBalance,
 	updatePendingMint,
+	reallocateDepositByKitId,
 	updatePendingBurn,
 	isValidAddress,
 	validateDepositEnabled,

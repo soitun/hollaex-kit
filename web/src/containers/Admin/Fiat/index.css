@@ -779,7 +779,264 @@
 	margin-top: 3%;
 	padding: 0 2% 2% 2%;
 	border: 1px solid #c7c7c7;
-	width: max-content;
+	width: 100%;
+}
+
+.payment-cards-wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	width: 100%;
+}
+
+.payment-cards-wrapper .payment-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 150px;
+	min-height: 130px;
+	padding: 16px 10px;
+	border: 1px solid #707070;
+	border-radius: 6px;
+	cursor: pointer;
+	text-align: center;
+	transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.payment-cards-wrapper .payment-card:hover {
+	border-color: #ffffff;
+}
+
+.payment-cards-wrapper .payment-card.payment-card-selected {
+	border-color: #288500;
+	border-width: 2px;
+	background-color: rgba(40, 133, 0, 0.12);
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon-wrapper {
+	position: relative;
+	display: inline-flex;
+	margin-bottom: 10px;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon {
+	width: 42px;
+	height: 42px;
+	object-fit: contain;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon-edit,
+.payment-cards-wrapper .payment-card .payment-card-icon-reset {
+	position: absolute;
+	top: -8px;
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background-color: #288500;
+	color: #ffffff;
+	font-size: 11px;
+	cursor: pointer;
+	margin: 0;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon-edit {
+	right: -8px;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-icon-reset {
+	left: -8px;
+	background-color: #707070;
+}
+
+.payment-cards-wrapper .payment-card:hover .payment-card-icon-edit,
+.payment-cards-wrapper .payment-card:hover .payment-card-icon-reset {
+	display: inline-flex;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-title {
+	font-size: 12px;
+	font-weight: bold;
+}
+
+.payment-cards-wrapper .payment-card .payment-card-name {
+	font-size: 12px;
+	color: #d8d8d8;
+	text-transform: capitalize;
+	word-break: break-word;
+}
+
+.payment-cards-wrapper .payment-card.payment-card-add {
+	border-style: dashed;
+}
+
+.payment-cards-wrapper .payment-card.payment-card-add .payment-card-plus {
+	font-size: 36px;
+	margin-bottom: 10px;
+}
+
+.payment-modal-wrapper .payment-preset-search {
+	margin-bottom: 8px;
+}
+
+.payment-modal-wrapper .payment-preset-search-input {
+	margin-bottom: 10px;
+}
+
+.payment-modal-wrapper .payment-preset-list {
+	display: block;
+	max-height: 320px;
+	overflow-y: auto;
+	padding-right: 6px;
+}
+
+.payment-modal-wrapper .payment-preset-list .payment-preset-item {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	margin: 0;
+	padding: 10px 6px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+	color: #ffffff;
+	white-space: normal;
+}
+
+.payment-modal-wrapper .payment-preset-list .payment-preset-item:hover {
+	background-color: rgba(255, 255, 255, 0.06);
+}
+
+.payment-modal-wrapper
+	.payment-preset-list
+	.payment-preset-item
+	.ant-radio
+	+ * {
+	display: block;
+	width: 100%;
+	padding-right: 0;
+}
+
+.payment-modal-wrapper .payment-preset-item-content {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+}
+
+.payment-modal-wrapper .payment-preset-item-icon {
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
+	flex: 0 0 28px;
+}
+
+.payment-modal-wrapper .payment-preset-item-text {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.25;
+}
+
+.payment-modal-wrapper .payment-preset-item-label {
+	font-weight: bold;
+}
+
+.payment-modal-wrapper .payment-preset-item-region {
+	font-size: 12px;
+	color: #d8d8d8;
+}
+
+.payment-modal-wrapper .payment-preset-empty {
+	padding: 16px 6px;
+	color: #d8d8d8;
+}
+
+.payment-modal-wrapper .payment-preset-custom {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid rgba(255, 255, 255, 0.12);
+	color: #d8d8d8;
+}
+
+.payment-modal-wrapper .payment-preset-custom .txtanchor {
+	color: #ffffff;
+	margin-left: 4px;
+}
+
+.onramp-coin-selector {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.onramp-coin-selector .onramp-coin-chip {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	width: 84px;
+	padding: 12px 6px 8px 6px;
+	border: 1px solid #707070;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.onramp-coin-selector .onramp-coin-chip:hover {
+	border-color: #ffffff;
+}
+
+.onramp-coin-selector .onramp-coin-chip.onramp-coin-chip-selected {
+	border-color: #288500;
+	border-width: 2px;
+	background-color: rgba(40, 133, 0, 0.12);
+}
+
+.onramp-coin-selector .onramp-coin-chip .onramp-coin-chip-symbol {
+	font-size: 12px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.onramp-coin-selector .onramp-coin-chip .onramp-coin-logo-img {
+	width: 42px;
+	height: 42px;
+	object-fit: contain;
+}
+
+.onramp-coin-selector .onramp-coin-chip.onramp-coin-chip-add {
+	justify-content: center;
+	border-style: dashed;
+}
+
+.onramp-coin-selector
+	.onramp-coin-chip.onramp-coin-chip-add
+	.onramp-coin-chip-plus {
+	font-size: 30px;
+	height: 42px;
+	display: flex;
+	align-items: center;
+}
+
+.onramp-config-logo .onramp-config-logo-img {
+	width: 64px;
+	height: 64px;
+	object-fit: contain;
+}
+
+.payment-option-icon {
+	width: 22px;
+	height: 22px;
+	object-fit: contain;
+}
+
+.fiat-coin-option-icon {
+	width: 30px;
+	height: 30px;
+	object-fit: contain;
+	border-radius: 50%;
 }
 
 .edit-fiat-fees-popup-wrapper .ant-input-suffix .asset-icon,
@@ -846,4 +1103,229 @@
 
 .summary-content-wrapper > .blue-admin-table > .ant-expanded-row > td:hover {
 	background-color: var(--admin_panel_content_background) !important;
+}
+
+/* Make the popup close (X) icon white to match the popup text */
+.fiat-popup-modal .ant-modal-close,
+.fiat-popup-modal .ant-modal-close-x {
+	color: #ffffff;
+}
+
+/* On-ramp per-method deposit limits & fee inputs */
+.onramp-method-limits-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	max-width: 40rem;
+}
+
+.onramp-method-limits-fields .onramp-method-limit-field {
+	flex: 1;
+	min-width: 10rem;
+}
+
+/* On-ramp form instruction note */
+.onramp-instruction-note {
+	display: flex;
+	align-items: flex-start;
+	background-color: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+	padding: 10px 14px;
+	max-width: 40rem;
+}
+
+.onramp-instruction-note .anticon {
+	margin-top: 3px;
+}
+
+/* ---- Fiat summary page ---- */
+.summary-content-wrapper .fiat-summary-section {
+	width: 100%;
+}
+
+.summary-content-wrapper .fiat-summary-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.summary-content-wrapper .fiat-summary-section-title {
+	font-weight: bold;
+	font-size: 15px;
+}
+
+.summary-content-wrapper .fiat-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 16px;
+}
+
+.summary-content-wrapper .fiat-currency-card {
+	border: 1px solid #ffffff;
+	border-radius: 4px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--admin_panel_content_background);
+}
+
+.summary-content-wrapper .fiat-currency-card-header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 14px;
+}
+
+.summary-content-wrapper .fiat-currency-logo {
+	width: 2rem;
+	height: 2rem;
+	border-radius: 50%;
+	object-fit: cover;
+}
+
+.summary-content-wrapper .fiat-currency-symbol {
+	font-weight: bold;
+	font-size: 15px;
+	line-height: 1.1;
+}
+
+.summary-content-wrapper .fiat-currency-name {
+	opacity: 0.7;
+	font-size: 12px;
+}
+
+.summary-content-wrapper .fiat-currency-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+
+.summary-content-wrapper .ramp-status-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.summary-content-wrapper .ramp-status-label {
+	font-size: 13px;
+}
+
+.summary-content-wrapper .ramp-status-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.summary-content-wrapper .ramp-status-badge.configured {
+	color: #2bb473;
+	border: 1px solid #2bb473;
+}
+
+.summary-content-wrapper .ramp-status-badge.not-configured {
+	opacity: 0.6;
+	border: 1px solid #ffffff;
+}
+
+.summary-content-wrapper .ramp-status-badge.clickable {
+	cursor: pointer;
+	transition: opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-content-wrapper .ramp-status-badge.clickable:hover {
+	opacity: 1;
+	box-shadow: 0 0 0 1px currentColor;
+}
+
+.summary-content-wrapper .fiat-currency-card-actions {
+	display: flex;
+	justify-content: space-between;
+	border-top: 1px solid rgba(255, 255, 255, 0.25);
+	padding-top: 12px;
+	margin-top: auto;
+}
+
+.summary-content-wrapper .fiat-summary-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	border: 1px solid #ffffff;
+	border-radius: 4px;
+	padding: 30px;
+}
+
+.summary-content-wrapper .fiat-summary-empty-icon {
+	width: 4rem !important;
+	margin-bottom: 10px;
+}
+
+.summary-content-wrapper .fiat-mini-stats {
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.summary-content-wrapper .fiat-mini-stat-card {
+	display: flex;
+	align-items: center;
+	border: 1px solid #ffffff;
+	border-radius: 4px;
+	padding: 14px 18px;
+	flex: 1;
+	min-width: 240px;
+	background-color: var(--admin_panel_content_background);
+}
+
+.summary-content-wrapper .fiat-mini-stat-icon {
+	width: 2.5rem !important;
+	margin-right: 14px;
+}
+
+.summary-content-wrapper .fiat-mini-stat-text {
+	flex: 1;
+}
+
+.summary-content-wrapper .fiat-mini-stat-title {
+	font-weight: bold;
+}
+
+.summary-content-wrapper .fiat-mini-stat-sub {
+	opacity: 0.7;
+	font-size: 12px;
+}
+
+.summary-content-wrapper .fiat-mini-stat-link {
+	white-space: nowrap;
+}
+
+/* Per-payment-method breakdown shown when expanding a fiat row in Fiat Fees & Customization */
+.fiat-fees-wrapper .blue-admin-table tr.ant-table-expanded-row > td,
+.fiat-fees-wrapper .blue-admin-table tr.ant-table-expanded-row:hover > td {
+	background: var(--admin_panel_table_tbody) !important;
+}
+.ramp-breakdown {
+	color: #ffffff;
+}
+.ramp-breakdown-row {
+	display: grid;
+	grid-template-columns: 1fr 1.6fr 1fr 1fr 1fr 90px;
+	align-items: center;
+	column-gap: 12px;
+	padding: 10px 8px;
+}
+.ramp-breakdown-row:not(.ramp-breakdown-head) {
+	border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.ramp-breakdown-head {
+	font-weight: 600;
+	opacity: 0.85;
+}
+.ramp-breakdown-empty {
+	color: #cccccc;
+	padding: 10px 8px;
 }

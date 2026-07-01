@@ -340,6 +340,7 @@
 		"TEXT_2": "続けるにはログインボタンを押してください。"
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "法人アカウントとして登録",
 		"SIGNUP_TO": "{0}に登録する",
 		"NO_EMAIL": "メールが届きませんか？",
 		"REQUEST_EMAIL": "メールをもう一度要請する",
@@ -378,6 +379,15 @@
 		"CONFIRM_DESCRIPTION": "以下のボタンをクリックして、アカウント登録を確認してください"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "法人アカウント",
+			"BANNER": "これは法人アカウントです",
+			"NAME": "会社名",
+			"REGISTRATION_NUMBER": "登録番号",
+			"COUNTRY_OF_INCORPORATION": "設立国",
+			"BUSINESS_ADDRESS": "事業所所在地",
+			"PENDING": "法人確認は保留中です"
+		},
 		"INFO_TXT": "ここから個人情報およびアップグレード状況を確認できます。",
 		"INFO_TXT_1": "以下の各部分に必要な情報を記入してください。全部分の提出が完了した後、審査を通してアカウントのアップグレードが承認されます。",
 		"INFO_TXT_2": "*認証には{0}が必要です。",
@@ -843,6 +853,8 @@
 	"COMPLETE": "Complete",
 	"PENDING": "Pending",
 	"REJECTED": "Rejected",
+	"VERIFIED": "確認済み",
+	"TYPE_AMOUNT": "金額を入力",
 	"ORDERBOOK": "注文一覧",
 	"CANCEL": "Cancel",
 	"CANCEL_ALL": "Cancel All",
@@ -1386,6 +1398,8 @@
 	"ORDER_ENTRY_ADVANCED": "アドバンス",
 	"ESTIMATED_PRICE": "推定価格",
 	"VIEW_ALL": "すべてを見る",
+	"SHOW_LESS": "表示を減らす",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} 件のアカウント",
 	"TRIGGER_PRICE": "トリガー価格",
 	"NO_ACTIVE_ORDERS": "注文が検出されませんでした。プロまたはクイック取引ページで注文を出します",
 	"NO_ACTIVE_TRADES": "まだ取引はないようです",
@@ -2993,5 +3007,36 @@
 		"TOO_MANY_REQUEST_ERROR": "リクエストが多すぎます",
 		"TOO_MANY_REQUEST_ERROR_DESC": "わあ！ゆっくりしてください、一度にやりすぎです",
 		"NETWORK_ERROR_MESSAGE": "ネットワークエラー"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "トラベルルール情報",
+		"INTRO": "この取引にはコンプライアンスのための追加情報が必要です。以下の詳細をご入力ください。",
+		"SERVICE_PROVIDER_TYPE": "サービスプロバイダーの種類",
+		"SELECT_COUNTERPARTY_TYPE": "取引相手の種類を選択",
+		"COUNTERPARTY_EXCHANGE": "取引所 / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "セルフカストディウォレット",
+		"VASP_NAME": "取引所 / VASP 名",
+		"VASP_NAME_PLACEHOLDER": "例: Coinbase、Binance",
+		"ACCOUNT_HOLDER_NAME": "口座名義人の氏名",
+		"COUNTERPARTY_NAME": "取引相手の名前",
+		"NAME_PLACEHOLDER": "個人または法人の正式名称",
+		"RECEIVER_IS_MYSELF": "受取人は本人です",
+		"SENDER_IS_MYSELF": "送金人は本人です",
+		"PURPOSE_LABEL": "取引の目的",
+		"SELECT_PURPOSE": "目的を選択",
+		"SPECIFY": "詳細を入力",
+		"SPECIFY_PLACEHOLDER": "目的を入力してください",
+		"PROVIDE_SOURCE": "送金元を提供",
+		"DEPOSIT_RELEASED": "入金が反映されました。",
+		"DEPOSIT_INFO_SAVED": "情報が保存されました。入金は審査中です。",
+		"CANCEL": "キャンセル",
+		"SUBMIT": "送信",
+		"PURPOSE_PERSONAL_TRANSFER": "個人間送金",
+		"PURPOSE_INVESTMENT": "投資",
+		"PURPOSE_PURCHASE": "商品・サービスの購入",
+		"PURPOSE_SALARY": "給与・収入",
+		"PURPOSE_GIFT": "贈与",
+		"PURPOSE_TRADING": "取引",
+		"PURPOSE_OTHER": "その他"
 	}
 }

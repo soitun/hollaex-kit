@@ -86,6 +86,9 @@ definitions:
           - v4
       verification_method:
         $ref: '#/definitions/RequestVerificationMethod'
+      is_company:
+        type: boolean
+        description: Whether the account is being registered as a company account (optional; defaults to false)
   SetEmailRequest:
     type: object
     required:
@@ -473,6 +476,25 @@ definitions:
           - v4
       verification_method:
         $ref: '#/definitions/RequestVerificationMethod'
+      is_own_address:
+        type: boolean
+        description: Travel rule - whether the receiver of the withdrawal is the user themselves
+      purpose:
+        type: string
+        maxLength: 256
+        description: Travel rule - purpose of the transaction (or free text when "Other")
+      counterparty_type:
+        type: string
+        maxLength: 64
+        description: Travel rule - counterparty service-provider type (exchange_vasp | self_custody)
+      counterparty_name:
+        type: string
+        maxLength: 256
+        description: Travel rule - name of the counterparty person/entity
+      vasp_name:
+        type: string
+        maxLength: 256
+        description: Travel rule - name of the exchange/VASP (when counterparty_type is exchange_vasp)
   OtpRequest:
     type: object
     required:
@@ -1512,6 +1534,32 @@ definitions:
         type: boolean
       email:
         type: boolean
+      description:
+        type: string
+        maxLength: 256
+      clear_hold_reason:
+        type: string
+        maxLength: 256
+        description: "Operator: deactivate the matching hold reason on the deposit note; the deposit is released only when no active reason remains."
+      clear_hold_source:
+        type: string
+        maxLength: 256
+        description: "Optional source discriminator paired with clear_hold_reason (e.g. KYT provider)."
+  ReallocateDepositRequest:
+    type: object
+    required:
+      - transaction_id
+      - address
+      - receiver_id
+    properties:
+      transaction_id:
+        type: string
+        maxLength: 256
+      address:
+        type: string
+        maxLength: 256
+      receiver_id:
+        type: integer
       description:
         type: string
         maxLength: 256

@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import _isEqual from 'lodash/isEqual';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { isMobile } from 'react-device-detect';
@@ -11,16 +12,18 @@ import { getFormatTimestamp } from 'utils/utils';
 import { formatToCurrency } from 'utils/currency';
 import { CURRENCY_PRICE_FORMAT } from 'config/constants';
 
+import { message } from 'antd';
 import {
 	getOrdersHistory,
 	getUserOrders as getUserTrades,
 	getUserDeposits,
 	getUserWithdrawals,
-	withdrawalCancel,
 	downloadUserTrades,
 	activeTabFromWallet,
+	submitDepositTravelRule,
 } from 'actions/walletActions';
 import { cancelOrder } from 'actions/orderAction';
+import TravelRuleModal from 'containers/Withdraw/TravelRuleModal';
 
 import {
 	IconTitle,
@@ -28,12 +31,11 @@ import {
 	Loader,
 	Dialog,
 	Button,
-	CurrencyBallWithPrice,
 	EditWrapper,
 	NotLoggedIn,
 	Coin,
 } from 'components';
-import { FLEX_CENTER_CLASSES, BASE_CURRENCY } from 'config/constants';
+import { BASE_CURRENCY } from 'config/constants';
 import {
 	generateOrderHistoryHeaders,
 	generateTradeHeaders,
@@ -61,7 +63,6 @@ import { Image } from 'hollaex-web-lib';
 import { quicktradePairSelector } from 'containers/QuickTrade/components/utils';
 import { setTransactionPair } from 'actions/appActions';
 
-const GROUP_CLASSES = [...FLEX_CENTER_CLASSES, 'flex-column'];
 const transactionTabs = ['trades', 'orders', 'deposits', 'withdrawals'];
 
 class TransactionsHistory extends Component {
@@ -69,9 +70,6 @@ class TransactionsHistory extends Component {
 		headers: [],
 		filters: {},
 		activeTab: 0,
-		dialogIsOpen: false,
-		amount: 0,
-		transactionId: 0,
 		jumpToPage: 0,
 		currency: BASE_CURRENCY,
 		params: {},
@@ -79,6 +77,9 @@ class TransactionsHistory extends Component {
 		current_order_id: '',
 		showCancelOrderDialog: false,
 		selectedOrder: null,
+		travelRuleDialogOpen: false,
+		travelRuleSubmitting: false,
+		travelRuleTxId: null,
 	};
 
 	cancelOrderTimeout = null;
@@ -187,7 +188,7 @@ class TransactionsHistory extends Component {
 		const { coins, pairs, prices, quicktradePairs, orders } = this.props;
 		if (
 			nextProps.activeLanguage !== this.props.activeLanguage ||
-			JSON.stringify(nextProps.prices) !== JSON.stringify(prices)
+			!_isEqual(nextProps.prices, prices)
 		) {
 			this.generateHeaders(
 				nextProps.symbol,
@@ -196,16 +197,7 @@ class TransactionsHistory extends Component {
 				nextProps.prices
 			);
 		}
-		if (
-			this.props.cancelData.dismissed !== nextProps.cancelData.dismissed &&
-			nextProps.cancelData.dismissed === true
-		) {
-			this.onCloseDialog();
-			this.requestData(nextProps.symbol);
-		}
-		if (
-			JSON.stringify(nextProps.orders?.data) !== JSON.stringify(orders?.data)
-		) {
+		if (!_isEqual(nextProps.orders?.data, orders?.data)) {
 			this.generateHeaders(
 				nextProps.symbol,
 				nextProps.coins,
@@ -214,24 +206,13 @@ class TransactionsHistory extends Component {
 			);
 		}
 		if (
-			JSON.stringify(nextProps.pairs) !== JSON.stringify(pairs) ||
-			JSON.stringify(nextProps.quicktradePairs) !==
-				JSON.stringify(quicktradePairs) ||
-			JSON.stringify(nextProps.coins) !== JSON.stringify(coins)
+			!_isEqual(nextProps.pairs, pairs) ||
+			!_isEqual(nextProps.quicktradePairs, quicktradePairs) ||
+			!_isEqual(nextProps.coins, coins)
 		) {
 			this.generateFilters();
 		}
 	}
-
-	onCloseDialog = () => {
-		this.setState({
-			dialogIsOpen: false,
-		});
-	};
-
-	openDialog = () => {
-		this.setState({ dialogIsOpen: true });
-	};
 
 	requestData = () => {
 		const { params, activeTab, jumpToPage } = this.state;
@@ -459,7 +440,7 @@ class TransactionsHistory extends Component {
 
 	generateHeaders(symbol, coins, discount, prices) {
 		const { orders } = this.props;
-		const { pairs, icons: ICONS } = this.props;
+		const { pairs, icons: ICONS, travelRuleActive } = this.props;
 		let type = STRINGS['TIME'];
 		const ordersArray = Array.isArray(orders?.data) ? orders.data : [];
 
@@ -509,15 +490,12 @@ class TransactionsHistory extends Component {
 				deposits: generateDepositsHeaders(
 					symbol,
 					coins,
-					this.withdrawalPopup,
-					ICONS
+					null,
+					ICONS,
+					this.depositTravelRulePopup,
+					travelRuleActive
 				),
-				withdrawals: generateWithdrawalsHeaders(
-					symbol,
-					coins,
-					this.withdrawalPopup,
-					ICONS
-				),
+				withdrawals: generateWithdrawalsHeaders(symbol, coins, null, ICONS),
 			},
 		});
 	}
@@ -746,19 +724,50 @@ class TransactionsHistory extends Component {
 		);
 		activeTabFromWallet('');
 	};
-	withdrawalPopup = (id, amount, currency) => {
-		if (id) {
-			this.setState({ amount: amount, transactionId: id, currency: currency });
-			this.openDialog();
+	// Open the travel-rule source form for an on-hold deposit.
+	depositTravelRulePopup = (transaction_id) => {
+		if (transaction_id) {
+			this.setState({
+				travelRuleDialogOpen: true,
+				travelRuleTxId: transaction_id,
+			});
 		}
 	};
 
-	withdrawalCancel = () => {
-		const { transactionId } = this.state;
-		this.props.withdrawalCancel(transactionId);
+	onCloseTravelRule = () => {
+		this.setState({
+			travelRuleDialogOpen: false,
+			travelRuleSubmitting: false,
+			travelRuleTxId: null,
+		});
 	};
-	onClose = () => {
-		this.onCloseDialog();
+
+	onSubmitDepositTravelRule = (values) => {
+		const { travelRuleTxId } = this.state;
+		if (!travelRuleTxId) return;
+		this.setState({ travelRuleSubmitting: true });
+		submitDepositTravelRule({ transaction_id: travelRuleTxId, ...values })
+			.then((res) => {
+				this.setState({
+					travelRuleDialogOpen: false,
+					travelRuleSubmitting: false,
+					travelRuleTxId: null,
+				});
+				message.success(
+					res?.data?.released
+						? STRINGS['TRAVEL_RULE.DEPOSIT_RELEASED'] ||
+								'Your deposit has been released.'
+						: STRINGS['TRAVEL_RULE.DEPOSIT_INFO_SAVED'] ||
+								'Your information has been saved. The deposit remains under review.'
+				);
+				this.requestData(this.props.symbol);
+			})
+			.catch((err) => {
+				this.setState({ travelRuleSubmitting: false });
+				message.error(
+					err?.response?.data?.message || err.message || 'Something went wrong'
+				);
+			});
 	};
 
 	handleNext = (pageCount, pageNumber) => {
@@ -985,15 +994,7 @@ class TransactionsHistory extends Component {
 
 	render() {
 		const { coins, icons: ICONS, isFromWallet = false } = this.props;
-		let {
-			activeTab,
-			dialogIsOpen,
-			amount,
-			currency,
-			showCancelOrderDialog,
-			selectedOrder,
-		} = this.state;
-		const { onCloseDialog } = this;
+		let { activeTab, showCancelOrderDialog, selectedOrder } = this.state;
 
 		if (Object.keys(coins).length === 0) {
 			return <Loader />;
@@ -1080,53 +1081,20 @@ class TransactionsHistory extends Component {
 					/>
 				)}
 				<Dialog
-					isOpen={dialogIsOpen}
-					label="token-modal"
-					onCloseDialog={onCloseDialog}
-					shouldCloseOnOverlayClick={true}
-					showCloseText={false}
-					className="cancel-withdraw-pop-up"
+					isOpen={this.state.travelRuleDialogOpen}
+					label="travel-rule-deposit-modal"
+					onCloseDialog={this.onCloseTravelRule}
+					shouldCloseOnOverlayClick={false}
+					showCloseText={true}
 				>
-					<div>
-						<IconTitle
-							iconId="CANCEL_WITHDRAW"
-							iconPath={ICONS['CANCEL_WITHDRAW']}
-							stringId="CANCEL_BASE_WITHDRAWAL"
-							text={STRINGS.formatString(
-								STRINGS['CANCEL_BASE_WITHDRAWAL'],
-								coins && coins[currency] && coins[currency].fullname
-									? `${coins[currency].fullname} ${STRINGS['SUMMARY.WITHDRAWAL']}`
-									: ''
-							)}
-							textType="title"
-							underline={true}
-							className="w-100 cancel-widrawal-pop-up"
+					{this.state.travelRuleDialogOpen && (
+						<TravelRuleModal
+							onSubmit={this.onSubmitDepositTravelRule}
+							onCancel={this.onCloseTravelRule}
+							loading={this.state.travelRuleSubmitting}
+							subjectLabelId="TRAVEL_RULE.SENDER_IS_MYSELF"
 						/>
-						<div>
-							<div className="text-center mt-3 mb-3">
-								<div>{STRINGS['CANCEL_WITHDRAWAL_POPUP_CONFIRM']}</div>
-								<div className={classnames(...GROUP_CLASSES)}>
-									<CurrencyBallWithPrice
-										symbol={
-											coins && coins[currency] && coins[currency].symbol
-												? coins[currency].symbol
-												: ''
-										}
-										amount={amount}
-										price={1}
-									/>
-								</div>
-							</div>
-							<div className="w-100 buttons-wrapper d-flex">
-								<Button label={STRINGS['BACK_TEXT']} onClick={this.onClose} />
-								<div className="separator" />
-								<Button
-									label={STRINGS['USER_APPS.REMOVE.CONFIRM']}
-									onClick={this.withdrawalCancel}
-								/>
-							</div>
-						</div>
-					</div>
+					)}
 				</Dialog>
 				{selectedOrder && (
 					<Dialog
@@ -1187,9 +1155,9 @@ const mapStateToProps = (store) => ({
 	withdrawals: withdrawalHistorySelector(store),
 	symbol: store.orderbook.symbol,
 	activeLanguage: store.app.language,
-	cancelData: store.wallet.withdrawalCancelData,
 	discount: store.user.discount || 0,
 	getActiveTabFromWallet: store.wallet.activeTabFromWallet,
+	travelRuleActive: store.app.constants?.travel_rule?.active === true,
 });
 
 const mapDispatchToProps = (dispatch) => ({
@@ -1201,8 +1169,6 @@ const mapDispatchToProps = (dispatch) => ({
 		dispatch(getUserDeposits({ limit, page, ...params })),
 	getUserWithdrawals: (limit, page = 1, params) =>
 		dispatch(getUserWithdrawals({ limit, page, ...params })),
-	withdrawalCancel: (transactionId) =>
-		dispatch(withdrawalCancel({ transactionId })),
 	downloadUserTrades: (params) => dispatch(downloadUserTrades('trade', params)),
 	downloadUserDeposit: (params) =>
 		dispatch(downloadUserTrades('deposit', params)),

@@ -340,6 +340,7 @@
 		"TEXT_2": "Nhấn vào nút đăng nhập phía dưới để tiếp tục."
 	},
 	"SIGN_UP": {
+		"COMPANY_ACCOUNT": "Đăng ký tài khoản doanh nghiệp",
 		"SIGNUP_TO": "Đăng ký vào {0}",
 		"NO_EMAIL": "Quý khách không nhận được email?",
 		"REQUEST_EMAIL": "Yêu cầu gửi một email khác",
@@ -378,6 +379,15 @@
 		"CONFIRM_DESCRIPTION": "Vui lòng xác nhận đăng ký tài khoản của bạn bằng cách nhấn nút bên dưới"
 	},
 	"USER_VERIFICATION": {
+		"COMPANY": {
+			"TITLE": "Tài khoản doanh nghiệp",
+			"BANNER": "Đây là tài khoản doanh nghiệp",
+			"NAME": "Tên công ty",
+			"REGISTRATION_NUMBER": "Số đăng ký",
+			"COUNTRY_OF_INCORPORATION": "Quốc gia thành lập",
+			"BUSINESS_ADDRESS": "Địa chỉ doanh nghiệp",
+			"PENDING": "Đang chờ xác minh doanh nghiệp"
+		},
 		"INFO_TXT": "Quý khách có thể xác nhận trình tự xác thực và nâng cấp tài khoản tại đây.",
 		"INFO_TXT_1": "Vui lòng nhập các thông tin cần thiết cho mỗi hạng mục phía dưới. Các thông tin của quý khách chỉ được xem xét và chấp nhận khi tất cả các hạng mục được nhập đầy đủ.",
 		"INFO_TXT_2": "* Thủ tục xác thực người dùng đòi hỏi bắt buộc các hồ sơ về {0}.",
@@ -915,6 +925,8 @@
 	"COMPLETE": "Hoàn thành",
 	"PENDING": "Chưa giải quyết",
 	"REJECTED": "Vật bị loại bỏ",
+	"VERIFIED": "Đã xác minh",
+	"TYPE_AMOUNT": "Nhập số tiền",
 	"ORDERBOOK": "SỔ LỆNH",
 	"CANCEL": "Hủy bỏ",
 	"CANCEL_ALL": "Hủy bỏ tất cả",
@@ -1415,6 +1427,8 @@
 	"OPEN_WALLET": "Ví mở",
 	"ALL": "TẤT CẢ",
 	"VIEW_ALL": "XEM CHI TIẾT",
+	"SHOW_LESS": "Thu gọn",
+	"PAYMENT_ACCOUNTS_COUNT": "{0} tài khoản",
 	"MARKET_OPTIONS": {
 		"LIST": "Danh sách",
 		"CARD": "Biểu đồ"
@@ -3002,5 +3016,36 @@
 		"TOO_MANY_REQUEST_ERROR": "Quá nhiều yêu cầu",
 		"TOO_MANY_REQUEST_ERROR_DESC": "Wow! Chậm lại đi, bạn đang làm quá nhiều việc cùng một lúc",
 		"NETWORK_ERROR_MESSAGE": "Lỗi mạng"
+	},
+	"TRAVEL_RULE": {
+		"TITLE": "Thông tin quy tắc du lịch",
+		"INTRO": "Giao dịch này yêu cầu thông tin bổ sung để tuân thủ quy định. Vui lòng cung cấp các chi tiết bên dưới.",
+		"SERVICE_PROVIDER_TYPE": "Loại nhà cung cấp dịch vụ",
+		"SELECT_COUNTERPARTY_TYPE": "Chọn loại đối tác",
+		"COUNTERPARTY_EXCHANGE": "Sàn giao dịch / VASP",
+		"COUNTERPARTY_SELF_CUSTODY": "Ví tự lưu ký",
+		"VASP_NAME": "Tên sàn giao dịch / VASP",
+		"VASP_NAME_PLACEHOLDER": "ví dụ: Coinbase, Binance",
+		"ACCOUNT_HOLDER_NAME": "Tên chủ tài khoản",
+		"COUNTERPARTY_NAME": "Tên đối tác",
+		"NAME_PLACEHOLDER": "Họ tên đầy đủ của cá nhân hoặc tổ chức",
+		"RECEIVER_IS_MYSELF": "Người nhận là chính tôi",
+		"SENDER_IS_MYSELF": "Người gửi là chính tôi",
+		"PURPOSE_LABEL": "Mục đích giao dịch",
+		"SELECT_PURPOSE": "Chọn mục đích",
+		"SPECIFY": "Vui lòng nêu rõ",
+		"SPECIFY_PLACEHOLDER": "Nhập mục đích",
+		"PROVIDE_SOURCE": "Cung cấp nguồn",
+		"DEPOSIT_RELEASED": "Khoản nạp của bạn đã được giải phóng.",
+		"DEPOSIT_INFO_SAVED": "Thông tin của bạn đã được lưu. Khoản nạp vẫn đang được xem xét.",
+		"CANCEL": "Hủy",
+		"SUBMIT": "Gửi",
+		"PURPOSE_PERSONAL_TRANSFER": "Chuyển khoản cá nhân",
+		"PURPOSE_INVESTMENT": "Đầu tư",
+		"PURPOSE_PURCHASE": "Mua hàng hóa/dịch vụ",
+		"PURPOSE_SALARY": "Lương/thu nhập",
+		"PURPOSE_GIFT": "Quà tặng",
+		"PURPOSE_TRADING": "Giao dịch",
+		"PURPOSE_OTHER": "Khác"
 	}
 }

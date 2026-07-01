@@ -805,10 +805,8 @@ const verifyBearerTokenMiddleware = (req, authOrSecDef, token, cb, isSocket = fa
 						ip,
 						'token ip',
 						decodedToken.ip,
-						'user id',
-						decodedToken.sub?.id,
 						'email',
-						decodedToken.sub?.email,
+						decodedToken.sub?.email
 					);
 
 					if (decodedToken.iss !== ISSUER) {
@@ -1003,9 +1001,12 @@ const verifyBearerTokenPromise = (token, ip, scopes = BASE_SCOPES) => {
 			.then(async (decodedToken) => {
 				loggerAuth.verbose(
 					'helpers/auth/verifyToken verified_token',
+					'ip',
 					ip,
+					'token ip',
 					decodedToken.ip,
-					decodedToken.sub
+					'email',
+					decodedToken.sub?.email
 				);
 
 				// Check set of permissions that are available with the token and set of acceptable permissions set on swagger endpoint

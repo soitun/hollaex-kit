@@ -1,3 +1,4 @@
+@charset "UTF-8";
 @import url(_customVariables.css);
 @import 'https://code.highcharts.com/css/highcharts.css';
 @import url(_customVariables.css);
@@ -3520,6 +3521,104 @@ table th {
   overflow: hidden;
   width: 100%; }
 
+.travel-rule-modal {
+  width: 30rem;
+  max-width: 100%;
+  padding: 0.5rem 0.25rem;
+  color: var(--labels_important-active-labels-text-graphics); }
+  .travel-rule-modal .travel-rule-modal__header {
+    padding-bottom: 1.25rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--calculated_secondary-border); }
+  .travel-rule-modal .dialog-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem; }
+  .travel-rule-modal .travel-rule-modal__intro {
+    margin-top: 0.5rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: var(--labels_secondary-inactive-label-text-graphics); }
+  .travel-rule-modal .travel-rule-modal__field {
+    margin-top: 1.5rem; }
+    .travel-rule-modal .travel-rule-modal__field--checkbox {
+      margin-top: 1.25rem; }
+  .travel-rule-modal .travel-rule-modal__label {
+    margin-bottom: 0.4rem;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--labels_secondary-inactive-label-text-graphics); }
+  .travel-rule-modal .ant-input {
+    height: 2.6rem;
+    padding: 0 0.75rem;
+    border-radius: 0.35rem !important;
+    border: 1px solid var(--calculated_important-border) !important;
+    background-color: var(--base_wallet-sidebar-and-popup) !important;
+    color: var(--labels_important-active-labels-text-graphics) !important;
+    box-shadow: none !important; }
+    .travel-rule-modal .ant-input::placeholder {
+      color: var(--labels_secondary-inactive-label-text-graphics);
+      opacity: 0.5; }
+    .travel-rule-modal .ant-input:hover, .travel-rule-modal .ant-input:focus {
+      border-color: var(--specials_buttons-links-and-highlights) !important; }
+  .travel-rule-modal .ant-select .ant-select-selector {
+    height: 2.6rem !important;
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem !important;
+    border-radius: 0.35rem !important;
+    border: 1px solid var(--calculated_important-border) !important;
+    background-color: var(--base_wallet-sidebar-and-popup) !important;
+    color: var(--labels_important-active-labels-text-graphics) !important;
+    box-shadow: none !important; }
+  .travel-rule-modal .ant-select .ant-select-selection-item {
+    color: var(--labels_important-active-labels-text-graphics); }
+  .travel-rule-modal .ant-select .ant-select-selection-placeholder {
+    color: var(--labels_secondary-inactive-label-text-graphics);
+    opacity: 0.5; }
+  .travel-rule-modal .ant-select .ant-select-arrow {
+    color: var(--labels_important-active-labels-text-graphics); }
+  .travel-rule-modal .ant-select:hover .ant-select-selector,
+  .travel-rule-modal .ant-select.ant-select-focused .ant-select-selector {
+    border-color: var(--specials_buttons-links-and-highlights) !important; }
+  .travel-rule-modal .ant-checkbox-wrapper {
+    color: var(--labels_important-active-labels-text-graphics); }
+    .travel-rule-modal .ant-checkbox-wrapper .ant-checkbox-inner {
+      background-color: var(--base_wallet-sidebar-and-popup);
+      border-color: var(--calculated_important-border); }
+    .travel-rule-modal .ant-checkbox-wrapper .ant-checkbox-checked .ant-checkbox-inner {
+      background-color: var(--specials_buttons-links-and-highlights);
+      border-color: var(--specials_buttons-links-and-highlights); }
+  .travel-rule-modal .travel-rule-modal__actions {
+    margin-top: 2rem;
+    gap: 1rem; }
+    .travel-rule-modal .travel-rule-modal__actions .ant-btn {
+      flex: 1;
+      height: 2.8rem;
+      border-radius: 0.35rem;
+      font-weight: 600;
+      box-shadow: none; }
+    .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__cancel {
+      background-color: transparent;
+      border: 1px solid var(--calculated_important-border);
+      color: var(--labels_important-active-labels-text-graphics); }
+      .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__cancel:hover, .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__cancel:focus {
+        border-color: var(--specials_buttons-links-and-highlights);
+        color: var(--specials_buttons-links-and-highlights); }
+    .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit {
+      background-color: var(--specials_buttons-links-and-highlights);
+      border-color: var(--specials_buttons-links-and-highlights);
+      color: #fff; }
+      .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit:hover, .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit:focus {
+        background-color: var(--specials_buttons-links-and-highlights);
+        border-color: var(--specials_buttons-links-and-highlights);
+        opacity: 0.9; }
+      .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit[disabled], .travel-rule-modal .travel-rule-modal__actions .travel-rule-modal__submit[disabled]:hover {
+        background-color: var(--calculated_important-border);
+        border-color: var(--calculated_important-border);
+        color: var(--labels_secondary-inactive-label-text-graphics);
+        opacity: 0.6; }
+
 .extra_information-wrapper {
   margin-top: 1rem;
   padding: 0.5rem;
@@ -3738,6 +3837,48 @@ table th {
 @media screen and (max-width: 450px) {
   .layout-mobile .withdrawal-container .withdraw-form-wrapper .withdraw-form .deposit-wrapper-fields .btn-wrapper-deposit .holla-button {
     width: -webkit-fill-available; } }
+
+/* Fiat deposit (on-ramp) layout */
+.fiat-deposit-summary {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--calculated_footer_border);
+  background-color: var(--base_secondary);
+  border-radius: 0.25rem;
+  min-width: 18rem; }
+  .fiat-deposit-summary .fiat-deposit-summary-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem; }
+  .fiat-deposit-summary .fiat-deposit-summary-label {
+    font-weight: bold; }
+
+.fiat-account-card {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--calculated_footer_border);
+  background-color: var(--base_secondary);
+  border-radius: 0.25rem; }
+  .fiat-account-card .fiat-account-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 0.4rem 0; }
+    .fiat-account-card .fiat-account-row:not(:last-child) {
+      border-bottom: 1px solid var(--calculated_footer_border); }
+  .fiat-account-card .fiat-account-label {
+    font-weight: bold;
+    opacity: 0.85;
+    white-space: nowrap; }
+  .fiat-account-card .fiat-account-value {
+    text-align: right;
+    word-break: break-word; }
+
+/* Taller deposit form panel */
+.withdrawal-container .withdraw-form-wrapper .withdraw-form {
+  min-height: 50rem; }
 
 .transaction-history-wrapper .ant-row,
 .login-history-section-wrapper .ant-row {
@@ -5711,6 +5852,87 @@ table th {
     font-size: 13px; }
   .verification_container .verification_content-form-wrapper .verification-form-panel .field-wrapper .input-box-field .input_field-input::placeholder {
     font-size: 13px; } }
+
+/* Payment accounts verification — grouped cards by payment method */
+.payment-accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin: 1.5rem 0; }
+
+.payment-account-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column; }
+
+.payment-account-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+  .payment-account-card-header .payment-account-card-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain; }
+  .payment-account-card-header .payment-account-card-title {
+    font-weight: bold;
+    font-size: 15px;
+    text-transform: capitalize; }
+  .payment-account-card-header .payment-account-card-count {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.7; }
+
+.payment-account-item {
+  padding: 12px 14px; }
+  .payment-account-item + .payment-account-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.07); }
+
+.payment-account-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-bottom: 10px; }
+  .payment-account-status.verified {
+    color: #29c07a;
+    background: rgba(41, 192, 122, 0.12); }
+  .payment-account-status.pending {
+    color: #f0a020;
+    background: rgba(240, 160, 32, 0.12); }
+  .payment-account-status.rejected {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.12); }
+
+.payment-account-field {
+  display: flex;
+  font-size: 13px;
+  padding: 3px 0; }
+  .payment-account-field .payment-account-field-label {
+    font-weight: 600;
+    margin-right: 8px;
+    text-transform: capitalize; }
+  .payment-account-field .payment-account-field-value {
+    opacity: 0.85;
+    word-break: break-all; }
+
+.payment-account-expand {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: var(--specials_buttons-links-and-highlights);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center; }
+  .payment-account-expand:hover {
+    text-decoration: underline; }
 
 .help-wrapper {
   min-width: 30rem;

@@ -528,8 +528,30 @@ const joinKitConfig = (existingKitConfig = {}, newKitConfig = {}, scopes, permis
 	if (newKitConfig.selectable_native_currencies) {
 
 		for (let coin of newKitConfig.selectable_native_currencies) {
-			if (!subscribedToCoin(coin)) {
+			// Exchange-listed coins are always valid. Currencies that are NOT listed
+			// exchange assets (e.g. a fiat such as usd/krw used only for price/valuation
+			// display through the oracle quote) are also allowed: they are never added
+			// to the exchange wallet/markets, and the oracle resolves the quote on the
+			// network side. Such display-only currencies are validated for basic symbol
+			// format only to avoid storing arbitrary garbage.
+			if (!subscribedToCoin(coin) && !(isString(coin) && /^[a-z0-9]{1,32}$/.test(coin))) {
 				throw new Error('Invalid coin ' + coin);
+			}
+		}
+	}
+
+	if (newKitConfig.valuation_assets) {
+		// Display-only metadata (logo/fullname/decimals) for non-listed valuation
+		// currencies. Keyed by symbol; never added to the exchange wallet/markets.
+		if (!isPlainObject(newKitConfig.valuation_assets)) {
+			throw new Error('valuation_assets must be an object');
+		}
+		for (const [symbol, meta] of Object.entries(newKitConfig.valuation_assets)) {
+			if (!(isString(symbol) && /^[a-z0-9]{1,32}$/.test(symbol))) {
+				throw new Error('Invalid valuation asset symbol ' + symbol);
+			}
+			if (!isPlainObject(meta)) {
+				throw new Error('Invalid valuation asset metadata for ' + symbol);
 			}
 		}
 	}
@@ -562,6 +584,9 @@ const joinKitConfig = (existingKitConfig = {}, newKitConfig = {}, scopes, permis
 				|| key === 'onramp'
 				|| key === 'offramp'
 				|| key === 'user_payments'
+				// Fully replace (not deep-merge) so removing a valuation currency
+				// in the admin actually drops it; the admin always sends the complete set.
+				|| key === 'valuation_assets'
 			) {
 				joinedKitConfig[key] = newKitConfig[key];
 			} else if (isPlainObject(existingKitConfig[key])) {

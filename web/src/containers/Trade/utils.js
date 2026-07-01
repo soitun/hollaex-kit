@@ -92,6 +92,7 @@ const getDepth = (state) => state.orderbook.depth;
 const getChartClose = (state) => state.orderbook.chart_last_close;
 const getTickers = (state) => state.app.tickers;
 const getCoins = (state) => state.app.coins;
+const getValuationCoins = (state) => state.app.valuation_coins;
 export const getFavourites = (state) => state.app.favourites;
 const getPrices = (state) => state.asset.wsPriceData;
 const getOraclePrices = (state) => state.asset.oraclePrices;
@@ -277,6 +278,7 @@ export const unsortedMarketsSelector = createSelector(
 		getNativeCurrency,
 		getDisplayCurrency,
 		getOraclePrices,
+		getValuationCoins,
 	],
 	(
 		pairKeys,
@@ -286,7 +288,8 @@ export const unsortedMarketsSelector = createSelector(
 		prices,
 		native_currency,
 		display_currency,
-		oraclePrices
+		oraclePrices,
+		valuation_coins = {}
 	) => {
 		const markets = pairKeys.map((key) => {
 			const {
@@ -306,7 +309,9 @@ export const unsortedMarketsSelector = createSelector(
 			const { volume = 0, open, close } = tickers[key] || {};
 			const { [pair_base]: price = 0 } = prices;
 			const baseCoin =
-				coins[display_currency || native_currency] ?? DEFAULT_COIN_DATA;
+				coins[display_currency || native_currency] ??
+				valuation_coins[display_currency || native_currency] ??
+				DEFAULT_COIN_DATA;
 
 			const priceDifference = open === 0 ? 0 : (close || 0) - (open || 0);
 
@@ -371,7 +376,11 @@ const getSortFunction = (mode) => {
 const sortedMarketsSelector = createSelector(
 	[unsortedMarketsSelector, getSortMode, getSortDir],
 	(markets, mode, is_descending) => {
-		const sortedMarkets = markets.sort(getSortFunction(mode, is_descending));
+		// copy before sorting: Array.sort mutates in place, which would
+		// corrupt the memoized output of unsortedMarketsSelector
+		const sortedMarkets = [...markets].sort(
+			getSortFunction(mode, is_descending)
+		);
 		return is_descending ? sortedMarkets : [...sortedMarkets].reverse();
 	}
 );
