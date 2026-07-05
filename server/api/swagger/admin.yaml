@@ -1393,8 +1393,10 @@ paths:
                 type: string
                 maxLength: 256
               dob:
+                # calendar date ('YYYY-MM-DD'); legacy clients may still send an
+                # ISO datetime, which the server normalizes to date-only at UTC
                 type: ['string', 'null']
-                format: date-time
+                maxLength: 256
               address:
                 type: object
                 properties:
