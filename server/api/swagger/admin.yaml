@@ -1393,8 +1393,10 @@ paths:
                 type: string
                 maxLength: 256
               dob:
+                # calendar date ('YYYY-MM-DD'); legacy clients may still send an
+                # ISO datetime, which the server normalizes to date-only at UTC
                 type: ['string', 'null']
-                format: date-time
+                maxLength: 256
               address:
                 type: object
                 properties:
@@ -2661,6 +2663,82 @@ paths:
         - hmac
       x-token-permissions:
         - can_read
+    post:
+      operationId: createAdminTravelRule
+      description: Manually add a travel-rule compliance record for a transaction that has none.
+      tags:
+        - Admin
+      parameters:
+        - name: data
+          in: body
+          required: true
+          schema:
+            type: object
+            required:
+              - user_id
+              - type
+              - transaction_id
+            properties:
+              user_id:
+                type: integer
+                description: Id of the user the transaction belongs to
+              type:
+                type: string
+                enum: ['deposit', 'withdrawal']
+              transaction_id:
+                type: string
+                maxLength: 256
+              address:
+                type: string
+                maxLength: 256
+                description: Destination (withdrawal) or source (deposit) address
+              network:
+                type: string
+                maxLength: 256
+              currency:
+                type: string
+                maxLength: 256
+              amount:
+                type: number
+              is_own_address:
+                type: boolean
+                description: Whether the counterparty address belongs to the user themselves
+              purpose:
+                type: string
+                maxLength: 256
+                description: Purpose/source of the transaction (or free text when "Other")
+              counterparty_type:
+                type: string
+                maxLength: 64
+                description: Counterparty service-provider type (exchange_vasp | self_custody)
+              counterparty_name:
+                type: string
+                maxLength: 256
+                description: Name of the counterparty person/entity
+              vasp_name:
+                type: string
+                maxLength: 256
+                description: Name of the exchange/VASP (when counterparty_type is exchange_vasp)
+              note:
+                type: string
+                maxLength: 256
+                description: Optional operator note (e.g. how the info was obtained)
+      responses:
+        201:
+          description: Success
+          schema:
+            type: object
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+        - hmac
+      x-token-permissions:
+        - can_withdraw
   /admin/deposits:
     x-swagger-router-controller: deposit
     get:

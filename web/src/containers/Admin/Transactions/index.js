@@ -15,6 +15,7 @@ import {
 	requestReallocate,
 } from './actions';
 import { renderRowContent, COLUMNS, TRAVEL_RULE_TYPE_LABELS } from './utils';
+import TravelRuleForm from './TravelRuleForm';
 import { Filters } from './Filters';
 import ValidateDismiss from '../Deposits/ValidateDismiss';
 
@@ -72,7 +73,7 @@ class Transactions extends Component {
 		travelRuleLoading: false,
 		travelRuleData: [],
 		travelRuleError: '',
-		travelRuleTxId: null,
+		travelRuleTx: null,
 		isOpen: false,
 		statusType: '',
 		validateData: {},
@@ -250,15 +251,17 @@ class Transactions extends Component {
 	};
 
 	// Open the travel-rule detail modal for a transaction and fetch its record(s).
-	openTravelRule = (transaction_id) => {
+	// The full row is kept so the manual-entry form can prefill the transaction
+	// context (user, currency, amount, address) when no record exists.
+	openTravelRule = (transaction) => {
 		this.setState({
 			travelRuleOpen: true,
 			travelRuleLoading: true,
 			travelRuleData: [],
 			travelRuleError: '',
-			travelRuleTxId: transaction_id,
+			travelRuleTx: transaction,
 		});
-		requestTravelRule(transaction_id)
+		requestTravelRule(transaction.transaction_id)
 			.then((data) => {
 				this.setState({
 					travelRuleLoading: false,
@@ -277,8 +280,12 @@ class Transactions extends Component {
 			travelRuleLoading: false,
 			travelRuleData: [],
 			travelRuleError: '',
-			travelRuleTxId: null,
+			travelRuleTx: null,
 		});
+	};
+
+	onTravelRuleCreated = (record) => {
+		this.setState({ travelRuleData: record ? [record] : [] });
 	};
 
 	renderTravelRuleRecord = (record) => {
@@ -541,7 +548,7 @@ class Transactions extends Component {
 									// feature is on; the record is fetched lazily on click (the modal
 									// reports "no record" when none exists). No per-row server lookup.
 									viewTravelRule: this.props.travelRuleActive
-										? () => this.openTravelRule(deposit.transaction_id)
+										? () => this.openTravelRule(deposit)
 										: undefined,
 								};
 							})}
@@ -571,7 +578,25 @@ class Transactions extends Component {
 					) : this.state.travelRuleError ? (
 						<Alert message={this.state.travelRuleError} type="error" showIcon />
 					) : this.state.travelRuleData.length === 0 ? (
-						<div>No travel rule record was collected for this transaction.</div>
+						<div>
+							<div>
+								No travel rule record was collected for this transaction. You
+								can add the information manually on the user's behalf below.
+							</div>
+							{this.state.travelRuleTx && (
+								<TravelRuleForm
+									transaction={{
+										...this.state.travelRuleTx,
+										// the endpoint this list was fetched from decides the type
+										type:
+											this.props.queryParams.type === 'withdrawal'
+												? 'withdrawal'
+												: 'deposit',
+									}}
+									onCreated={this.onTravelRuleCreated}
+								/>
+							)}
+						</div>
 					) : (
 						this.state.travelRuleData.map((record) =>
 							this.renderTravelRuleRecord(record)

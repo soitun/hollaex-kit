@@ -115,6 +115,62 @@ async function loginUser(page, userType = 'admin') {
 }
 
 /**
+ * Install an auto-dismisser for the announcement popup.
+ *
+ * The popup (AppBar Dialog with class `.announcement-popup-wrapper`) may or may
+ * not appear after any page load, and clicking CLOSE does NOT persist to
+ * localStorage — so it can reappear on every full navigation. Registering this
+ * before the first navigation makes a MutationObserver click CLOSE the moment
+ * the popup shows up, on every page load, without blocking the test flow.
+ */
+async function setupAnnouncementAutoDismiss(page) {
+  await page.addInitScript(() => {
+    const dismiss = () => {
+      const wrapper = document.querySelector('.announcement-popup-wrapper');
+      if (!wrapper) return;
+      const closeButton =
+        wrapper.querySelector('.announcement-popup-buttons button') ||
+        wrapper.querySelector('.announcement-popup-buttons .back-btn') ||
+        wrapper.querySelector('.close-button');
+      if (closeButton) closeButton.click();
+    };
+    const start = () => {
+      dismiss();
+      new MutationObserver(dismiss).observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
+    } else {
+      start();
+    }
+  });
+}
+
+/**
+ * Close the announcement popup if it is currently shown, otherwise do nothing.
+ * Safe to call at any step — never throws if the popup is absent.
+ */
+async function dismissAnnouncementPopup(page) {
+  const closeButton = page
+    .locator('.announcement-popup-wrapper .announcement-popup-buttons button')
+    .first();
+  try {
+    await closeButton.waitFor({ state: 'visible', timeout: 2000 });
+  } catch {
+    // Popup did not appear — proceed with the original action
+    return;
+  }
+  await closeButton.click({ force: true }).catch(() => {});
+  await page
+    .locator('.announcement-popup-wrapper')
+    .waitFor({ state: 'hidden', timeout: 5000 })
+    .catch(() => {});
+}
+
+/**
  * Navigate to a specific transaction page
  */
 async function navigateToTransactionPage(page, tab) {
@@ -201,6 +257,8 @@ async function clickDropdown(page, labelText) {
 
 module.exports = {
   loginUser,
+  setupAnnouncementAutoDismiss,
+  dismissAnnouncementPopup,
   navigateToTransactionPage,
   waitForClickableElement,
   safeClick,
