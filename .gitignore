@@ -31,6 +31,7 @@ test/playwright/tests/utils/test-data.js
 .playwright-mcp/
 test/playwright/session-storage/
 test/playwright/test-results/
+test-results/
 test/playwright/playwright-report/
 test/playwright/.auth
 
@@ -76,6 +77,8 @@ templates/kubernetes/config/*
 backups
 .vscode/settings.json
 web/public/.vscode/settings.json
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 
 docs/

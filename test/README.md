@@ -15,9 +15,23 @@ test/
 │   │   ├── global-setup.js  # Global authentication setup
 │   │   ├── page-navigation/ # Page navigation tests
 │   │   └── utils/           # Test utilities and helpers
+│   ├── troubleshooter/      # AI troubleshooter procedure + scripts
 │   └── playwright.config.js # Playwright configuration
 └── Cypress/                 # Cypress test suite (legacy)
 ```
+
+## AI-assisted test fixing
+
+When the web UI changes, these tests often break on stale selectors. You don't have to fix them by
+hand — open your AI assistant (Claude Code or Codex) in this repo and say **"fix the web tests"**.
+A shared skill (`fix-web-tests`) runs the failing spec, diagnoses it from the
+live rendered DOM, and **proposes a fix for your confirmation** before editing (it won't blindly
+green a test that's catching a real regression).
+
+- Skill entry points: `.claude/skills/fix-web-tests/` (Claude Code), `.agents/skills/fix-web-tests/`
+  (Codex).
+- The procedure, known-flaky-pattern catalog, and new-test authoring guide live in
+  `playwright/troubleshooter/`.
 
 ## Prerequisites
 
