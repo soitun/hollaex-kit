@@ -233,7 +233,11 @@ const RenderModalContent = ({
 		case 'company':
 			return (
 				<div className="user-data-form">
-					<h3>Company information</h3>
+					<h3>
+						{userData.is_company
+							? 'Company information'
+							: 'Convert to company account'}
+					</h3>
 					<CompanyData
 						initialValues={userData}
 						onChangeSuccess={onChangeSuccess}
@@ -1137,27 +1141,31 @@ const AboutData = ({
 							</Button>
 						</div>
 					</div>
-					{userData.is_company && (
-						<div className="d-flex justify-content-between m-4">
-							<div>
-								<div className="about-title">Company information</div>
+					<div className="d-flex justify-content-between m-4">
+						<div>
+							<div className="about-title">
+								Account type: {userData.is_company ? 'Company' : 'Individual'}
+							</div>
+							{userData.is_company && (
 								<DataDisplay
 									data={companyInfo}
 									renderRow={renderRowInformation}
 								/>
-							</div>
-							<div>
-								<Button
-									type="primary"
-									className="green-btn"
-									size="small"
-									onClick={() => handleOpenModal('company')}
-								>
-									Edit Company Data
-								</Button>
-							</div>
+							)}
 						</div>
-					)}
+						<div>
+							<Button
+								type="primary"
+								className="green-btn"
+								size="small"
+								onClick={() => handleOpenModal('company')}
+							>
+								{userData.is_company
+									? 'Edit Company Data'
+									: 'Convert to company'}
+							</Button>
+						</div>
+					</div>
 				</div>
 				{/* <div>
 					<div className="about-title">Audit</div>
