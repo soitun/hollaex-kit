@@ -47,12 +47,12 @@ const AccountTypeFields = {
 	is_company: {
 		type: 'boolean',
 		label:
-			'Company account (turn off to revert this user to an individual account)',
+			'Company account (turn on to convert this user to a company account, off for an individual account)',
 	},
 };
 
 const onSubmit = (userData, onChangeSuccess, handleClose) => (values) => {
-	const isCompany = values.is_company !== false;
+	const isCompany = !!values.is_company;
 	const submitData = {
 		business_address: {},
 		is_company: isCompany,
@@ -83,7 +83,7 @@ const onSubmit = (userData, onChangeSuccess, handleClose) => (values) => {
 		});
 };
 
-const generateInitialValues = (company = {}, is_company = true) => {
+const generateInitialValues = (company = {}, is_company = false) => {
 	const { business_address = {} } = company;
 	return {
 		...company,
@@ -106,10 +106,7 @@ const CompanyData = ({ initialValues, onChangeSuccess, handleClose }) => {
 			onSubmit={onSubmit(initialValues, onChangeSuccess, handleClose)}
 			buttonText="SAVE"
 			fields={fieldsData}
-			initialValues={generateInitialValues(
-				company,
-				initialValues.is_company !== false
-			)}
+			initialValues={generateInitialValues(company, !!initialValues.is_company)}
 			buttonClass="green-btn"
 		/>
 	);
