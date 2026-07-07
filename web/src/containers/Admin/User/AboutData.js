@@ -1044,7 +1044,7 @@ const AboutData = ({
 					<div className="about-title">
 						User info
 						<div className="mt-2 user-info-header-wrapper">
-							<div className="d-flex mt-4">
+							<div className="d-flex mt-4 user-info-row">
 								<div className="user-info-container">
 									<div className="user-info-label">
 										email: {userInfo && userInfo.email}
@@ -1173,18 +1173,6 @@ const AboutData = ({
 									renderRow={renderRowInformation}
 								/>
 							)}
-						</div>
-						<div>
-							<Button
-								type="primary"
-								className="green-btn"
-								size="small"
-								onClick={() => handleOpenModal('company')}
-							>
-								{userData.is_company
-									? 'Edit Company Data'
-									: 'Convert to company'}
-							</Button>
 						</div>
 					</div>
 				</div>

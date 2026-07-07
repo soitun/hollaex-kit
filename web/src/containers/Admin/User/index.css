@@ -264,6 +264,10 @@
 	justify-content: space-between;
 	padding-top: 10px;
 }
+.user-info-row {
+	flex-wrap: wrap;
+	row-gap: 10px;
+}
 .user-account-type-container {
 	align-items: center;
 }
