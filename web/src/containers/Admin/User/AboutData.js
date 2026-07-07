@@ -19,6 +19,7 @@ import {
 	CaretUpFilled,
 	CaretDownFilled,
 	UserOutlined,
+	BankOutlined,
 } from '@ant-design/icons';
 import classnames from 'classnames';
 
@@ -1043,7 +1044,7 @@ const AboutData = ({
 					<div className="about-title">
 						User info
 						<div className="mt-2 user-info-header-wrapper">
-							<div className="d-flex mt-4">
+							<div className="d-flex mt-4 user-info-row">
 								<div className="user-info-container">
 									<div className="user-info-label">
 										email: {userInfo && userInfo.email}
@@ -1107,6 +1108,26 @@ const AboutData = ({
 									</div>
 								</div>
 								<div className="user-info-separator"></div>
+								<div className="user-account-type-container">
+									<div className="user-account-type-icon-wrapper">
+										<BankOutlined className="user-icon" />
+									</div>
+									<div className="user-info-label">
+										Account type:{' '}
+										{userData.is_company ? 'Company' : 'Individual'}
+									</div>
+									<div className="ml-4">
+										<Button
+											type="primary"
+											className="green-btn"
+											size="small"
+											onClick={() => handleOpenModal('company')}
+										>
+											Edit
+										</Button>
+									</div>
+								</div>
+								<div className="user-info-separator"></div>
 							</div>
 						</div>
 					</div>
@@ -1152,18 +1173,6 @@ const AboutData = ({
 									renderRow={renderRowInformation}
 								/>
 							)}
-						</div>
-						<div>
-							<Button
-								type="primary"
-								className="green-btn"
-								size="small"
-								onClick={() => handleOpenModal('company')}
-							>
-								{userData.is_company
-									? 'Edit Company Data'
-									: 'Convert to company'}
-							</Button>
 						</div>
 					</div>
 				</div>
