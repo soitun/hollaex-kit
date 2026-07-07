@@ -19,6 +19,7 @@ import {
 	CaretUpFilled,
 	CaretDownFilled,
 	UserOutlined,
+	BankOutlined,
 } from '@ant-design/icons';
 import classnames from 'classnames';
 
@@ -1101,6 +1102,26 @@ const AboutData = ({
 											className="green-btn"
 											size="small"
 											onClick={() => handleOpenModal('verification-levels')}
+										>
+											Edit
+										</Button>
+									</div>
+								</div>
+								<div className="user-info-separator"></div>
+								<div className="user-account-type-container">
+									<div className="user-account-type-icon-wrapper">
+										<BankOutlined className="user-icon" />
+									</div>
+									<div className="user-info-label">
+										Account type:{' '}
+										{userData.is_company ? 'Company' : 'Individual'}
+									</div>
+									<div className="ml-4">
+										<Button
+											type="primary"
+											className="green-btn"
+											size="small"
+											onClick={() => handleOpenModal('company')}
 										>
 											Edit
 										</Button>
