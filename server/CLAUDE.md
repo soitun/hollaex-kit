@@ -29,3 +29,8 @@ Rules:
   never raw `err.message`.
 - Clients (web/mobile) must branch on the numeric `code`, never on message
   text — the text is localized to the user's language.
+- `messages.js` and `utils/lang-messages.js` are shared verbatim between
+  `hollaex-server` and `hollaex-kit/server` because both serve the same web
+  front-end, which relies on exact codes. When adding a message in one repo,
+  add the identical entry (same string, same code) to the other in the same
+  change — codes are append-only across **both** repos.

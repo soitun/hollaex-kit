@@ -322,3 +322,7 @@ exports.WITHDRAWAL_LIMIT_ERROR = 'You have reached your withdrawal limit for you
 exports.USER_PHONE_NOT_VERIFIED = 'User phone number is not verified';
 exports.USER_HAS_NO_PHONE = 'User has no phone number';
 exports.USER_PHONE_ALREADY_VERIFIED = 'User phone number already verified';
+exports.REFERRAL_CODE_APPLY_WINDOW_EXPIRED = 'Referral code can only be applied within 48 hours of account creation';
+exports.REFERRAL_ALREADY_APPLIED = 'Your account is already linked to a referrer';
+exports.INVALID_REFERRAL_CODE = 'Invalid referral code';
+exports.CANNOT_USE_OWN_REFERRAL_CODE = 'You cannot use your own referral code';
