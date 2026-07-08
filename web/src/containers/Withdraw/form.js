@@ -39,6 +39,11 @@ import { isMobile } from 'react-device-detect';
 
 export const FORM_NAME = 'WithdrawCryptocurrencyForm';
 
+// Error code of TRAVEL_RULE_INFO_REQUIRED, assigned in
+// server/utils/lang-messages.js. Codes are stable across server versions
+// and languages; message text is not.
+const TRAVEL_RULE_INFO_REQUIRED_CODE = 251;
+
 const selector = formValueSelector(FORM_NAME);
 let errorTimeOut = null;
 
@@ -175,9 +180,19 @@ class Form extends Component {
 	};
 
 	// The server gates qualifying withdrawals with the TRAVEL_RULE_INFO_REQUIRED
-	// message until the purpose / receiver info is supplied. Detect that response
+	// error until the purpose / receiver info is supplied. Detect that response
 	// and collect the info via a modal, then resubmit with the fields attached.
+	// Match on the stable numeric error code (server/utils/lang-messages.js) —
+	// the message text is localized to the user's language and can't be relied
+	// on. The string match remains only for older servers that send no code.
 	isTravelRuleError = (err) => {
+		const code =
+			(err && err.errors && err.errors._code) != null
+				? err.errors._code
+				: err && err.code;
+		if (code != null) {
+			return code === TRAVEL_RULE_INFO_REQUIRED_CODE;
+		}
 		const msg =
 			(err && err.errors && err.errors._error) || (err && err.message) || '';
 		return (

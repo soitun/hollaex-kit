@@ -258,10 +258,18 @@
 }
 .user-info-container,
 .user-role-container,
-.user-level-container {
+.user-level-container,
+.user-account-type-container {
 	display: flex;
 	justify-content: space-between;
 	padding-top: 10px;
+}
+.user-info-row {
+	flex-wrap: wrap;
+	row-gap: 10px;
+}
+.user-account-type-container .user-icon {
+	font-size: 30px;
 }
 .user-info-container {
 	width: 25rem;
