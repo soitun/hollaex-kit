@@ -268,9 +268,6 @@
 	flex-wrap: wrap;
 	row-gap: 10px;
 }
-.user-account-type-container {
-	align-items: center;
-}
 .user-account-type-container .user-icon {
 	font-size: 30px;
 }
