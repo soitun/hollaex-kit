@@ -1,14 +1,24 @@
 const { test, expect } = require('@playwright/test');
-const { loginUser } = require('../utils/login-helper');
+const {
+  loginUser,
+  setupAnnouncementAutoDismiss,
+  dismissAnnouncementPopup,
+} = require('../utils/login-helper');
 const testData = require('../utils/test-data');
 
 test.describe('Page Navigation Tests', () => {
   test.beforeEach(async ({ page }) => {
+    // The announcement popup may appear on any page load and clicking CLOSE does
+    // not persist, so it can reappear on every navigation. Register the
+    // auto-dismisser before any navigation so it is cleared on all steps.
+    await setupAnnouncementAutoDismiss(page);
     // Check if login is needed (only logs in if not already authenticated)
     // The storageState from global setup should handle authentication, but this is a fallback
     await loginUser(page, 'admin');
     // Wait for navigation after login (if login was performed)
     await page.waitForTimeout(6000);
+    // Clear the popup once before the test body runs (no-op if not shown)
+    await dismissAnnouncementPopup(page);
   });
 
   test.describe('Wallet Pages', () => {

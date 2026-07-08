@@ -32,6 +32,33 @@ const getAdminTravelRule = (req, res) => {
 		});
 };
 
+// Admin: manually create a travel-rule compliance record for a transaction the
+// user never submitted info for (the detail modal offers a form when no record
+// exists). Refuses when a record for the transaction already exists.
+const createAdminTravelRule = (req, res) => {
+	const data = req.swagger.params.data.value;
+
+	loggerDeposits.verbose(
+		req.uuid,
+		'controllers/travelRule/createAdminTravelRule',
+		'transaction_id', data.transaction_id,
+		'user_id', data.user_id,
+		'type', data.type
+	);
+
+	toolsLib.travelRule.createAdminRecord(data)
+		.then((record) => {
+			toolsLib.user.createAuditLog({ email: req?.auth?.sub?.email, session_id: req?.session_id }, req?.swagger?.apiPath, req?.swagger?.operationPath?.[2], data);
+			return res.status(201).json(record);
+		})
+		.catch((err) => {
+			loggerDeposits.error(req.uuid, 'controllers/travelRule/createAdminTravelRule', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({ message: messageObj?.message, lang: messageObj?.lang, code: messageObj?.code });
+		});
+};
+
 module.exports = {
-	getAdminTravelRule
+	getAdminTravelRule,
+	createAdminTravelRule
 };

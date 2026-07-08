@@ -58,6 +58,16 @@ export const requestTravelRule = (transaction_id) => {
 	return requestAuthenticated(`/admin/travel-rule?${queryValues}`);
 };
 
+// Manually create a travel-rule record for a transaction that has none
+// (admin enters the info on the user's behalf).
+export const createTravelRule = (data) => {
+	const options = {
+		method: 'POST',
+		body: JSON.stringify(data),
+	};
+	return requestAuthenticated('/admin/travel-rule', options);
+};
+
 export const completeDeposits = (values) => {
 	const options = {
 		method: 'PUT',

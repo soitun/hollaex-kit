@@ -139,6 +139,64 @@ const createDepositHold = async ({
 	});
 };
 
+/**
+ * Admin: manually create a travel-rule compliance record for a transaction the
+ * user never submitted info for. One record per (transaction, user, type) — throws
+ * when one already exists. amount_native is derived from amount/currency when the
+ * oracle can convert it.
+ */
+const createAdminRecord = async ({
+	user_id,
+	type,
+	transaction_id,
+	address,
+	network,
+	currency,
+	amount,
+	is_own_address,
+	purpose,
+	counterparty_type,
+	counterparty_name,
+	vasp_name,
+	note
+}) => {
+	if (!['deposit', 'withdrawal'].includes(type)) {
+		throw new Error('Invalid transaction type');
+	}
+	if (counterparty_type && !TRAVEL_RULE_COUNTERPARTY_TYPES.includes(counterparty_type)) {
+		throw new Error('Invalid counterparty type');
+	}
+	const where = { transaction_id, type };
+	if (user_id != null) {
+		where.user_id = user_id;
+	}
+	const existing = await getModel('travelRule').findOne({ where });
+	if (existing) {
+		throw new Error('A travel rule record already exists for this transaction');
+	}
+	let amount_native = null;
+	if (currency && Number(amount) > 0) {
+		amount_native = await convertToNative(currency, amount);
+	}
+	return getModel('travelRule').create({
+		user_id,
+		type,
+		transaction_id,
+		address: address || null,
+		network: network || null,
+		currency: currency || null,
+		amount: amount == null ? null : amount,
+		amount_native,
+		is_own_address: is_own_address === undefined ? null : is_own_address,
+		purpose: purpose || null,
+		counterparty_type: counterparty_type || null,
+		counterparty_name: counterparty_name || null,
+		vasp_name: vasp_name || null,
+		note: note || null,
+		status: 'recorded'
+	});
+};
+
 const findByTxid = async (transaction_id, opts = {}) => {
 	const where = { transaction_id };
 	if (opts.user_id != null) {
@@ -216,6 +274,7 @@ module.exports = {
 	isAboveThreshold,
 	recordWithdrawalCompliance,
 	createDepositHold,
+	createAdminRecord,
 	findByTxid,
 	getTravelRuleRecords,
 	resolveDeposit
