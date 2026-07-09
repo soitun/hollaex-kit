@@ -69,7 +69,7 @@
 			"title": "Diskontsatzänderung"
 		},
 		"BANK_VERIFIED": {
-			"html": "<div><p> Sehr geehrte/r ${name} </p><p>Ein ausstehendes Bankkonto wurde bestätigt. Ihr gültiges Konto kann jetzt für Umtauschoperationen verwendet werden, die ein Bankkonto erfordern.</p><div><strong>Verifizierte Bankkonten:</strong>${list_detail_bank_account}</div><p><a href=\"${link_verification}\">Um Ihre aktuellen Bankkonten anzuzeigen, besuchen Sie bitte die Registerkarte „Verifizierung“ der Börse</a></p><p> Mit freundlichen Grüßen<br> ${api_name} team </p></div>",
+			"html": "<div><p> Sehr geehrte/r ${name} </p><p>Ein ausstehendes Bankkonto wurde bestätigt. Ihr gültiges Konto kann jetzt für Umtauschoperationen verwendet werden, die ein Bankkonto erfordern.</p><p><a href=\"${link_verification}\">Um Ihre aktuellen Bankkonten anzuzeigen, besuchen Sie bitte die Registerkarte „Verifizierung“ der Börse</a></p><p> Mit freundlichen Grüßen<br> ${api_name} team </p></div>",
 			"title": "Bank verifiziert"
 		},
 		"USER_ID_VERIFICATION_REJECT": {
