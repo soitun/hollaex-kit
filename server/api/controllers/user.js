@@ -1648,6 +1648,26 @@ const connectReferral = (req, res) => {
 		});
 };
 
+const applyReferralCode = (req, res) => {
+	loggerUser.info(req.uuid, 'controllers/user/applyReferralCode');
+
+	const { code } = req.swagger.params.data.value || {};
+
+	toolsLib.user.applyReferralCode(code, req.auth.sub.id)
+		.then(() => {
+			return res.json({ message: 'success' });
+		})
+		.catch((err) => {
+			loggerUser.error(req.uuid, 'controllers/user/applyReferralCode err', err.message);
+			const messageObj = errorMessageConverter(err, req?.auth?.sub?.lang);
+			return res.status(err.statusCode || 400).json({
+				message: messageObj?.message,
+				lang: messageObj?.lang,
+				code: messageObj?.code
+			});
+		});
+};
+
 const getUserBalance = (req, res) => {
 	loggerUser.debug(req.uuid, 'controllers/user/getUserBalance auth', req.auth.sub);
 	const user_id = req.auth.sub.id;
@@ -3212,6 +3232,7 @@ module.exports = {
 	getUserLogins,
 	affiliationCount,
 	connectReferral,
+	applyReferralCode,
 	getUserBalance,
 	deactivateUser,
 	createCryptoAddress,

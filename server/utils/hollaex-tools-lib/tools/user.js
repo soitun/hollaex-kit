@@ -62,6 +62,10 @@ const {
 	EMAIL_IS_SAME,
 	EMAIL_EXISTS,
 	REFERRAL_CODE_REQUIRED,
+	REFERRAL_CODE_APPLY_WINDOW_EXPIRED,
+	REFERRAL_ALREADY_APPLIED,
+	INVALID_REFERRAL_CODE,
+	CANNOT_USE_OWN_REFERRAL_CODE,
 	REFERRAL_HISTORY_NOT_ACTIVE,
 	REFERRAL_UNSUPPORTED_EXCHANGE_PLAN,
 	CANNOT_CHANGE_DELETED_EMAIL,
@@ -856,6 +860,52 @@ const checkAffiliation = (affiliationCode, user_id) => {
 			}
 			return;
 		});
+};
+
+const REFERRAL_APPLY_WINDOW_HOURS = 48;
+
+const applyReferralCode = async (referralCode, user_id) => {
+	const referralConfig = getKitConfig()?.referral_history_config;
+	if (!referralConfig || !referralConfig.active) {
+		throw new Error(REFERRAL_HISTORY_NOT_ACTIVE);
+	}
+
+	if (!referralCode || !isString(referralCode) || referralCode.trim().length === 0) {
+		throw new Error(INVALID_REFERRAL_CODE);
+	}
+
+	const trimmedCode = referralCode.trim();
+
+	const [user, existingAffiliation, referrer] = await all([
+		dbQuery.findOne('user', { where: { id: user_id }, attributes: ['id', 'created_at'] }),
+		dbQuery.findOne('affiliation', { where: { user_id } }),
+		getUserByAffiliationCode(trimmedCode)
+	]);
+
+	if (!user) {
+		throw new Error(USER_NOT_FOUND);
+	}
+
+	if (existingAffiliation) {
+		throw new Error(REFERRAL_ALREADY_APPLIED);
+	}
+
+	if (!referrer) {
+		throw new Error(INVALID_REFERRAL_CODE);
+	}
+
+	if (referrer.user_id === user_id) {
+		throw new Error(CANNOT_USE_OWN_REFERRAL_CODE);
+	}
+
+	const accountCreatedAt = new Date(user.created_at);
+	const windowExpiry = new Date(accountCreatedAt.getTime() + REFERRAL_APPLY_WINDOW_HOURS * 60 * 60 * 1000);
+
+	if (new Date() > windowExpiry) {
+		throw new Error(REFERRAL_CODE_APPLY_WINDOW_EXPIRED);
+	}
+
+	await checkAffiliation(trimmedCode, user_id);
 };
 
 const connectUserReferral = async (affiliationCode, userId, hoursThreshold = 24) => {
@@ -6059,6 +6109,7 @@ module.exports = {
 	getUserByAffiliationCode,
 	checkAffiliation,
 	connectUserReferral,
+	applyReferralCode,
 	verifyUserEmailByKitId,
 	verifyUserPhoneByKitId,
 	generateAffiliationCode,
