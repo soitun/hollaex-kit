@@ -30,7 +30,7 @@ module.exports = function (sequelize, DataTypes) {
 			},
 			// withdrawal: destination address; deposit: source/originating address
 			address: {
-				type: DataTypes.STRING,
+				type: DataTypes.TEXT,
 				allowNull: true
 			},
 			network: {
