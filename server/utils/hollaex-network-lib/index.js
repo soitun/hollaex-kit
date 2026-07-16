@@ -559,6 +559,7 @@ class HollaExNetwork {
 	 * @param {number} amount - Amount to withdraw
 	 * @param {object} opts - Optional parameters.
 	 * @param {string} opts.network - Specify crypto currency network
+	 * @param {object} opts.context - Optional boolean risk flags (device/IP novelty, recent credential changes, account standing) for the network's withdrawal risk screen
 	 * @param {object} opts.additionalHeaders - Object storing addtional headers to send with request.
 	 * @return {object} Withdrawal made on the network
 	 */
@@ -588,6 +589,12 @@ class HollaExNetwork {
 		}
 		if (opts.fee_markup) {
 			data.fee_markup = opts.fee_markup;
+		}
+		// optional boolean risk flags (device/IP novelty, recent credential
+		// changes, account standing) consumed by the network's withdrawal
+		// risk screen — flags only, never raw session data
+		if (isPlainObject(opts.context)) {
+			data.context = opts.context;
 		}
 		const headers = generateHeaders(
 			isPlainObject(opts.additionalHeaders) ? { ...this.headers, ...opts.additionalHeaders } : this.headers,

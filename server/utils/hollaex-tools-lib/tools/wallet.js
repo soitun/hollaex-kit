@@ -3,10 +3,13 @@
 const { SERVER_PATH } = require('../constants');
 const { MAILTYPE } = require(`${SERVER_PATH}/mail/strings`);
 const { loggerWithdrawals } = require(`${SERVER_PATH}/config/logger`);
-const { WITHDRAWALS_REQUEST_KEY } = require(`${SERVER_PATH}/constants`);
+const { WITHDRAWALS_REQUEST_KEY, VERIFY_STATUS } = require(`${SERVER_PATH}/constants`);
 const { sendVerificationCode } = require('./verification');
-const { verifyOtpBeforeAction } = require('./security');
-const { subscribedToCoin, getKitCoin, getKitSecrets, getKitConfig } = require('./common');
+const { verifyOtpBeforeAction, getCountryFromIp, getSecurityChangeStamps } = require('./security');
+const { getModel } = require('./database/model');
+const { Op } = require('sequelize');
+const DeviceDetector = require('node-device-detector');
+const { subscribedToCoin, getKitCoin, getKitSecrets, getKitConfig, getKitTiers } = require('./common');
 const {
 	INVALID_OTP_CODE,
 	INVALID_WITHDRAWAL_TOKEN,
@@ -29,12 +32,13 @@ const {
 	WITHDRAWAL_LIMIT_ERROR,
 	WITHDRAWAL_DAILY_LIMIT_REACHED,
 	WITHDRAWAL_MONTHLY_LIMIT_REACHED,
-	TRAVEL_RULE_INFO_REQUIRED
+	TRAVEL_RULE_INFO_REQUIRED,
+	TRAVEL_RULE_RECORD_FAILED
 } = require(`${SERVER_PATH}/messages`);
 const { getUserByKitId, mapNetworkIdToKitId, mapKitIdToNetworkId } = require('./user');
 const { findTransactionLimitPerTier } = require('./tier');
 const { enforceAddressNotBlacklisted } = require('./blockchain');
-const { isAboveThreshold, recordWithdrawalCompliance } = require('./travelRule');
+const { isAboveThreshold, recordWithdrawalCompliance, finalizeWithdrawalCompliance, discardWithdrawalCompliance } = require('./travelRule');
 const { client } = require('./database/redis');
 const crypto = require('crypto');
 const uuid = require('uuid/v4');
@@ -403,6 +407,165 @@ const checkTransaction = (currency, transactionId, address, network, isTestnet =
 	return getNodeLib().checkTransaction(currency, transactionId, address, network, { isTestnet, ...opts });
 };
 
+// Same detector configuration as controllers/user.js loginPost, so the device
+// string built here matches the format stored on Login rows and can be
+// compared against the login history below.
+const riskDeviceDetector = new DeviceDetector({
+	clientIndexes: true,
+	deviceIndexes: true,
+	deviceAliasCode: false,
+});
+
+const parseDeviceFromHeaders = (headers = {}) => {
+	const userAgent = headers['user-agent'];
+	if (!userAgent || typeof userAgent !== 'string') {
+		return '';
+	}
+	// mirrors loginPost: a custom-device header means the client already sends
+	// a device identifier as its user-agent, stored verbatim on login.
+	if (headers['custom-device']) {
+		return userAgent.substring(0, 1000);
+	}
+	const result = riskDeviceDetector.detect(userAgent);
+	const truncate = (str, maxLen = 100) => {
+		if (!str || typeof str !== 'string') return '';
+		return str.substring(0, maxLen);
+	};
+	let deviceParts = [
+		truncate(result.device.brand, 100),
+		truncate(result.device.model, 100),
+		truncate(result.device.type, 100),
+		truncate(result.client.name, 100),
+		truncate(result.client.type, 100),
+		truncate(result.os.name, 100)
+	].filter(Boolean);
+	let device = deviceParts.join(' ').trim();
+	const encoder = new TextEncoder();
+	while (encoder.encode(device).length > 1000 && deviceParts.length > 1) {
+		deviceParts.pop();
+		device = deviceParts.join(' ').trim();
+	}
+	return device;
+};
+
+// How far back a device/IP/country must appear in the login history to count
+// as "known". The current session's own login row already exists by
+// withdrawal time, so novelty is computed against successful logins OLDER
+// than this buffer — anything first seen inside it is exactly the takeover
+// window the network's context rules score.
+const RISK_CONTEXT_HISTORY_BUFFER_HOURS = 24;
+const RISK_CONTEXT_LOGIN_SCAN_LIMIT = 100;
+// A credential-change stamp older than this no longer counts as "recent" for
+// the *_recently_changed flags, even though the stamp itself lives longer in
+// redis (SECURITY_CHANGE_STAMP_EXPIRY).
+const RISK_CONTEXT_RECENT_CREDENTIAL_HOURS = 24;
+// Account age below which the new_user flag is sent. Deliberately wider than
+// the network's own newAccount rule (72h on its copy of the account) so the
+// flag still adds signal for accounts a few days old.
+const RISK_CONTEXT_NEW_USER_DAYS = 7;
+
+// Build the optional withdrawal risk `context` object forwarded to the
+// network (see the network's WithdrawalRequest swagger definition). Boolean
+// flags ONLY — no raw session or account data (ip/device/country/timestamps)
+// ever leaves the kit; the raw values are used locally to compute the
+// novelty flags and then dropped:
+//   new_device / new_ip / new_country  — session novelty vs login history
+//   password_recently_changed / otp_recently_changed / email_recently_changed
+//   verified_user                      — approved identity data (id_data status 3)
+//   flagged_user                       — operator flagged the account on the kit
+//   new_user                           — account younger than RISK_CONTEXT_NEW_USER_DAYS
+//   high_tier_user                     — tier above half the exchange's tier count
+// Risk-decreasing flags (verified_user, high_tier_user) and risk-increasing
+// ones are sent only when true; novelty flags are sent true/false when
+// computable, since an explicit false ("known device") is itself a signal.
+// Fail-open: any error returns undefined and the withdrawal proceeds without
+// context — this must never block a withdrawal.
+const buildWithdrawalRiskContext = async (user, requestHeaders = {}) => {
+	try {
+		const context = {};
+		const ip = requestHeaders['x-real-ip'];
+		const device = parseDeviceFromHeaders(requestHeaders);
+		const country = ip ? getCountryFromIp(ip, requestHeaders) : '';
+
+		if (ip || device) {
+			const priorLogins = await getModel('login').findAll({
+				where: {
+					user_id: user.id,
+					status: true,
+					timestamp: {
+						[Op.lt]: moment().subtract(RISK_CONTEXT_HISTORY_BUFFER_HOURS, 'hours').toDate()
+					}
+				},
+				attributes: ['ip', 'device', 'country'],
+				order: [['id', 'DESC']],
+				limit: RISK_CONTEXT_LOGIN_SCAN_LIMIT,
+				raw: true
+			});
+			// a brand-new account has no history older than the buffer; claim no
+			// novelty at all rather than flagging everything (the new_user flag
+			// below already covers new accounts). The scan cap means a device
+			// last used >100 logins ago can re-flag as new — acceptable for an
+			// alert-scoring signal.
+			if (priorLogins.length) {
+				if (device) {
+					context.new_device = !priorLogins.some((l) => l.device === device);
+				}
+				if (ip) {
+					context.new_ip = !priorLogins.some((l) => l.ip === ip);
+				}
+				if (country) {
+					context.new_country = !priorLogins.some((l) => l.country === country);
+				}
+			}
+		}
+
+		const stamps = await getSecurityChangeStamps(user.id);
+		if (stamps) {
+			const recentlyChanged = (at) => {
+				if (!at) {
+					return false;
+				}
+				const ts = moment(at);
+				return ts.isValid() && moment().diff(ts, 'hours', true) < RISK_CONTEXT_RECENT_CREDENTIAL_HOURS;
+			};
+			if (recentlyChanged(stamps.password_changed_at)) {
+				context.password_recently_changed = true;
+			}
+			if (recentlyChanged(stamps.otp_changed_at)) {
+				context.otp_recently_changed = true;
+			}
+			if (recentlyChanged(stamps.email_changed_at)) {
+				context.email_recently_changed = true;
+			}
+		}
+
+		if (user.id_data && user.id_data.status === VERIFY_STATUS.COMPLETED) {
+			context.verified_user = true;
+		}
+		if (user.flagged === true) {
+			context.flagged_user = true;
+		}
+		if (user.created_at && moment().diff(moment(user.created_at), 'days', true) < RISK_CONTEXT_NEW_USER_DAYS) {
+			context.new_user = true;
+		}
+
+		const tierCount = Object.keys(getKitTiers() || {}).length;
+		if (tierCount > 0 &&
+			typeof user.verification_level === 'number' &&
+			user.verification_level > tierCount / 2) {
+			context.high_tier_user = true;
+		}
+
+		return Object.keys(context).length ? context : undefined;
+	} catch (err) {
+		loggerWithdrawals.error(
+			'tools/wallet/buildWithdrawalRiskContext error',
+			err.message
+		);
+		return undefined;
+	}
+};
+
 const performWithdrawal = (userId, address, currency, amount, opts = {
 	network: null,
 	fee_markup: null,
@@ -422,7 +585,12 @@ const performWithdrawal = (userId, address, currency, amount, opts = {
 		})
 		.then(async (user) => {
 			await enforceAddressNotBlacklisted(address, opts.network, user);
-			return getNodeLib().performWithdrawal(user.network_id, address, currency, amount, opts);
+			// optional risk flags for the network's withdrawal risk screen,
+			// built from the request headers when the controller passes them.
+			const context = opts.requestHeaders
+				? await buildWithdrawalRiskContext(user, opts.requestHeaders)
+				: undefined;
+			return getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, context });
 		});
 };
 
@@ -432,22 +600,23 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 }) {
 	const user = await getUserByKitId(userId);
 	// validateWithdrawal already enforces the address blacklist, so no extra check here
-	const { fee_markup, travel_rule_amount_native } = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
+	const { fee_markup, travel_rule_required, travel_rule_amount_native } = await validateWithdrawal(user, address, amount, currency, opts.network, null, {
 		is_own_address: opts.is_own_address,
 		purpose: opts.purpose,
 		counterparty_type: opts.counterparty_type,
 		counterparty_name: opts.counterparty_name,
 		vasp_name: opts.vasp_name
 	});
-	const result = await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup });
 
-	// Record a travel-rule compliance row (one per transaction) when the
-	// withdrawal qualified. travel_rule_amount_native is only set when above threshold.
-	if (travel_rule_amount_native != null) {
+	// Travel rule: the compliance row is written BEFORE the withdrawal performs —
+	// fail closed: when it can't be written the withdrawal is refused rather than
+	// moving funds without a record. Finalized with the transaction id below.
+	let travelRuleRecord = null;
+	if (travel_rule_required) {
 		try {
-			await recordWithdrawalCompliance({
+			travelRuleRecord = await recordWithdrawalCompliance({
 				user_id: user.id,
-				transaction_id: result?.transaction_id,
+				transaction_id: null,
 				address,
 				network: opts.network,
 				currency,
@@ -457,10 +626,43 @@ async function performDirectWithdrawal(userId, address, currency, amount, opts =
 				purpose: opts.purpose,
 				counterparty_type: opts.counterparty_type,
 				counterparty_name: opts.counterparty_name,
-				vasp_name: opts.vasp_name
+				vasp_name: opts.vasp_name,
+				status: 'pending'
 			});
 		} catch (err) {
-			loggerWithdrawals.error('tools/wallet/performDirectWithdrawal/travelRule', err.message);
+			loggerWithdrawals.error('tools/wallet/performDirectWithdrawal/travelRule record', err.message);
+			throw new Error(TRAVEL_RULE_RECORD_FAILED);
+		}
+	}
+
+	// optional risk flags for the network's withdrawal risk screen,
+	// built from the request headers when the controller passes them.
+	const context = opts.requestHeaders
+		? await buildWithdrawalRiskContext(user, opts.requestHeaders)
+		: undefined;
+
+	let result;
+	try {
+		result = await getNodeLib().performWithdrawal(user.network_id, address, currency, amount, { ...opts, fee_markup, context });
+	} catch (err) {
+		// the withdrawal never performed — drop the pre-created compliance row
+		if (travelRuleRecord) {
+			try {
+				await discardWithdrawalCompliance(travelRuleRecord);
+			} catch (discardErr) {
+				loggerWithdrawals.error('tools/wallet/performDirectWithdrawal/travelRule discard', discardErr.message);
+			}
+		}
+		throw err;
+	}
+
+	if (travelRuleRecord) {
+		try {
+			await finalizeWithdrawalCompliance(travelRuleRecord, result?.transaction_id);
+		} catch (err) {
+			// the info itself is already durably recorded; only the
+			// transaction-id/status linkage failed
+			loggerWithdrawals.error('tools/wallet/performDirectWithdrawal/travelRule finalize', err.message);
 		}
 	}
 
@@ -653,6 +855,8 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 	// Travel rule: when active and the native-currency value is >= threshold, the
 	// user must supply the purpose and whether the receiver is themselves. There is
 	// no address dedup — the info is required for every qualifying withdrawal.
+	// Fails closed: a withdrawal whose value can't be priced also qualifies
+	// (travel_rule_amount_native is then null).
 	const travelRuleCheck = await isAboveThreshold(currency, amount);
 	if (travelRuleCheck.above) {
 		const hasInfo = travelRuleOpts
@@ -726,7 +930,10 @@ const validateWithdrawal = async (user, address, amount, currency, network = nul
 		fee,
 		fee_coin,
 		...((coinMarkup?.fee_markups?.[network]?.withdrawal?.value && coinMarkup?.fee_markups?.[network]?.withdrawal?.symbol === fee_coin) && { fee_markup: coinMarkup.fee_markups[network].withdrawal?.value }),
-		...(travelRuleCheck.above && { travel_rule_amount_native: travelRuleCheck.amountNative })
+		...(travelRuleCheck.above && {
+			travel_rule_required: true,
+			travel_rule_amount_native: travelRuleCheck.amountNative
+		})
 	};
 };
 
@@ -1694,6 +1901,7 @@ module.exports = {
 	cancelUserWithdrawalByKitId,
 	checkTransaction,
 	performWithdrawal,
+	buildWithdrawalRiskContext,
 	performDirectWithdrawal,
 	transferAssetByKitIds,
 	getUserBalanceByKitId,

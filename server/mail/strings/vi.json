@@ -69,7 +69,7 @@
 			"title": "Thay đổi tỷ lệ chiết khấu"
 		},
 		"BANK_VERIFIED": {
-			"html": "<div><p> ${name} thân mến </p><p>Một tài khoản ngân hàng đang chờ xử lý đã được xác minh. Tài khoản hợp lệ của bạn hiện có thể được sử dụng cho các hoạt động trao đổi yêu cầu tài khoản ngân hàng.</p><div><strong>Tài khoản ngân hàng đã xác minh::</strong>${list_detail_bank_account}</div><p><a href=\"${link_verification}\">Để xem các tài khoản ngân hàng hiện tại của bạn, vui lòng truy cập vào Tab Xác minh của sàn giao dịch</a></p><p> Cảm ơn quý khách vì đã sử dụng dịch vụ của chúng tôi. <br> Đội ngũ  ${api_name}  </p></div>",
+			"html": "<div><p> ${name} thân mến </p><p>Một tài khoản ngân hàng đang chờ xử lý đã được xác minh. Tài khoản hợp lệ của bạn hiện có thể được sử dụng cho các hoạt động trao đổi yêu cầu tài khoản ngân hàng.</p><p><a href=\"${link_verification}\">Để xem các tài khoản ngân hàng hiện tại của bạn, vui lòng truy cập vào Tab Xác minh của sàn giao dịch</a></p><p> Cảm ơn quý khách vì đã sử dụng dịch vụ của chúng tôi. <br> Đội ngũ  ${api_name}  </p></div>",
 			"title": "Ngân hàng đã xác minh"
 		},
 		"USER_ID_VERIFICATION_REJECT": {

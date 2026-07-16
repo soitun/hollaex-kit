@@ -30,7 +30,7 @@ module.exports = function (sequelize, DataTypes) {
 			},
 			// withdrawal: destination address; deposit: source/originating address
 			address: {
-				type: DataTypes.STRING,
+				type: DataTypes.TEXT,
 				allowNull: true
 			},
 			network: {
@@ -76,7 +76,8 @@ module.exports = function (sequelize, DataTypes) {
 				type: DataTypes.STRING,
 				allowNull: true
 			},
-			// withdrawals: 'recorded'. deposits: 'pending' -> 'released' | 'kept'
+			// withdrawals: 'pending' (pre-created before the withdrawal performs) -> 'recorded'.
+			// deposits: 'pending' -> 'released' | 'kept'
 			status: {
 				type: DataTypes.STRING,
 				allowNull: false,

@@ -69,7 +69,7 @@
 			"title": "Perubahan Tarif Diskon"
 		},
 		"BANK_VERIFIED": {
-			"html": "<div><p> Kepada ${name} </p><p>Rekening bank yang tertunda telah diverifikasi. Rekening Anda yang valid sekarang dapat digunakan untuk operasi pertukaran yang membutuhkan rekening bank.</p><div><strong>Rekening Bank Terverifikasi:</strong>${list_detail_bank_account}</div><p><a href=\"${link_verification}\">Untuk melihat rekening bank Anda saat ini, kunjungi Verifikasi bursa Tab</a></p><p> Salam<br> ${api_name} tim </p></div>",
+			"html": "<div><p> Kepada ${name} </p><p>Rekening bank yang tertunda telah diverifikasi. Rekening Anda yang valid sekarang dapat digunakan untuk operasi pertukaran yang membutuhkan rekening bank.</p><p><a href=\"${link_verification}\">Untuk melihat rekening bank Anda saat ini, kunjungi Verifikasi bursa Tab</a></p><p> Salam<br> ${api_name} tim </p></div>",
 			"title": "Bank Terverifikasi"
 		},
 		"USER_ID_VERIFICATION_REJECT": {

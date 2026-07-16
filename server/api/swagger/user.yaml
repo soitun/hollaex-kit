@@ -2053,6 +2053,40 @@ paths:
         - bearer
       x-security-scopes:
         - user
+  /user/referral/apply:
+    x-swagger-router-controller: user
+    post:
+      operationId: applyReferralCode
+      description: Apply a referral code to connect your account to a referrer. Must be used within 48 hours of account creation.
+      tags:
+        - User
+      parameters:
+      - name: data
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - code
+          properties:
+            code:
+              type: string
+              description: The referral code to apply
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/MessageResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/MessageResponse"
+      security:
+        - Token: []
+      x-security-types:
+        - bearer
+      x-security-scopes:
+        - user
   /user/referral/unrealized:
     x-swagger-router-controller: user
     get:
