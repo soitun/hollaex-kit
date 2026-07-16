@@ -5020,6 +5020,26 @@ const messages = {
 		'vi': 'Bạn không thể sử dụng mã giới thiệu của chính mình',
 		'zh': '不能使用自己的推荐码'
 	},
+	'Unable to record travel rule information. Please try again later.': {
+		'code': 258,
+		'en': 'Unable to record travel rule information. Please try again later.',
+		'de': 'Die Travel-Rule-Informationen konnten nicht gespeichert werden. Bitte versuchen Sie es später erneut.',
+		'es': 'No se pudo registrar la información de la regla de viaje (Travel Rule). Por favor, inténtelo de nuevo más tarde.',
+		'fa': 'ثبت اطلاعات قانون سفر (Travel Rule) ممکن نبود. لطفاً بعداً دوباره تلاش کنید.',
+		'fr': 'Impossible d\'enregistrer les informations de la Travel Rule. Veuillez réessayer plus tard.',
+		'id': 'Tidak dapat menyimpan informasi travel rule. Silakan coba lagi nanti.',
+		'it': 'Impossibile registrare le informazioni sulla Travel Rule. Si prega di riprovare più tardi.',
+		'ja': 'トラベルルール情報を記録できませんでした。後でもう一度お試しください。',
+		'ko': '트래블룰 정보를 기록할 수 없습니다. 나중에 다시 시도해 주세요.',
+		'mn': 'Travel Rule мэдээллийг бүртгэж чадсангүй. Дараа дахин оролдоно уу.',
+		'nl': 'Kan de travel rule-informatie niet vastleggen. Probeer het later opnieuw.',
+		'pt': 'Não foi possível registrar as informações da travel rule. Por favor, tente novamente mais tarde.',
+		'ru': 'Не удалось записать информацию Travel Rule. Пожалуйста, повторите попытку позже.',
+		'tr': 'Travel rule (seyahat kuralı) bilgileri kaydedilemedi. Lütfen daha sonra tekrar deneyin.',
+		'ur': 'ٹریول رول کی معلومات ریکارڈ نہیں کی جا سکیں۔ براہ کرم بعد میں دوبارہ کوشش کریں۔',
+		'vi': 'Không thể ghi lại thông tin travel rule. Vui lòng thử lại sau.',
+		'zh': '无法记录旅行规则（Travel Rule）信息。请稍后再试。'
+	},
 	// add new ones above here
 }
 

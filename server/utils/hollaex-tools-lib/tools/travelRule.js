@@ -29,8 +29,8 @@ const isTravelRuleActive = () => getTravelRuleConfig().active === true;
 
 /**
  * Converts `amount` of `currency` into the exchange native currency. Returns the
- * converted value, or null when the conversion can't be determined (so callers
- * can skip the travel-rule check rather than block normal operations).
+ * converted value, or null when the conversion can't be determined (no oracle
+ * quote for the coin, or the oracle call failed).
  */
 const convertToNative = async (currency, amount) => {
 	const nativeCurrency = getKitConfig().native_currency;
@@ -63,7 +63,8 @@ const convertToNative = async (currency, amount) => {
 /**
  * True when the travel rule is active and the native-currency value of the given
  * amount is at or above the configured threshold. Returns the resolved native
- * amount alongside the verdict so callers can persist it.
+ * amount alongside the verdict so callers can persist it. When the value can't
+ * be priced at all, the check fails closed (`above: true`, `amountNative: null`).
  */
 const isAboveThreshold = async (currency, amount) => {
 	if (!isTravelRuleActive()) {
@@ -77,9 +78,18 @@ const isAboveThreshold = async (currency, amount) => {
 	if (!Number.isFinite(threshold) || threshold <= 0) {
 		return { above: false, amountNative: null };
 	}
+	// The threshold is expressed in the native currency; without one configured
+	// there is nothing to compare against (feature misconfiguration, not an
+	// oracle failure) so the check is skipped.
+	if (!getKitConfig().native_currency) {
+		return { above: false, amountNative: null };
+	}
 	const amountNative = await convertToNative(currency, amount);
 	if (amountNative == null) {
-		return { above: false, amountNative: null };
+		// Fail closed: the transaction can't be priced, so it can't be proven
+		// below the threshold — treat it as qualifying. The compliance record
+		// then carries a null amount_native.
+		return { above: true, amountNative: null };
 	}
 	return { above: amountNative >= threshold, amountNative };
 };
@@ -96,24 +106,49 @@ const recordWithdrawalCompliance = async ({
 	purpose,
 	counterparty_type,
 	counterparty_name,
-	vasp_name
+	vasp_name,
+	status
 }) => {
 	return getModel('travelRule').create({
 		user_id,
 		type: 'withdrawal',
-		transaction_id,
+		transaction_id: transaction_id || null,
 		address,
 		network,
 		currency,
 		amount,
-		amount_native,
+		amount_native: amount_native == null ? null : amount_native,
 		is_own_address: is_own_address === undefined ? null : is_own_address,
 		purpose: purpose || null,
 		counterparty_type: counterparty_type || null,
 		counterparty_name: counterparty_name || null,
 		vasp_name: vasp_name || null,
+		status: status || 'recorded'
+	});
+};
+
+/**
+ * Marks a pre-created ('pending') withdrawal compliance row as recorded once
+ * the withdrawal has actually performed, attaching the resulting transaction id.
+ * The row is created BEFORE the network call so the info is never lost; only
+ * this transaction-id/status linkage happens afterwards.
+ */
+const finalizeWithdrawalCompliance = async (record, transaction_id) => {
+	return record.update({
+		transaction_id: transaction_id || record.transaction_id,
 		status: 'recorded'
 	});
+};
+
+/**
+ * Removes a pre-created withdrawal compliance row when the withdrawal it was
+ * written for never performed. No-op once the record has been finalized.
+ */
+const discardWithdrawalCompliance = async (record) => {
+	if (record.status !== 'pending') {
+		return record;
+	}
+	return record.destroy();
 };
 
 const createDepositHold = async ({
@@ -273,6 +308,8 @@ module.exports = {
 	convertToNative,
 	isAboveThreshold,
 	recordWithdrawalCompliance,
+	finalizeWithdrawalCompliance,
+	discardWithdrawalCompliance,
 	createDepositHold,
 	createAdminRecord,
 	findByTxid,

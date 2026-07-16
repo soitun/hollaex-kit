@@ -222,6 +222,36 @@ const checkCaptcha = (captcha = '', remoteip = '', headers = {}) => {
 		});
 };
 
+// Credential-change stamps for the network's withdrawal risk screen: every
+// password/2FA/email change writes an ISO timestamp into a short-lived redis
+// hash; withdrawal calls reduce the stamps to `*_recently_changed` boolean
+// flags in the optional risk `context` — the timestamps themselves never
+// leave the kit (change-credentials-then-drain is the classic
+// account-takeover sequence). Redis (not the user row) on purpose: no schema
+// change, users can't overwrite it through settings updates, and the TTL
+// bounds it to the window the network actually scores. Losing a stamp
+// (restart/flush) only means one signal doesn't fire — fail-open by design.
+const SECURITY_CHANGE_STAMP_PREFIX = 'user:security-change';
+const SECURITY_CHANGE_STAMP_EXPIRY = 72 * 60 * 60; // seconds
+const SECURITY_CHANGE_FIELDS = ['password_changed_at', 'otp_changed_at', 'email_changed_at'];
+
+const recordSecurityChange = (userId, field) => {
+	if (!userId || !SECURITY_CHANGE_FIELDS.includes(field)) {
+		return Promise.resolve();
+	}
+	const key = `${SECURITY_CHANGE_STAMP_PREFIX}:${userId}`;
+	return client.hsetAsync(key, field, new Date().toISOString())
+		.then(() => client.expireAsync(key, SECURITY_CHANGE_STAMP_EXPIRY))
+		.catch((err) => {
+			loggerAuth.error('tools/security/recordSecurityChange error', field, err.message);
+		});
+};
+
+const getSecurityChangeStamps = (userId) => {
+	return client.hgetallAsync(`${SECURITY_CHANGE_STAMP_PREFIX}:${userId}`)
+		.catch(() => null);
+};
+
 const validatePassword = (userPassword, inputPassword) => {
 	return bcrypt.compare(inputPassword, userPassword);
 };
@@ -246,6 +276,7 @@ const resetUserPassword = (resetPasswordCode, newPassword) => {
 			const { revokeAllUserSessions, disableUserWithdrawal } = require('./user');
 			await revokeAllUserSessions(user.id);
 			await disableUserWithdrawal(user.id, { expiry_date: moment().add(24, 'hours').toISOString() });
+			await recordSecurityChange(user.id, 'password_changed_at');
 			return updated;
 		});
 };
@@ -303,6 +334,7 @@ const confirmChangeUserPassword = (code, domain) => {
 
 			await revokeAllUserSessions(user.id);
 			await disableUserWithdrawal(user.id, { expiry_date: moment().add(24, 'hours').toISOString() });
+			await recordSecurityChange(user.id, 'password_changed_at');
 			sendEmail(
 				MAILTYPE.PASSWORD_CHANGED,
 				user.email,
@@ -671,6 +703,12 @@ const updateUserOtpEnabled = (id, otp_enabled = false, transaction) => {
 			{ otp_enabled },
 			{ fields: ['otp_enabled'], transaction }
 		);
+	}).then((user) => {
+		// stamp for the withdrawal risk context. Redis isn't part of the SQL
+		// transaction, so a rolled-back OTP toggle can leave a stray stamp —
+		// acceptable: the stamp only feeds an alert-scoring signal.
+		recordSecurityChange(id, 'otp_changed_at');
+		return user;
 	});
 };
 
@@ -1659,6 +1697,8 @@ module.exports = {
 	verifyBearerTokenExpressMiddleware,
 	getPasskeyConfig,
 	getCountryFromIp,
+	recordSecurityChange,
+	getSecurityChangeStamps,
 	getCountryFromHeaders,
 	checkIp,
 	sendConfirmationEmail,

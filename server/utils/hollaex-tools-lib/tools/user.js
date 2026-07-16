@@ -2064,6 +2064,13 @@ const deactivateUserOtpById = (userId) => {
 				{ otp_enabled: false },
 				{ fields: ['otp_enabled'] }
 			);
+		})
+		.then((user) => {
+			// stamp for the network withdrawal risk context: 2FA disabled via
+			// admin/support shortly before a withdrawal is a takeover signal
+			// (social-engineered support flows).
+			require('./security').recordSecurityChange(userId, 'otp_changed_at');
+			return user;
 		});
 };
 
@@ -3255,6 +3262,8 @@ const changeKitUserEmail = async (userId, newEmail, auditInfo) => {
 		{ email: newEmail },
 		{ fields: ['email'], returning: true }
 	);
+	// stamp for the network withdrawal risk context (email-change-then-drain)
+	await require('./security').recordSecurityChange(userId, 'email_changed_at');
 	createAuditLog({ email: auditInfo.userEmail, session_id: auditInfo.sessionId }, auditInfo.apiPath, auditInfo.method, { user_id: userId, email: userEmail }, { user_id: userId, email: newEmail });
 	sendEmail(
 		MAILTYPE.ALERT,

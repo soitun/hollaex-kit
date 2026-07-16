@@ -300,6 +300,7 @@ exports.WITHDRAWAL_ADDRESS_NOT_ALLOWED = 'Withdrawals to this address are not al
 exports.TRAVEL_RULE_INFO_REQUIRED = 'Travel rule information is required for this transaction. Please provide the purpose of the transaction and whether the receiver is yourself.';
 exports.TRAVEL_RULE_HOLD_NOT_FOUND = 'No pending travel rule hold found for this transaction';
 exports.TRAVEL_RULE_NOT_ACTIVE = 'Travel rule is not active on this exchange';
+exports.TRAVEL_RULE_RECORD_FAILED = 'Unable to record travel rule information. Please try again later.';
 exports.BLACKLISTED_ADDRESS_ALREADY_EXISTS = 'This address is already blacklisted';
 exports.BLACKLISTED_ADDRESS_NOT_FOUND = 'Blacklisted address not found';
 exports.BLACKLISTED_ADDRESS_REQUIRED = 'Address is required';

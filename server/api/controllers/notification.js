@@ -371,8 +371,9 @@ const checkDepositAddresses = (req, res) => {
 				return res.json({ allowed: false, blacklisted, reason: 'blacklist' });
 			}
 
-			// Travel rule: hold qualifying deposits (>= threshold in native currency) and
-			// record a pending compliance row. No dedup — every qualifying deposit is held.
+			// Travel rule: hold qualifying deposits (>= threshold in native currency,
+			// or unpriceable — the threshold check fails closed) and record a pending
+			// compliance row. No dedup — every qualifying deposit is held.
 			// Blacklist takes precedence above and never reaches here, so blacklisted holds
 			// never get a travel-rule record and can't be auto-released by the user flow.
 			if (toolsLib.travelRule.isTravelRuleActive()) {

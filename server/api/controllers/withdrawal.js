@@ -4,7 +4,7 @@ const { loggerWithdrawals } = require('../../config/logger');
 const toolsLib = require('hollaex-tools-lib');
 const { all } = require('bluebird');
 const { ROLES } = require('../../constants');
-const { USER_NOT_FOUND, API_KEY_NOT_PERMITTED, WITHDRAWAL_DISABLED } = require('../../messages');
+const { USER_NOT_FOUND, API_KEY_NOT_PERMITTED, WITHDRAWAL_DISABLED, TRAVEL_RULE_RECORD_FAILED } = require('../../messages');
 const { errorMessageConverter } = require('../../utils/conversion');
 const { isEmail } = require('validator');
 
@@ -115,6 +115,8 @@ const requestWithdrawal = (req, res) => {
 					counterparty_type,
 					counterparty_name,
 					vasp_name,
+					// session context source for the network withdrawal risk screen
+					requestHeaders: req.headers,
 					additionalHeaders: {
 						'x-forwarded-for': req.headers['x-forwarded-for']
 					}
@@ -186,6 +188,10 @@ const performWithdrawal = (req, res) => {
 	const authorization = req.headers['authorization'];
 	const ip = req.headers['x-real-ip'];
 
+	// pre-created ('pending') travel-rule compliance row for this withdrawal;
+	// finalized once the withdrawal performs, discarded when it doesn't.
+	let travelRuleRecord = null;
+
 	Promise.resolve()
 		.then(() => {
 			if (!authorization) {
@@ -219,6 +225,32 @@ const performWithdrawal = (req, res) => {
 			]);
 		})
 		.then(async ([withdrawal, validation]) => {
+			// Travel rule: the compliance row is written BEFORE the withdrawal
+			// performs — fail closed: when it can't be written the withdrawal is
+			// refused rather than moving funds without a record.
+			if (validation && validation.travel_rule_required) {
+				try {
+					travelRuleRecord = await toolsLib.travelRule.recordWithdrawalCompliance({
+						user_id: withdrawal.user_id,
+						transaction_id: null,
+						address: withdrawal.address,
+						network: withdrawal.network,
+						currency: withdrawal.currency,
+						amount: withdrawal.amount,
+						amount_native: validation.travel_rule_amount_native,
+						is_own_address: withdrawal.is_own_address,
+						purpose: withdrawal.purpose,
+						counterparty_type: withdrawal.counterparty_type,
+						counterparty_name: withdrawal.counterparty_name,
+						vasp_name: withdrawal.vasp_name,
+						status: 'pending'
+					});
+				} catch (err) {
+					loggerWithdrawals.error(req.uuid, 'controller/withdrawal/performWithdrawal/travelRule record', err.message);
+					throw new Error(TRAVEL_RULE_RECORD_FAILED);
+				}
+			}
+
 			if (isEmail(withdrawal.address)) {
 				const receiver = await toolsLib.user.getUserByEmail(withdrawal.address);
 				if (!receiver) {
@@ -262,6 +294,9 @@ const performWithdrawal = (req, res) => {
 						{
 							network: withdrawal.network,
 							fee_markup: withdrawal.fee_markup,
+							// session context source for the network withdrawal risk
+							// screen — the confirmation request's session (same user)
+							requestHeaders: req.headers,
 							additionalHeaders: {
 								'x-forwarded-for': req.headers['x-forwarded-for']
 							}
@@ -272,27 +307,15 @@ const performWithdrawal = (req, res) => {
 				]);
 			}
 		})
-		.then(async ([ result, withdrawal, validation ]) => {
-			// Record a travel-rule compliance row (one per transaction) when the
-			// withdrawal qualified. amount_native is only set when above threshold.
-			if (validation && validation.travel_rule_amount_native != null) {
+		.then(async ([ result, withdrawal ]) => {
+			// Attach the transaction id to the pre-created compliance row. The info
+			// itself is already durably recorded — a failure here only loses the
+			// transaction-id/status linkage.
+			if (travelRuleRecord) {
 				try {
-					await toolsLib.travelRule.recordWithdrawalCompliance({
-						user_id: withdrawal.user_id,
-						transaction_id: result?.transaction_id || withdrawal.transaction_id,
-						address: withdrawal.address,
-						network: withdrawal.network,
-						currency: withdrawal.currency,
-						amount: withdrawal.amount,
-						amount_native: validation.travel_rule_amount_native,
-						is_own_address: withdrawal.is_own_address,
-						purpose: withdrawal.purpose,
-						counterparty_type: withdrawal.counterparty_type,
-						counterparty_name: withdrawal.counterparty_name,
-						vasp_name: withdrawal.vasp_name
-					});
+					await toolsLib.travelRule.finalizeWithdrawalCompliance(travelRuleRecord, result?.transaction_id || withdrawal.transaction_id);
 				} catch (err) {
-					loggerWithdrawals.error(req.uuid, 'controller/withdrawal/performWithdrawal/travelRule', err.message);
+					loggerWithdrawals.error(req.uuid, 'controller/withdrawal/performWithdrawal/travelRule finalize', err.message);
 				}
 			}
 			return res.json({
@@ -301,7 +324,16 @@ const performWithdrawal = (req, res) => {
 				transaction_id: result?.transaction_id
 			});
 		})
-		.catch((err) => {
+		.catch(async (err) => {
+			// the withdrawal never performed — drop the pre-created compliance row
+			// (no-op when it was already finalized)
+			if (travelRuleRecord) {
+				try {
+					await toolsLib.travelRule.discardWithdrawalCompliance(travelRuleRecord);
+				} catch (discardErr) {
+					loggerWithdrawals.error(req.uuid, 'controller/withdrawal/performWithdrawal/travelRule discard', discardErr.message);
+				}
+			}
 			loggerWithdrawals.error(
 				req.uuid,
 				'controller/withdrawals/performWithdrawal',
@@ -358,6 +390,8 @@ const performDirectWithdrawal = (req, res) => {
 			counterparty_type,
 			counterparty_name,
 			vasp_name,
+			// session context source for the network withdrawal risk screen
+			requestHeaders: req.headers,
 			additionalHeaders: {
 				'x-forwarded-for': req.headers['x-forwarded-for']
 			}
