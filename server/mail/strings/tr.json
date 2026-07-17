@@ -73,7 +73,7 @@
 			"title": "İndirim Oran Değişimi"
 		},
 		"BANK_VERIFIED": {
-			"html": "<div><p> Sayın ${name} </p><p>İnceleme sürecindeki banka hesabınız onaylanmıştır. Geçerli hesabınız, banka hesabı gerektiren borsa işlemlerinde kullanılabilecektir.</p><div><strong>Onaylı Banka Hesapları:</strong>${list_detail_bank_account}</div><p><a href=\"${link_verification}\">Mevcut banka hesaplarınızı görüntülemek için, lütfen borsanın onay bölümüne bakınız.</a></p><p> İyi dileklerimizle<br> ${api_name} takımı </p></div>",
+			"html": "<div><p> Sayın ${name} </p><p>İnceleme sürecindeki banka hesabınız onaylanmıştır. Geçerli hesabınız, banka hesabı gerektiren borsa işlemlerinde kullanılabilecektir.</p><p><a href=\"${link_verification}\">Mevcut banka hesaplarınızı görüntülemek için, lütfen borsanın onay bölümüne bakınız.</a></p><p> İyi dileklerimizle<br> ${api_name} takımı </p></div>",
 			"title": "Banka Onayı"
 		},
 		"USER_ID_VERIFICATION_REJECT": {

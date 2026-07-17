@@ -69,7 +69,7 @@
 			"title": "貼現率變化"
 		},
 		"BANK_VERIFIED": {
-			"html": "<div><p> ${name} </p><p>一個待處理的銀行賬戶已經過驗證。 您的有效賬戶現在可用於需要銀行賬戶的兌換操作。</p><div><strong>已驗證的銀行賬戶:</strong>${list_detail_bank_account}</div><p><a href=\"${link_verification}\">要查看您當前的銀行賬戶，請訪問交易所的驗證選項卡</a></p><p> 感谢你的使用<br> ${api_name} 团队 </p></div>",
+			"html": "<div><p> ${name} </p><p>一個待處理的銀行賬戶已經過驗證。 您的有效賬戶現在可用於需要銀行賬戶的兌換操作。</p><p><a href=\"${link_verification}\">要查看您當前的銀行賬戶，請訪問交易所的驗證選項卡</a></p><p> 感谢你的使用<br> ${api_name} 团队 </p></div>",
 			"title": "銀行認證"
 		},
 		"USER_ID_VERIFICATION_REJECT": {

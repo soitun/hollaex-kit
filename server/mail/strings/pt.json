@@ -69,7 +69,7 @@
 			"title": "Alteração da taxa de desconto"
 		},
 		"BANK_VERIFIED": {
-			"html": "<div><p> Dear ${name} </p><p>Uma conta bancária pendente foi verificada. Sua conta válida agora pode ser usada para operações de câmbio que exigem uma conta bancária.</p><div><strong>Contas bancárias verificadas:</strong>${list_detail_bank_account}</div><p><a href=\"${link_verification}\">Para visualizar suas contas bancárias atuais, visite a guia Verificação da bolsa</a></p><p> Saudações<br> ${api_name} equipe </p></div>",
+			"html": "<div><p> Dear ${name} </p><p>Uma conta bancária pendente foi verificada. Sua conta válida agora pode ser usada para operações de câmbio que exigem uma conta bancária.</p><p><a href=\"${link_verification}\">Para visualizar suas contas bancárias atuais, visite a guia Verificação da bolsa</a></p><p> Saudações<br> ${api_name} equipe </p></div>",
 			"title": "Banco verificado"
 		},
 		"USER_ID_VERIFICATION_REJECT": {
